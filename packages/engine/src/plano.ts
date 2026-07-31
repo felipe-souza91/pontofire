@@ -27,6 +27,8 @@ export interface EntradaPlano {
   tss?: number;
   /** retorno REAL anual esperado (ex. 0,05) */
   retornoRealAnual: number;
+  /** meta FIRE (M) explícita; se ausente, deriva de C×12/TSS */
+  metaFire?: number;
   /** idade atual (para estimar idade na liberdade) */
   idadeAtual?: number;
   /** data-base (default: agora) — injetável para testes determinísticos */
@@ -51,7 +53,7 @@ export function calcularPlanoFire(e: EntradaPlano): PlanoFire {
   const R = e.rendaPassivaMensal ?? 0;
   const hoje = e.hoje ?? new Date();
 
-  const M = numeroFire(e.custoVidaMensal, tss);
+  const M = e.metaFire ?? numeroFire(e.custoVidaMensal, tss);
   const iMensal = realMensalDeAnual(e.retornoRealAnual);
   const res = mesesAteFire(e.patrimonioInvestivel, e.aporteMensal, iMensal, M);
 

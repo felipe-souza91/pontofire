@@ -1,0 +1,39 @@
+const brl = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+  maximumFractionDigits: 0,
+});
+
+const brlCent = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+});
+
+const dataLonga = new Intl.DateTimeFormat('pt-BR', {
+  month: 'long',
+  year: 'numeric',
+});
+
+const dataCurta = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium' });
+
+export const formatBRL = (v: number, comCentavos = false): string =>
+  (comCentavos ? brlCent : brl).format(v);
+
+export const formatPct = (v: number, casas = 1): string =>
+  `${(v * 100).toFixed(casas).replace('.', ',')}%`;
+
+/** "julho de 2041" — usado na contagem regressiva do FIRE. */
+export const formatMesAno = (d: Date): string => dataLonga.format(d);
+
+export const formatData = (d: Date): string => dataCurta.format(d);
+
+/** "15 anos e 4 meses" a partir de um total de meses. */
+export function formatDuracao(meses: number): string {
+  const anos = Math.floor(meses / 12);
+  const m = Math.round(meses - anos * 12);
+  const partes: string[] = [];
+  if (anos > 0) partes.push(`${anos} ${anos === 1 ? 'ano' : 'anos'}`);
+  if (m > 0) partes.push(`${m} ${m === 1 ? 'mês' : 'meses'}`);
+  if (partes.length === 0) return 'agora';
+  return partes.join(' e ');
+}

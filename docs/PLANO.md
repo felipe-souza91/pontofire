@@ -91,6 +91,9 @@ firebase.json  firestore.rules  firestore.indexes.json  .firebaserc
   unitários** (número a número). Tipos do modelo de dados. Helpers de retorno real/nominal.
 - **M2 — Auth + Onboarding 2 níveis:** Google + e-mail/senha; N1 (aha <60s → motor → 1ª data) →
   N2 (nome/apelido, aniversário, dados INSS, "por quê"); consentimento LGPD; perfil.
+  *Nota:* N1 coleta **5** campos, não 4 — o brief §4 lista custo/patrimônio/meta/retorno, mas sem
+  **aporte mensal** o motor não fecha uma data (só cresceria o P parado). Aporte entra como pergunta
+  rápida; consentimento LGPD é pré-requisito do N1 (guarda-se dado financeiro).
 - **M3 — Dashboard (Início):** termômetro, contagem regressiva, cobertura passiva, taxa de poupança,
   evolução (snapshots), card de insight; atualização mensal marcação a mercado. Mostra os **dois
   números**: patrimônio líquido total × patrimônio que sustenta o FIRE.

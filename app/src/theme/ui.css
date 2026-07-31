@@ -1,0 +1,132 @@
+/* Primitivas de UI do Ponto FIRE — enxutas, on-brand (§12). */
+
+.pf-container {
+  width: 100%;
+  max-width: 30rem;
+  margin: 0 auto;
+  padding: var(--space-6);
+}
+
+.pf-card {
+  background: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: var(--space-8);
+}
+
+/* botões */
+.pf-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: 0.85rem 1.25rem;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.15s ease, opacity 0.15s ease;
+}
+.pf-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.pf-btn-primary {
+  background: var(--flame-grad);
+  color: #241203;
+}
+.pf-btn-primary:not(:disabled):hover {
+  filter: brightness(1.06);
+}
+.pf-btn-ghost {
+  background: transparent;
+  border-color: var(--line-2);
+  color: var(--paper);
+}
+.pf-btn-ghost:not(:disabled):hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+.pf-btn-link {
+  background: none;
+  border: none;
+  color: var(--muted);
+  width: auto;
+  padding: var(--space-2);
+  cursor: pointer;
+  font: inherit;
+  text-decoration: underline;
+}
+
+/* campos */
+.pf-field {
+  display: block;
+  margin-bottom: var(--space-4);
+}
+.pf-label {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin-bottom: var(--space-2);
+}
+.pf-input {
+  width: 100%;
+  padding: 0.8rem 0.9rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--line-2);
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+}
+.pf-input.pf-num {
+  font-family: var(--font-mono);
+}
+.pf-input:focus {
+  outline: 2px solid var(--ember);
+  outline-offset: 1px;
+}
+.pf-hint {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-top: var(--space-2);
+}
+.pf-error {
+  color: var(--ember-2);
+  font-size: 0.9rem;
+  margin-top: var(--space-2);
+}
+
+/* passos do onboarding */
+.pf-steps {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-6);
+}
+.pf-step {
+  height: 4px;
+  flex: 1;
+  border-radius: 2px;
+  background: var(--line-2);
+}
+.pf-step.on {
+  background: var(--ember);
+}
+
+.pf-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: var(--space-4) 0;
+}
+.pf-divider::before,
+.pf-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
