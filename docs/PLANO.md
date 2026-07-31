@@ -22,6 +22,7 @@ contínuo (o dono é o usuário-alvo).
 | Retorno | Usuário informa **real** direto; mostrar nominal implícito (IPCA). |
 | Reconciliação | **Híbrido (c):** total é a verdade; itens abatem; sobra `não categorizado`. |
 | Patrimônio | Nº único no onboarding; mensal por **marcação a mercado** (rendimento derivado). |
+| Bens & FIRE | **Dois números:** *patrimônio líquido total* (todos os bens − dívidas, motivacional) × *patrimônio que sustenta o FIRE* (só o que **rende e é sacável** → alimenta `P`). Registra-se **todo bem** (casa, carro, sítio, imóvel de renda) com valor + dívida associada. **Imóvel/sítio de renda:** aluguel líquido entra como **renda passiva `R`** (adianta o FIRE de verdade). **Bem de uso** (casa própria, carro): entra no net worth, **fora da base do FIRE por padrão**. Toggle `incluirNoFire` livre, mas com **aviso honesto** do assistente ao marcar bem de uso (§6/§14). |
 | Auth | **Google + e-mail/senha** (Apple dispensado). App Check reCAPTCHA Enterprise reusado. |
 | Inteligência | **Motor de REGRAS** determinístico (não LLM). LLM no máx. reescreve fato aprovado (fase 2). |
 | Importador | **OFX + 3-5 adaptadores CSV**; revisão em lote; memória memo→categoria; dedupe fatura×extrato. |
@@ -39,6 +40,9 @@ contínuo (o dono é o usuário-alvo).
   `n=ln[(M·i+A)/(P·i+A)]/ln(1+i)`, CoastFIRE, custo de oportunidade.
 - Fallback `i≈0`: `n=(M−P)/A`. Meta inalcançável → mensagem honesta (não NaN). `P≥M` → "já está lá".
 - Aporte fim de mês (parametrizável). `rendimentoMes = P_hoje − P_anterior − aportesMes`.
+- **Base do FIRE = patrimônio investível** (bens com `geraRenda`/sacáveis + os marcados `incluirNoFire`),
+  **não** o net worth total. Aluguel/arrendamento líquido soma em `R` (não aplicar TSS ao valor do
+  imóvel de renda — seria dupla contagem com o aluguel). `patrimonioLiquido = Σ(bens) − Σ(dívidas)`.
 
 ## Arquitetura & layout do repo (monorepo, um Hosting site)
 ```
@@ -65,6 +69,9 @@ firebase.json  firestore.rules  firestore.indexes.json  .firebaserc
 - `snapshots/{uid}/meses/{YYYY-MM}`: fonte da verdade mensal (§5).
 - `transactions/{uid}/itens/{id}`: modo detalhado; `tipo` fechado, `categoria` livre, `origem`.
 - `entryTypes/{uid}/itens/{id}`: tipos de entrada personalizados (rótulo + `tipo` subjacente).
+- `assets/{uid}/itens/{id}`: bens do usuário — `nome`, `tipo` (`financeiro`/`imovel-uso`/`imovel-renda`/
+  `veiculo`/`outro`), `valor`, `geraRenda`+`rendaMensal`, `dividaAssociada`, `incluirNoFire`. Motor lê só
+  o que qualifica como investível; renda dos que alugam entra em `R`.
 - `goals/…`, `achievements/…`, `invites/…` (§5).
 - `feedback/{id}`: tipo, texto, contexto (rota/versão/plano), created — escrita user logado, leitura admin.
 - `indicadores/{atual}`: últimos valores BACEN (escrita só pela function; leitura pública/logada).
@@ -73,7 +80,7 @@ firebase.json  firestore.rules  firestore.indexes.json  .firebaserc
 ## Regras de segurança (a escrever)
 - **Fix waitlist:** `allow read: if request.auth.uid == 'nzGPtwHhnzeHRBm6UT4EWFYsB5N2';`
 - **App:** cada usuário só lê/escreve sob o próprio `uid` (`users`, `snapshots`, `transactions`,
-  `entryTypes`, `goals`, `achievements`, `invites`).
+  `entryTypes`, `assets`, `goals`, `achievements`, `invites`).
 - `feedback`: create por usuário logado; read/update/delete negados (só admin via console/painel).
 - `indicadores`: read liberado (logado); write negado (só Admin SDK da function).
 
@@ -85,9 +92,12 @@ firebase.json  firestore.rules  firestore.indexes.json  .firebaserc
 - **M2 — Auth + Onboarding 2 níveis:** Google + e-mail/senha; N1 (aha <60s → motor → 1ª data) →
   N2 (nome/apelido, aniversário, dados INSS, "por quê"); consentimento LGPD; perfil.
 - **M3 — Dashboard (Início):** termômetro, contagem regressiva, cobertura passiva, taxa de poupança,
-  evolução (snapshots), card de insight; atualização mensal marcação a mercado.
-- **M4 — Lançar:** modo rápido (3 totais) + detalhado + reconciliação híbrida; tipos de entrada
-  personalizados (`categoria` livre + `tipo` fechado).
+  evolução (snapshots), card de insight; atualização mensal marcação a mercado. Mostra os **dois
+  números**: patrimônio líquido total × patrimônio que sustenta o FIRE.
+- **M4 — Lançar + Bens:** modo rápido (3 totais) + detalhado + reconciliação híbrida; tipos de entrada
+  personalizados (`categoria` livre + `tipo` fechado). **Registro de bens** (`assets`): casa/carro/sítio/
+  imóvel de renda com valor + dívida; toggle `incluirNoFire` com aviso honesto ao marcar bem de uso;
+  renda de aluguel/arrendamento vira `R` no motor.
 - **M5 — Importador:** OFX + 3-5 CSV; UI de **revisão em lote**; memória memo→categoria; dedupe
   fatura×extrato.
 - **M6 — Econômico + INSS:** cron function → `indicadores`; módulo INSS (estimativa + config de
@@ -106,7 +116,8 @@ firebase.json  firestore.rules  firestore.indexes.json  .firebaserc
 ## Fase 2 / Backlog (fora do MVP)
 Simulador "e se", goal-seek (motor reverso), Monte Carlo/faixa de confiança, "suas alavancas",
 trilhas Lean/Fat/Coast/Barista, mais adaptadores de import, QR NFC-e, LLM p/ reescrita de insight e
-categorização de comerciante desconhecido (com guardrails), "você há 1 ano".
+categorização de comerciante desconhecido (com guardrails), "você há 1 ano", **plano de liquidação de
+bem (downsize):** vender casa/bem e liberar equity → parte do valor vira investível na base do FIRE.
 
 ## Pendências de input do dono (não travam o design; necessárias na implementação)
 - Preço do Pro (a testar). · `messagingSenderId` + VAPID key. · Confirmar código INPC no SGS.
