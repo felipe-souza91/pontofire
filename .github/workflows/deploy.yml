@@ -1,0 +1,44 @@
+name: Deploy Hosting (Firebase)
+
+# Compila o app React e publica no Firebase Hosting.
+# Roda a cada push nas branches abaixo e também pelo botão "Run workflow"
+# (aba Actions do GitHub) — tudo pela nuvem, sem build local.
+on:
+  push:
+    branches:
+      - main
+      - claude/project-briefing-i8u1bu
+  workflow_dispatch:
+
+# se vários pushes chegam juntos, cancela deploys antigos e publica só o último
+concurrency:
+  group: deploy-hosting
+  cancel-in-progress: true
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Preparar Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Compilar o app (gera public/app)
+        # Vite lê app/.env.local (versionado) com a config do Firebase.
+        run: npm run build
+
+      - name: Publicar no Firebase Hosting (só hosting — não toca nas regras)
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          channelId: live
+          projectId: firefinances-4b65f
