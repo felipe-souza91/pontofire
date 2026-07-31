@@ -1,0 +1,122 @@
+# Ponto FIRE — Plano de Construção (MVP)
+
+## Context
+Ponto FIRE é uma plataforma web/PWA que calcula, mês a mês, a **data exata da independência
+financeira** ("quando eu fico livre?") — voltada ao investidor. Diferencia-se de rastreadores de
+ativo e apps de gasto por responder essa pergunta. O repositório está vazio (só `README.md`);
+a **landing e o painel da waitlist já existem e estão no ar** no Firebase Hosting
+(`firefinances-4b65f`, `pontofire.com.br`), mas ainda **não estão versionados neste repo** — o dono
+os enviou avulsos. Este plano constrói o **app do MVP do zero** e organiza o repo, seguindo o brief
+(`pontofirebrief.md`) como fonte da verdade de produto, mais as decisões abaixo, tomadas na conversa.
+
+Decisão de rollout: **MVP completo antes de abrir o beta** (escolha do dono). Logo, a ordem abaixo é
+por **dependência técnica**, não por fatias de lançamento. Mitigação da validação tardia: dogfooding
+contínuo (o dono é o usuário-alvo).
+
+## Decisões travadas
+| Área | Decisão |
+|---|---|
+| Stack app | Web responsivo **PWA, React + Vite** (`vite-plugin-pwa`). Landing/painel seguem vanilla. Sem Flutter. |
+| Push | **FCM dia-1**, modelo **híbrido** (digest semanal + eventos). iOS exige PWA instalado (16.4+). |
+| Motor | Lib **TypeScript pura no client**, testável/offline. |
+| Retorno | Usuário informa **real** direto; mostrar nominal implícito (IPCA). |
+| Reconciliação | **Híbrido (c):** total é a verdade; itens abatem; sobra `não categorizado`. |
+| Patrimônio | Nº único no onboarding; mensal por **marcação a mercado** (rendimento derivado). |
+| Auth | **Google + e-mail/senha** (Apple dispensado). App Check reCAPTCHA Enterprise reusado. |
+| Inteligência | **Motor de REGRAS** determinístico (não LLM). LLM no máx. reescreve fato aprovado (fase 2). |
+| Importador | **OFX + 3-5 adaptadores CSV**; revisão em lote; memória memo→categoria; dedupe fatura×extrato. |
+| Entradas | `categoria` livre + `tipo` **fechado** (ativa/passiva/aporte/saída) — cobertura passiva depende. |
+| Calculadoras | **Públicas na landing (SEO) + no app.** |
+| Monetização | **Freemium**, gateway **Stripe + extensão Firebase**; beta 100% grátis (gate desligado). |
+| INSS | **Estimativa simplificada honesta**; constantes 2026 em config atualizável; link Meu INSS. |
+| Econômico | **Cloud Function diária** → doc `indicadores` (BACEN SGS); client lê cacheado. |
+| Feedback | **Mão única** + agradecimento automático; surface no painel. |
+| Onboarding | **2 níveis** (aha <60s → enriquecimento); humanização como gatilhos do motor. |
+
+## Precisão do motor (regras de implementação)
+- `i` real mensal `= (1+real_anual)^(1/12) − 1`; real de nominal `= (1+nom)/(1+ipca) − 1` (composto).
+- Fórmulas núcleo §6: `M=C×12/TSS`, `prog=P/M`, `cob=R/C`, `s=(rec−desp)/rec`,
+  `n=ln[(M·i+A)/(P·i+A)]/ln(1+i)`, CoastFIRE, custo de oportunidade.
+- Fallback `i≈0`: `n=(M−P)/A`. Meta inalcançável → mensagem honesta (não NaN). `P≥M` → "já está lá".
+- Aporte fim de mês (parametrizável). `rendimentoMes = P_hoje − P_anterior − aportesMes`.
+
+## Arquitetura & layout do repo (monorepo, um Hosting site)
+```
+/public/                 landing + painel (vanilla, SEO) — versionar os arquivos entregues
+  index.html  painel.html  404.html  favicon.svg  preview.png
+  ferramentas/           calculadoras públicas estáticas (SEO): juros, combustível, à vista×parcelado
+/app/                    React + Vite (SPA, atrás de login) → build p/ /public/app
+  src/  (routes, components, hooks, theme)
+/packages/
+  engine/                lib TS pura do motor (§6) + testes
+  insights/              catálogo de regras (módulo compartilhado client ↔ functions)
+  importer/              parser OFX + adaptadores CSV + dedupe + categorização
+/functions/              Cloud Functions (Blaze): cron indicadores, push semanal, Stripe webhook
+firebase.json  firestore.rules  firestore.indexes.json  .firebaserc
+```
+- **Hosting rewrites:** landing/ferramentas na raiz (estáticos, SEO); `"/app/**" → /app/index.html`
+  (SPA). Vite `base:'/app/'`. Design system §12 (tokens CSS + chama SVG/`glow`) vira tema
+  compartilhado.
+- Calculadoras: versão pública vanilla (SEO) + versão React no app; fórmulas simples podem duplicar
+  ou compartilhar um mini-módulo JS.
+
+## Modelo de dados (Firestore) — §5 + adições
+- `users/{uid}`: campos §5 + humanização (`apelido`, `porQue`, flags de consentimento) + `plano`.
+- `snapshots/{uid}/meses/{YYYY-MM}`: fonte da verdade mensal (§5).
+- `transactions/{uid}/itens/{id}`: modo detalhado; `tipo` fechado, `categoria` livre, `origem`.
+- `entryTypes/{uid}/itens/{id}`: tipos de entrada personalizados (rótulo + `tipo` subjacente).
+- `goals/…`, `achievements/…`, `invites/…` (§5).
+- `feedback/{id}`: tipo, texto, contexto (rota/versão/plano), created — escrita user logado, leitura admin.
+- `indicadores/{atual}`: últimos valores BACEN (escrita só pela function; leitura pública/logada).
+- `waitlist`, `referrals`: já existem.
+
+## Regras de segurança (a escrever)
+- **Fix waitlist:** `allow read: if request.auth.uid == 'nzGPtwHhnzeHRBm6UT4EWFYsB5N2';`
+- **App:** cada usuário só lê/escreve sob o próprio `uid` (`users`, `snapshots`, `transactions`,
+  `entryTypes`, `goals`, `achievements`, `invites`).
+- `feedback`: create por usuário logado; read/update/delete negados (só admin via console/painel).
+- `indicadores`: read liberado (logado); write negado (só Admin SDK da function).
+
+## Sequência de build (por dependência)
+- **M0 — Fundação:** versionar landing/painel/config; scaffold React+Vite+PWA; tema compartilhado;
+  init Firebase (Auth, Firestore, App Check); Hosting rewrites; fix regras waitlist + regras do app.
+- **M1 — Motor + tipos:** `packages/engine` com todas as fórmulas §6 e edge cases + **testes
+  unitários** (número a número). Tipos do modelo de dados. Helpers de retorno real/nominal.
+- **M2 — Auth + Onboarding 2 níveis:** Google + e-mail/senha; N1 (aha <60s → motor → 1ª data) →
+  N2 (nome/apelido, aniversário, dados INSS, "por quê"); consentimento LGPD; perfil.
+- **M3 — Dashboard (Início):** termômetro, contagem regressiva, cobertura passiva, taxa de poupança,
+  evolução (snapshots), card de insight; atualização mensal marcação a mercado.
+- **M4 — Lançar:** modo rápido (3 totais) + detalhado + reconciliação híbrida; tipos de entrada
+  personalizados (`categoria` livre + `tipo` fechado).
+- **M5 — Importador:** OFX + 3-5 CSV; UI de **revisão em lote**; memória memo→categoria; dedupe
+  fatura×extrato.
+- **M6 — Econômico + INSS:** cron function → `indicadores`; módulo INSS (estimativa + config de
+  constantes); alertas mecânicos.
+- **M7 — Insights + push:** catálogo compartilhado (cards in-app) + function semanal + eventos;
+  setup FCM (**precisa `messagingSenderId` + VAPID**); permissão pós-1º-valor + install iOS.
+- **M8 — Gamificação + viral + feedback:** metas, conquistas, streak, 3 convites, **cards de marco
+  compartilháveis**; feedback mão única + surface no painel.
+- **M9 — Calculadoras:** públicas vanilla em `/ferramentas` (juros simples/compostos, combustível,
+  à vista×parcelado) + versões no app.
+- **M10 — Monetização (gate desligado):** extensão Stripe; entitlement `plano`; gating de features
+  (beta = tudo liberado).
+- **M11 — Polish/QA:** PWA offline, export de dados (LGPD), acessibilidade/`prefers-reduced-motion`,
+  responsivo, deploy.
+
+## Fase 2 / Backlog (fora do MVP)
+Simulador "e se", goal-seek (motor reverso), Monte Carlo/faixa de confiança, "suas alavancas",
+trilhas Lean/Fat/Coast/Barista, mais adaptadores de import, QR NFC-e, LLM p/ reescrita de insight e
+categorização de comerciante desconhecido (com guardrails), "você há 1 ano".
+
+## Pendências de input do dono (não travam o design; necessárias na implementação)
+- Preço do Pro (a testar). · `messagingSenderId` + VAPID key. · Confirmar código INPC no SGS.
+
+## Verificação
+- **Motor:** testes unitários cobrindo edge cases (i≈0, inalcançável, P≥M, real↔nominal).
+- **Importador:** fixtures OFX/CSV anonimizados; caso fatura×extrato não duplica.
+- **Regras:** testes do emulador Firestore (usuário só acessa o próprio `uid`; waitlist só admin).
+- **E2E:** `vite dev` → onboarding N1 → data calculada → dashboard; lançar rápido → reconciliação;
+  import → revisão → snapshot. Deploy em canal de preview do Hosting antes de produção.
+
+## Git
+Desenvolver na branch `claude/project-briefing-i8u1bu`; commits descritivos; push com `-u origin`.
