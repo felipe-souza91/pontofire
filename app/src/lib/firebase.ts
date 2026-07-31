@@ -19,7 +19,15 @@ const firebaseConfig = {
 export const app: FirebaseApp = initializeApp(firebaseConfig);
 
 // App Check com reCAPTCHA Enterprise (já ativo no projeto — §3).
-// Em dev, defina VITE_APPCHECK_DEBUG=true e use um debug token do console.
+// Em dev local o reCAPTCHA falha no localhost: defina VITE_APPCHECK_DEBUG_TOKEN
+// (true para gerar um token e registrá-lo no console, ou cole um token já
+// registrado). Só roda em modo DEV.
+if (import.meta.env.DEV && import.meta.env.VITE_APPCHECK_DEBUG_TOKEN) {
+  const debug = import.meta.env.VITE_APPCHECK_DEBUG_TOKEN;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = debug === 'true' ? true : debug;
+}
+
 const recaptchaKey = import.meta.env.VITE_RECAPTCHA_ENTERPRISE_KEY;
 if (recaptchaKey) {
   initializeAppCheck(app, {

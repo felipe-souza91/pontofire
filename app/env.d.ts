@@ -12,6 +12,8 @@ interface ImportMetaEnv {
   readonly VITE_FIREBASE_APP_ID: string;
   // App Check — reCAPTCHA Enterprise (site key).
   readonly VITE_RECAPTCHA_ENTERPRISE_KEY: string;
+  // App Check debug token para dev local ('true' gera um; ou cole um registrado).
+  readonly VITE_APPCHECK_DEBUG_TOKEN?: string;
   // FCM Web Push (VAPID) — usado no M7.
   readonly VITE_FCM_VAPID_KEY: string;
 }
