@@ -1,0 +1,31 @@
+# deps
+node_modules/
+.pnp
+.pnp.js
+
+# build output (app compila para /public/app — não versionar o bundle)
+dist/
+public/app/
+*.tsbuildinfo
+
+# env / segredos locais
+.env
+.env.local
+.env.*.local
+
+# firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+functions/lib/
+
+# editores / OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.log
+
+# testes
+coverage/
