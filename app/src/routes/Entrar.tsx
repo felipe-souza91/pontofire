@@ -19,6 +19,7 @@ export function Entrar() {
     try {
       await fn();
     } catch (e) {
+      console.error('[auth]', e);
       setErro(mensagemErroAuth(e));
     } finally {
       setOcupado(false);

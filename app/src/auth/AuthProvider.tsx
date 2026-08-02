@@ -39,8 +39,18 @@ export function mensagemErroAuth(erro: unknown): string {
       return 'Login cancelado.';
     case 'auth/too-many-requests':
       return 'Muitas tentativas. Tente de novo em instantes.';
+    case 'auth/operation-not-allowed':
+      return 'Cadastro por e-mail/senha não está habilitado no Firebase.';
+    case 'auth/network-request-failed':
+      return 'Falha de rede. Verifique a conexão e tente de novo.';
+    case 'auth/unauthorized-domain':
+      return 'Este domínio não está autorizado no Firebase Authentication.';
+    case 'auth/firebase-app-check-token-is-invalid':
+    case 'auth/app-check-token-is-invalid':
+      return 'App Check bloqueou a requisição (token inválido neste domínio).';
     default:
-      return 'Não foi possível concluir. Tente novamente.';
+      // mostra o código bruto para diagnóstico (beta) em vez de esconder
+      return code ? `Não foi possível concluir. (${code})` : 'Não foi possível concluir. Tente novamente.';
   }
 }
 
