@@ -19,6 +19,17 @@ const dataCurta = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium' });
 export const formatBRL = (v: number, comCentavos = false): string =>
   (comCentavos ? brlCent : brl).format(v);
 
+/** Moeda compacta no estilo da landing: "R$ 2,4 mi", "R$ 300 mil", "R$ 850". */
+export function formatBRLcompact(v: number): string {
+  const abs = Math.abs(v);
+  const sinal = v < 0 ? '-' : '';
+  const br = (n: number, casas: number) =>
+    n.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: casas });
+  if (abs >= 1_000_000) return `${sinal}R$ ${br(abs / 1_000_000, 1)} mi`;
+  if (abs >= 1_000) return `${sinal}R$ ${br(abs / 1_000, abs < 10_000 ? 1 : 0)} mil`;
+  return `${sinal}R$ ${br(abs, 0)}`;
+}
+
 export const formatPct = (v: number, casas = 1): string =>
   `${(v * 100).toFixed(casas).replace('.', ',')}%`;
 

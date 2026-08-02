@@ -9,7 +9,7 @@ import { useAuth } from '../auth/useAuth';
 import { useUserDoc } from '../hooks/useUserDoc';
 import type { UserDoc } from '../data/types';
 import { Flame } from '../theme/Flame';
-import { formatBRL, formatDuracao, formatMesAno, formatPct } from '../utils/format';
+import { formatBRLcompact, formatDuracao, formatMesAno, formatPct } from '../utils/format';
 
 function idadeDe(dataNascimento?: string): number | undefined {
   if (!dataNascimento) return undefined;
@@ -46,9 +46,11 @@ export function Dashboard() {
   const saudacao = doc.apelido || doc.nome?.split(' ')[0] || 'você';
   const progressoPct = Math.min(100, Math.max(0, plano.progresso * 100));
 
+  const mostraProjecao = plano.status === 'ok' && plano.meses !== null;
+
   return (
-    <main className="pf-container" style={{ maxWidth: '34rem', paddingTop: 'var(--space-6)', paddingBottom: 'var(--space-12)' }}>
-      <span className="pf-glow" style={{ top: '-140px', right: '-120px' }} aria-hidden />
+    <main className="pf-dash">
+      <span className="pf-glow" style={{ top: '-140px', right: '-160px' }} aria-hidden />
 
       <header style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-8)', position: 'relative', zIndex: 1 }}>
         <Flame size={30} />
@@ -57,9 +59,9 @@ export function Dashboard() {
         <button className="pf-btn-link" onClick={() => void sair()}>Sair</button>
       </header>
 
-      <p className="pf-eyebrow" style={{ marginBottom: 'var(--space-2)' }}>Olá, {saudacao}</p>
+      <p className="pf-eyebrow" style={{ marginBottom: 'var(--space-4)' }}>Olá, {saudacao}</p>
 
-      {/* Card da data — termômetro + contagem regressiva */}
+      {/* Card da data — termômetro + contagem regressiva (full width) */}
       <section className="pf-hero-card">
         <span className="pf-eyebrow">Seu ponto FIRE</span>
         {plano.status === 'ok' && plano.dataLiberdade && plano.meses !== null ? (
@@ -88,41 +90,43 @@ export function Dashboard() {
           <i style={{ width: `${progressoPct}%` }} />
         </div>
         <div className="pf-bar-row">
-          <span>{formatBRL(doc.patrimonioInicial)}</span>
+          <span>{formatBRLcompact(doc.patrimonioInicial)}</span>
           <span>
-            meta {formatBRL(doc.metaFire)} · {progressoPct.toFixed(0)}%
+            meta {formatBRLcompact(doc.metaFire)} · {progressoPct.toFixed(0)}%
           </span>
         </div>
       </section>
 
-      {/* Números */}
-      <div className="pf-grid" style={{ marginTop: 'var(--space-4)' }}>
-        <Stat rot="Número FIRE" val={formatBRL(doc.metaFire)} />
-        <Stat rot="Renda ao atingir" val={`${formatBRL(plano.saqueMensalSustentavel)}`} tom="mint" />
-        <Stat rot="Aporte mensal" val={formatBRL(doc.aporteMensal)} />
-        <Stat rot="Retorno real a.a." val={formatPct(doc.retornoRealEsperado)} tom="ember" />
-      </div>
+      <div className="pf-cols-2" style={{ marginTop: 'var(--space-4)' }}>
+        {/* Números */}
+        <div className="pf-stats">
+          <Stat rot="Número FIRE" val={formatBRLcompact(doc.metaFire)} />
+          <Stat rot="Renda ao atingir" val={`${formatBRLcompact(plano.saqueMensalSustentavel)}/mês`} tom="mint" />
+          <Stat rot="Aporte mensal" val={`${formatBRLcompact(doc.aporteMensal)}/mês`} />
+          <Stat rot="Retorno real a.a." val={formatPct(doc.retornoRealEsperado)} tom="ember" />
+        </div>
 
-      {/* Projeção */}
-      {plano.status === 'ok' && plano.meses !== null && (
-        <section className="pf-hero-card" style={{ marginTop: 'var(--space-4)' }}>
-          <span className="pf-eyebrow">Projeção do patrimônio</span>
-          <p className="pf-hc-sub" style={{ marginTop: 'var(--space-2)' }}>
-            do valor de hoje até a meta, no seu ritmo
-          </p>
-          <GraficoProjecao
-            P={doc.patrimonioInicial}
-            A={doc.aporteMensal}
-            i={plano.iMensal}
-            M={doc.metaFire}
-            meses={plano.meses}
-          />
-        </section>
-      )}
-
-      {/* Insight do assistente */}
-      <div className="pf-insight" style={{ marginTop: 'var(--space-4)' }}>
-        <Insight doc={doc} iMensal={plano.iMensal} status={plano.status} />
+        {/* Projeção + insight */}
+        <div style={{ display: 'grid', gap: 'var(--space-4)', alignContent: 'start' }}>
+          {mostraProjecao && (
+            <section className="pf-hero-card">
+              <span className="pf-eyebrow">Projeção do patrimônio</span>
+              <p className="pf-hc-sub" style={{ marginTop: 'var(--space-2)', marginBottom: 0 }}>
+                do valor de hoje até a meta, no seu ritmo
+              </p>
+              <GraficoProjecao
+                P={doc.patrimonioInicial}
+                A={doc.aporteMensal}
+                i={plano.iMensal}
+                M={doc.metaFire}
+                meses={plano.meses!}
+              />
+            </section>
+          )}
+          <div className="pf-insight">
+            <Insight doc={doc} iMensal={plano.iMensal} status={plano.status} />
+          </div>
+        </div>
       </div>
 
       <p className="pf-hint" style={{ textAlign: 'center', marginTop: 'var(--space-8)' }}>
