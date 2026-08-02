@@ -86,6 +86,12 @@ export function Dashboard() {
           </>
         )}
 
+        {doc.nomeSonho && (
+          <p style={{ color: 'var(--muted)', marginTop: '-10px', marginBottom: '18px' }}>
+            rumo a <span style={{ color: 'var(--mint)', fontStyle: 'italic' }}>“{doc.nomeSonho}”</span>
+          </p>
+        )}
+
         <div className="pf-bar">
           <i style={{ width: `${progressoPct}%` }} />
         </div>

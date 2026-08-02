@@ -66,9 +66,11 @@ export async function salvarOnboardingN2(uid: string, n2: OnboardingN2): Promise
     onboardingCompleto: true,
     atualizadoEm: serverTimestamp(),
   };
-  // grava só os campos preenchidos (não sobrescreve com undefined)
+  // grava só os campos preenchidos (não sobrescreve com vazio)
   for (const [k, v] of Object.entries(n2)) {
-    if (v !== undefined && v !== '') patch[k] = v;
+    if (v === undefined || v === '') continue;
+    if (Array.isArray(v) && v.length === 0) continue;
+    patch[k] = v;
   }
   await setDoc(userRef(uid), patch, { merge: true });
 }

@@ -363,6 +363,17 @@ function Linha({ rotulo, valor }: { rotulo: string; valor: string }) {
   );
 }
 
+const PORQUES = [
+  'Viver de renda',
+  'Tempo com quem amo',
+  'Sair de um trabalho que sufoca',
+  'Viajar sem pedir férias',
+  'Empreender sem medo',
+  'Segurança e paz',
+  'Ter opções',
+  'Cuidar da minha família',
+];
+
 function FormularioN2({
   salvando,
   erro,
@@ -374,77 +385,170 @@ function FormularioN2({
   onConcluir: (n2: OnboardingN2) => void;
   onPular: () => void;
 }) {
-  const [nome, setNome] = useState('');
+  const [passo, setPasso] = useState(0);
   const [apelido, setApelido] = useState('');
+  const [porQues, setPorQues] = useState<string[]>([]);
+  const [porQue, setPorQue] = useState('');
+  const [nomeSonho, setNomeSonho] = useState('');
+  const [idadeAlvo, setIdadeAlvo] = useState('');
   const [dataNascimento, setDataNascimento] = useState('');
   const [inicioContribuicao, setInicioContribuicao] = useState('');
   const [salario, setSalario] = useState('');
-  const [porQue, setPorQue] = useState('');
+
+  function toggle(p: string) {
+    setPorQues((prev) => (prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]));
+  }
+
+  function concluir() {
+    onConcluir({
+      apelido: apelido.trim() || undefined,
+      porQues: porQues.length ? porQues : undefined,
+      porQue: porQue.trim() || undefined,
+      nomeSonho: nomeSonho.trim() || undefined,
+      idadeAlvo: idadeAlvo ? parseInt(idadeAlvo, 10) : undefined,
+      dataNascimento: dataNascimento || undefined,
+      inicioContribuicao: inicioContribuicao || undefined,
+      salario: salario ? parseInt(salario, 10) : undefined,
+    });
+  }
+
+  const passos: { titulo: string; sub: string; campo: ReactNode }[] = [
+    {
+      titulo: 'Como te chamo?',
+      sub: 'Vou usar isso pra falar com você — nada formal.',
+      campo: (
+        <input
+          className="pf-input"
+          style={{ fontSize: '1.2rem' }}
+          autoFocus
+          value={apelido}
+          onChange={(e) => setApelido(e.target.value)}
+          placeholder="seu nome ou apelido"
+        />
+      ),
+    },
+    {
+      titulo: 'O que a liberdade significa pra você?',
+      sub: 'Escolha o que ressoar. É disso que eu vou te lembrar nos dias difíceis.',
+      campo: (
+        <div>
+          <div className="pf-chips">
+            {PORQUES.map((p) => (
+              <button
+                key={p}
+                type="button"
+                className={`pf-chip ${porQues.includes(p) ? 'on' : ''}`}
+                onClick={() => toggle(p)}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+          <textarea
+            className="pf-input"
+            style={{ marginTop: 'var(--space-4)' }}
+            rows={2}
+            value={porQue}
+            onChange={(e) => setPorQue(e.target.value)}
+            placeholder="quer contar mais? (opcional)"
+          />
+        </div>
+      ),
+    },
+    {
+      titulo: 'Dá um nome pra esse sonho.',
+      sub: 'Vai aparecer no seu Início — pra lembrar por que você começou.',
+      campo: (
+        <input
+          className="pf-input"
+          style={{ fontSize: '1.2rem' }}
+          autoFocus
+          value={nomeSonho}
+          onChange={(e) => setNomeSonho(e.target.value)}
+          placeholder='ex: "minha ilha", "liberdade aos 50"'
+        />
+      ),
+    },
+    {
+      titulo: 'Quando você quer poder parar?',
+      sub: 'Sua meta de idade — sem pressão, dá pra mudar depois.',
+      campo: (
+        <div style={{ position: 'relative', maxWidth: '12rem' }}>
+          <input
+            className="pf-input pf-num"
+            style={{ fontSize: '1.4rem' }}
+            inputMode="numeric"
+            value={idadeAlvo}
+            onChange={(e) => setIdadeAlvo(e.target.value.replace(/\D/g, '').slice(0, 3))}
+            placeholder="55"
+          />
+          <span style={{ position: 'absolute', right: '0.9rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }}>
+            anos
+          </span>
+        </div>
+      ),
+    },
+    {
+      titulo: 'Por último: seus dados de INSS',
+      sub: 'Só pra eu estimar, lá na frente, quanto o INSS te daria. Pode pular.',
+      campo: (
+        <div>
+          <Campo rotulo="Data de nascimento">
+            <input className="pf-input" type="date" value={dataNascimento} onChange={(e) => setDataNascimento(e.target.value)} />
+          </Campo>
+          <Campo rotulo="Início das contribuições ao INSS">
+            <input className="pf-input" type="month" value={inicioContribuicao} onChange={(e) => setInicioContribuicao(e.target.value)} />
+          </Campo>
+          <Campo rotulo="Salário bruto atual">
+            <input
+              className="pf-input pf-num"
+              inputMode="numeric"
+              value={salario}
+              onChange={(e) => setSalario(e.target.value.replace(/\D/g, ''))}
+            />
+          </Campo>
+        </div>
+      ),
+    },
+  ];
+
+  const atual = passos[passo]!;
+  const ultimo = passo === passos.length - 1;
 
   return (
     <Tela>
-      <h2 style={{ fontSize: '1.5rem' }}>Sobre você</h2>
-      <p className="pf-hint" style={{ marginTop: 0 }}>
-        Tudo opcional — ajuda o assistente a falar com você e habilita o módulo INSS. Pode pular.
-      </p>
+      <div className="pf-steps">
+        {passos.map((_, i) => (
+          <div key={i} className={`pf-step ${i <= passo ? 'on' : ''}`} />
+        ))}
+      </div>
 
-      <Campo rotulo="Nome">
-        <input className="pf-input" value={nome} onChange={(e) => setNome(e.target.value)} />
-      </Campo>
-      <Campo rotulo="Como quer ser chamado(a)?">
-        <input className="pf-input" value={apelido} onChange={(e) => setApelido(e.target.value)} />
-      </Campo>
-      <Campo rotulo="Data de nascimento">
-        <input
-          className="pf-input"
-          type="date"
-          value={dataNascimento}
-          onChange={(e) => setDataNascimento(e.target.value)}
-        />
-      </Campo>
-      <Campo rotulo="Início das contribuições ao INSS">
-        <input
-          className="pf-input"
-          type="month"
-          value={inicioContribuicao}
-          onChange={(e) => setInicioContribuicao(e.target.value)}
-        />
-      </Campo>
-      <Campo rotulo="Salário bruto atual (INSS)">
-        <input
-          className="pf-input pf-num"
-          inputMode="numeric"
-          value={salario}
-          onChange={(e) => setSalario(e.target.value.replace(/\D/g, ''))}
-        />
-      </Campo>
-      <Campo rotulo="Por que você quer essa liberdade?">
-        <textarea
-          className="pf-input"
-          rows={2}
-          value={porQue}
-          onChange={(e) => setPorQue(e.target.value)}
-        />
-      </Campo>
+      <h2 style={{ fontSize: '1.5rem' }}>{atual.titulo}</h2>
+      <p className="pf-hint" style={{ marginTop: 0 }}>{atual.sub}</p>
+      <div style={{ margin: 'var(--space-4) 0' }}>{atual.campo}</div>
 
       {erro && <p className="pf-error">{erro}</p>}
 
-      <button
-        className="pf-btn pf-btn-primary"
-        disabled={salvando}
-        onClick={() =>
-          onConcluir({
-            nome: nome.trim() || undefined,
-            apelido: apelido.trim() || undefined,
-            dataNascimento: dataNascimento || undefined,
-            inicioContribuicao: inicioContribuicao || undefined,
-            salario: salario ? parseInt(salario, 10) : undefined,
-            porQue: porQue.trim() || undefined,
-          })
-        }
-      >
-        {salvando ? 'Salvando…' : 'Concluir'}
-      </button>
+      <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-4)' }}>
+        {passo > 0 && (
+          <button
+            className="pf-btn pf-btn-ghost"
+            style={{ flex: '0 0 auto', width: 'auto', padding: '0.85rem 1.5rem' }}
+            onClick={() => setPasso(passo - 1)}
+            disabled={salvando}
+          >
+            Voltar
+          </button>
+        )}
+        <button
+          className="pf-btn pf-btn-primary"
+          disabled={salvando}
+          onClick={() => (ultimo ? concluir() : setPasso(passo + 1))}
+        >
+          {ultimo ? (salvando ? 'Salvando…' : 'Concluir') : 'Continuar'}
+        </button>
+      </div>
+
       <div style={{ textAlign: 'center', marginTop: 'var(--space-3)' }}>
         <button className="pf-btn-link" onClick={onPular} disabled={salvando}>
           Pular por agora

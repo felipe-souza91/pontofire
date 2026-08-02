@@ -17,8 +17,11 @@ export interface UserDoc {
   metaFire: number; // M
   taxaSaqueSegura: number; // TSS, default 0,04
 
-  // humanização (N2) — vira gatilho do assistente
-  porQue?: string;
+  // humanização (N2) — âncoras emocionais, viram gatilho do assistente (§7)
+  porQues?: string[]; // motivações escolhidas (chips)
+  porQue?: string; // texto livre "conta mais"
+  nomeSonho?: string; // nome que o usuário dá à meta ("meu sítio")
+  idadeAlvo?: number; // idade em que quer poder parar
 
   // consentimento
   consentimentoLgpd?: { aceitoEm: string; versao: string };
@@ -42,12 +45,16 @@ export interface OnboardingN1 {
   taxaSaqueSegura: number;
 }
 
-/** Dados coletados no Nível 2 (enriquecimento). */
+/** Dados coletados no Nível 2 (enriquecimento humanizado). */
 export interface OnboardingN2 {
-  nome?: string;
   apelido?: string;
+  porQues?: string[];
+  porQue?: string;
+  nomeSonho?: string;
+  idadeAlvo?: number;
+  // dados utilitários (módulo INSS) — opcionais
+  nome?: string;
   dataNascimento?: string;
   inicioContribuicao?: string;
   salario?: number;
-  porQue?: string;
 }
