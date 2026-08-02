@@ -130,3 +130,129 @@
   height: 1px;
   background: var(--line);
 }
+
+/* ---------------------------------------------------------------------------
+   Componentes espelhados da landing (§12) — para o app falar a mesma língua.
+--------------------------------------------------------------------------- */
+
+/* label em mono âmbar (eyebrow/kicker/hc-label) */
+.pf-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ember-2);
+}
+
+/* pill "beta fechado" */
+.pf-pill {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--ember-2);
+  border: 1px solid var(--line-2);
+  border-radius: 100px;
+  padding: 5px 13px;
+  letter-spacing: 0.02em;
+}
+
+/* brilho âmbar de fundo */
+.pf-glow {
+  position: absolute;
+  width: 520px;
+  height: 520px;
+  max-width: 90vw;
+  background: radial-gradient(circle, rgba(255, 122, 69, 0.16), transparent 62%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* card "SEU PONTO FIRE" — data/contagem/progresso */
+.pf-hero-card {
+  background: linear-gradient(180deg, var(--ink-2), var(--ink));
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: clamp(20px, 4vw, 28px);
+  position: relative;
+  z-index: 1;
+}
+.pf-hc-date {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: clamp(30px, 8vw, 46px);
+  color: var(--mint);
+  letter-spacing: -0.01em;
+  margin: 6px 0 2px;
+}
+.pf-hc-sub {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-bottom: 18px;
+}
+
+/* barra de progresso (termômetro) */
+.pf-bar {
+  height: 10px;
+  background: var(--ink-3);
+  border-radius: 100px;
+  overflow: hidden;
+}
+.pf-bar > i {
+  display: block;
+  height: 100%;
+  background: var(--flame-grad);
+  border-radius: 100px;
+  transition: width 0.6s ease;
+}
+.pf-bar-row {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-top: 8px;
+}
+
+/* grid de cards de estatística */
+.pf-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: var(--space-3);
+}
+.pf-stat {
+  background: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: var(--space-6);
+}
+.pf-stat .rot {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+.pf-stat .val {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 1.4rem;
+  margin-top: 6px;
+}
+.pf-stat .val.mint {
+  color: var(--mint);
+}
+.pf-stat .val.ember {
+  color: var(--ember-2);
+}
+
+/* card de insight do assistente */
+.pf-insight {
+  background: linear-gradient(120deg, rgba(255, 122, 69, 0.12), rgba(255, 122, 69, 0.02));
+  border: 1px solid rgba(255, 122, 69, 0.3);
+  border-radius: 18px;
+  padding: var(--space-6);
+}
+.pf-insight .hl {
+  color: var(--ember-2);
+  font-weight: 500;
+}

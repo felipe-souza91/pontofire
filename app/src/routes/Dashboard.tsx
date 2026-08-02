@@ -1,12 +1,27 @@
 import { useMemo, type ReactNode } from 'react';
-import { calcularPlanoFire } from '@pontofire/engine';
+import {
+  calcularPlanoFire,
+  impactoAporteExtra,
+  valorFuturo,
+  type ParametrosFire,
+} from '@pontofire/engine';
 import { useAuth } from '../auth/useAuth';
 import { useUserDoc } from '../hooks/useUserDoc';
+import type { UserDoc } from '../data/types';
 import { Flame } from '../theme/Flame';
-import { formatBRL, formatDuracao, formatMesAno } from '../utils/format';
+import { formatBRL, formatDuracao, formatMesAno, formatPct } from '../utils/format';
 
-// Placeholder do Início (M3 constrói termômetro, contagem regressiva, cobertura
-// passiva, evolução etc.). Por ora prova a persistência: mostra a data salva.
+function idadeDe(dataNascimento?: string): number | undefined {
+  if (!dataNascimento) return undefined;
+  const d = new Date(dataNascimento);
+  if (Number.isNaN(d.getTime())) return undefined;
+  const hoje = new Date();
+  let idade = hoje.getFullYear() - d.getFullYear();
+  const m = hoje.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && hoje.getDate() < d.getDate())) idade--;
+  return idade;
+}
+
 export function Dashboard() {
   const { user, sair } = useAuth();
   const { doc, carregando } = useUserDoc(user?.uid ?? null);
@@ -20,6 +35,7 @@ export function Dashboard() {
       retornoRealAnual: doc.retornoRealEsperado,
       metaFire: doc.metaFire,
       tss: doc.taxaSaqueSegura,
+      idadeAtual: idadeDe(doc.dataNascimento),
       hoje: new Date(),
     });
   }, [doc]);
@@ -27,46 +43,156 @@ export function Dashboard() {
   if (carregando) return <Centro>Carregando…</Centro>;
   if (!doc || !plano) return <Centro>Sem dados ainda.</Centro>;
 
-  const saudacao = doc.apelido || doc.nome || 'você';
+  const saudacao = doc.apelido || doc.nome?.split(' ')[0] || 'você';
+  const progressoPct = Math.min(100, Math.max(0, plano.progresso * 100));
 
   return (
-    <main className="pf-container" style={{ paddingTop: 'var(--space-8)' }}>
-      <header style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-8)' }}>
-        <Flame size={32} />
-        <strong style={{ flex: 1 }}>Ponto FIRE</strong>
-        <button className="pf-btn-link" onClick={() => void sair()}>
-          Sair
-        </button>
+    <main className="pf-container" style={{ maxWidth: '34rem', paddingTop: 'var(--space-6)', paddingBottom: 'var(--space-12)' }}>
+      <span className="pf-glow" style={{ top: '-140px', right: '-120px' }} aria-hidden />
+
+      <header style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-8)', position: 'relative', zIndex: 1 }}>
+        <Flame size={30} />
+        <strong className="mono" style={{ flex: 1, letterSpacing: '-0.01em' }}>Ponto FIRE</strong>
+        <span className="pf-pill">beta fechado</span>
+        <button className="pf-btn-link" onClick={() => void sair()}>Sair</button>
       </header>
 
-      <p style={{ color: 'var(--muted)' }}>Olá, {saudacao}.</p>
+      <p className="pf-eyebrow" style={{ marginBottom: 'var(--space-2)' }}>Olá, {saudacao}</p>
 
-      <div className="pf-card" style={{ textAlign: 'center' }}>
+      {/* Card da data — termômetro + contagem regressiva */}
+      <section className="pf-hero-card">
+        <span className="pf-eyebrow">Seu ponto FIRE</span>
         {plano.status === 'ok' && plano.dataLiberdade && plano.meses !== null ? (
           <>
-            <p style={{ color: 'var(--muted)', marginBottom: 'var(--space-2)' }}>Sua liberdade chega em</p>
-            <h1 style={{ fontSize: 'clamp(2rem, 8vw, 3rem)', color: 'var(--mint)', margin: 0 }}>
-              {formatMesAno(plano.dataLiberdade)}
-            </h1>
-            <p className="mono" style={{ color: 'var(--muted)' }}>daqui a {formatDuracao(plano.meses)}</p>
+            <div className="pf-hc-date">{formatMesAno(plano.dataLiberdade)}</div>
+            <p className="pf-hc-sub">
+              faltam {formatDuracao(plano.meses)} no seu ritmo atual
+              {plano.idadeNaLiberdade !== null && ` · aos ${Math.round(plano.idadeNaLiberdade)} anos`}
+            </p>
           </>
         ) : plano.status === 'atingido' ? (
-          <h1 style={{ color: 'var(--mint)' }}>Você já chegou lá.</h1>
+          <>
+            <div className="pf-hc-date">Livre 🔥</div>
+            <p className="pf-hc-sub">seu patrimônio já cobre sua meta</p>
+          </>
         ) : (
-          <h1 style={{ fontSize: '1.6rem' }}>Ainda sem data — ajuste o aporte pra ver a projeção.</h1>
+          <>
+            <div className="pf-hc-date" style={{ color: 'var(--ember-2)', fontSize: 'clamp(22px, 6vw, 32px)' }}>
+              sem data ainda
+            </div>
+            <p className="pf-hc-sub">no aporte atual a meta não fecha — simular um aporte maior muda o jogo</p>
+          </>
         )}
+
+        <div className="pf-bar">
+          <i style={{ width: `${progressoPct}%` }} />
+        </div>
+        <div className="pf-bar-row">
+          <span>{formatBRL(doc.patrimonioInicial)}</span>
+          <span>
+            meta {formatBRL(doc.metaFire)} · {progressoPct.toFixed(0)}%
+          </span>
+        </div>
+      </section>
+
+      {/* Números */}
+      <div className="pf-grid" style={{ marginTop: 'var(--space-4)' }}>
+        <Stat rot="Número FIRE" val={formatBRL(doc.metaFire)} />
+        <Stat rot="Renda ao atingir" val={`${formatBRL(plano.saqueMensalSustentavel)}`} tom="mint" />
+        <Stat rot="Aporte mensal" val={formatBRL(doc.aporteMensal)} />
+        <Stat rot="Retorno real a.a." val={formatPct(doc.retornoRealEsperado)} tom="ember" />
       </div>
 
-      <div className="pf-card" style={{ marginTop: 'var(--space-4)' }}>
-        <Linha rotulo="Número FIRE" valor={formatBRL(plano.numeroFire)} />
-        <Linha rotulo="Progresso" valor={`${(plano.progresso * 100).toFixed(1).replace('.', ',')}%`} />
-        <Linha rotulo="Renda ao atingir" valor={`${formatBRL(plano.saqueMensalSustentavel)} /mês`} />
+      {/* Projeção */}
+      {plano.status === 'ok' && plano.meses !== null && (
+        <section className="pf-hero-card" style={{ marginTop: 'var(--space-4)' }}>
+          <span className="pf-eyebrow">Projeção do patrimônio</span>
+          <p className="pf-hc-sub" style={{ marginTop: 'var(--space-2)' }}>
+            do valor de hoje até a meta, no seu ritmo
+          </p>
+          <GraficoProjecao
+            P={doc.patrimonioInicial}
+            A={doc.aporteMensal}
+            i={plano.iMensal}
+            M={doc.metaFire}
+            meses={plano.meses}
+          />
+        </section>
+      )}
+
+      {/* Insight do assistente */}
+      <div className="pf-insight" style={{ marginTop: 'var(--space-4)' }}>
+        <Insight doc={doc} iMensal={plano.iMensal} status={plano.status} />
       </div>
 
-      <p className="pf-hint" style={{ textAlign: 'center', marginTop: 'var(--space-6)' }}>
-        Início completo chega no M3 (termômetro, contagem regressiva, evolução).
+      <p className="pf-hint" style={{ textAlign: 'center', marginTop: 'var(--space-8)' }}>
+        Lançar seu mês e cadastrar bens chega no M4.
       </p>
     </main>
+  );
+}
+
+// ---------------------------------------------------------------------------
+
+function Stat({ rot, val, tom }: { rot: string; val: string; tom?: 'mint' | 'ember' }) {
+  return (
+    <div className="pf-stat">
+      <div className="rot">{rot}</div>
+      <div className={`val ${tom ?? ''}`}>{val}</div>
+    </div>
+  );
+}
+
+function Insight({ doc, iMensal, status }: { doc: UserDoc; iMensal: number; status: string }) {
+  if (status === 'atingido') {
+    return <p style={{ margin: 0 }}>Seus rendimentos já sustentam seu custo de vida. Você pode parar quando quiser. 🔥</p>;
+  }
+  const base: ParametrosFire = { P: doc.patrimonioInicial, A: doc.aporteMensal, i: iMensal, M: doc.metaFire };
+  const imp = impactoAporteExtra(base, 500);
+  if (imp.deltaMeses !== null && imp.deltaMeses > 0.5) {
+    return (
+      <p style={{ margin: 0 }}>
+        Investir <span className="hl">R$ 500 a mais</span> por mês adianta sua liberdade em{' '}
+        <span className="hl">{formatDuracao(imp.deltaMeses)}</span>. A alavanca real é o aporte e o
+        retorno — não os microcortes.
+      </p>
+    );
+  }
+  return (
+    <p style={{ margin: 0 }}>
+      Com o aporte atual a meta não fecha. Aumentar quanto você investe por mês é o que muda a data —
+      dá pra simular sem compromisso.
+    </p>
+  );
+}
+
+function GraficoProjecao({ P, A, i, M, meses }: { P: number; A: number; i: number; M: number; meses: number }) {
+  const w = 100;
+  const h = 42;
+  const n = 48;
+  const pts = Array.from({ length: n + 1 }, (_, k) => {
+    const t = (meses * k) / n;
+    return { x: (t / meses) * w, v: valorFuturo(P, A, i, t) };
+  });
+  const maxV = Math.max(M, pts[pts.length - 1]!.v) * 1.02;
+  const y = (v: number) => h - (v / maxV) * h;
+  const linha = pts.map((p, idx) => `${idx ? 'L' : 'M'} ${p.x.toFixed(2)} ${y(p.v).toFixed(2)}`).join(' ');
+  const area = `${linha} L ${w} ${h} L 0 ${h} Z`;
+  const metaY = y(M);
+
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ width: '100%', height: '130px', marginTop: 'var(--space-3)', display: 'block' }} aria-hidden>
+      <defs>
+        <linearGradient id="pf-proj" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#FF7A45" stopOpacity="0.28" />
+          <stop offset="1" stopColor="#FF7A45" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {/* linha da meta */}
+      <line x1="0" y1={metaY} x2={w} y2={metaY} stroke="#3FD69B" strokeWidth="1" strokeDasharray="2 2" vectorEffect="non-scaling-stroke" opacity="0.7" />
+      <path d={area} fill="url(#pf-proj)" />
+      <path d={linha} fill="none" stroke="#FF7A45" strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+    </svg>
   );
 }
 
@@ -75,14 +201,5 @@ function Centro({ children }: { children: ReactNode }) {
     <main style={{ minHeight: '100dvh', display: 'grid', placeItems: 'center', color: 'var(--muted)' }}>
       {children}
     </main>
-  );
-}
-
-function Linha({ rotulo, valor }: { rotulo: string; valor: string }) {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', padding: 'var(--space-2) 0' }}>
-      <span style={{ color: 'var(--muted)' }}>{rotulo}</span>
-      <span className="mono">{valor}</span>
-    </div>
   );
 }
