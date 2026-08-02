@@ -35,10 +35,21 @@ jobs:
         # Vite lê app/.env.local (versionado) com a config do Firebase.
         run: npm run build
 
-      - name: Publicar no Firebase Hosting (só hosting — não toca nas regras)
+      - name: Publicar no Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           channelId: live
           projectId: firefinances-4b65f
+
+      - name: Publicar regras do Firestore
+        # Reconciliadas com a landing/painel (ver PLANO.md). Só rules — não mexe
+        # em indexes/functions. Idempotente: republicar regras iguais é no-op.
+        run: |
+          printf '%s' "$FIREBASE_SA" > "$RUNNER_TEMP/sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
+          npx --yes firebase-tools deploy --only firestore:rules \
+            --project firefinances-4b65f --non-interactive
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}

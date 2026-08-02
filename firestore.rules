@@ -2,12 +2,12 @@ rules_version = '2';
 
 // Ponto FIRE — regras de segurança do Firestore.
 //
-// ATENÇÃO (M0): a waitlist/referrals JÁ ESTÃO EM PRODUÇÃO com regras publicadas
-// pelo dono (que não estão neste repo). Este arquivo é a fonte-da-verdade
-// versionada a partir do brief (§5/§11). Antes de `firebase deploy --only
-// firestore:rules`, RECONCILIAR com as regras atualmente publicadas e testar no
-// emulador — em especial o caminho de create da waitlist usado pela landing ao
-// vivo, para não quebrar o funil.
+// Reconciliado com o código REAL da landing e do painel (public/index.html e
+// public/painel.html):
+//  - landing grava em waitlist { email, ref, referredBy, created(serverTimestamp) }
+//    com ID = sha256(email); NÃO escreve em referrals.
+//  - painel só LÊ waitlist (logado com Google; UID admin abaixo).
+// Publicado pelo CI (.github/workflows/deploy.yml, --only firestore:rules).
 
 service cloud.firestore {
   match /databases/{database}/documents {
