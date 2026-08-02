@@ -9,8 +9,9 @@ public/app/
 *.tsbuildinfo
 
 # env / segredos locais
+# Obs: app/.env.local é VERSIONADO de propósito (config web do Firebase, que
+# não é segredo) para o build no CI/navegador funcionar sem setup local.
 .env
-.env.local
 .env.*.local
 
 # firebase
