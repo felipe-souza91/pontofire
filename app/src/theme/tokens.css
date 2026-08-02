@@ -126,3 +126,43 @@ a {
     animation: none;
   }
 }
+
+/* chama "queimando" — indicador de loading (mais viva que o flicker) */
+@keyframes flame-burn {
+  0%,
+  100% {
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+  20% {
+    transform: translateY(-2px) scale(1.04, 0.97) rotate(-1.2deg);
+  }
+  45% {
+    transform: translateY(1px) scale(0.97, 1.04) rotate(1deg);
+  }
+  70% {
+    transform: translateY(-1px) scale(1.03, 0.99) rotate(-0.6deg);
+  }
+}
+@keyframes flame-glow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 8px rgba(255, 122, 69, 0.35));
+    opacity: 0.95;
+  }
+  50% {
+    filter: drop-shadow(0 0 24px rgba(255, 122, 69, 0.7));
+    opacity: 1;
+  }
+}
+.flame-loading {
+  transform-origin: 50% 92%;
+  animation:
+    flame-burn 1.1s ease-in-out infinite,
+    flame-glow 1.7s ease-in-out infinite;
+  will-change: transform, opacity, filter;
+}
+@media (prefers-reduced-motion: reduce) {
+  .flame-loading {
+    animation: flame-glow 2s ease-in-out infinite;
+  }
+}

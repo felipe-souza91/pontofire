@@ -3,6 +3,7 @@ import {
   GoogleAuthProvider,
   createUserWithEmailAndPassword,
   onAuthStateChanged,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut as fbSignOut,
@@ -16,6 +17,7 @@ export interface AuthContextValue {
   entrarComGoogle: () => Promise<void>;
   entrarComEmail: (email: string, senha: string) => Promise<void>;
   criarComEmail: (email: string, senha: string) => Promise<void>;
+  recuperarSenha: (email: string) => Promise<void>;
   sair: () => Promise<void>;
 }
 
@@ -35,6 +37,10 @@ export function mensagemErroAuth(erro: unknown): string {
       return 'Este e-mail já tem conta. Tente entrar.';
     case 'auth/weak-password':
       return 'A senha precisa de pelo menos 6 caracteres.';
+    case 'auth/missing-password':
+      return 'Digite a senha.';
+    case 'auth/missing-email':
+      return 'Digite o e-mail.';
     case 'auth/popup-closed-by-user':
       return 'Login cancelado.';
     case 'auth/too-many-requests':
@@ -78,6 +84,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       async criarComEmail(email, senha) {
         await createUserWithEmailAndPassword(auth, email, senha);
+      },
+      async recuperarSenha(email) {
+        await sendPasswordResetEmail(auth, email);
       },
       async sair() {
         await fbSignOut(auth);

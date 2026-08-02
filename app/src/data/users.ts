@@ -25,10 +25,13 @@ export async function getUserDoc(uid: string): Promise<UserDoc | null> {
 export function subscribeUserDoc(
   uid: string,
   cb: (doc: UserDoc | null) => void,
+  onError?: (erro: unknown) => void,
 ): Unsubscribe {
-  return onSnapshot(userRef(uid), (snap) => {
-    cb(snap.exists() ? (snap.data() as UserDoc) : null);
-  });
+  return onSnapshot(
+    userRef(uid),
+    (snap) => cb(snap.exists() ? (snap.data() as UserDoc) : null),
+    (erro) => onError?.(erro),
+  );
 }
 
 /**
