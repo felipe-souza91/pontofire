@@ -4,6 +4,7 @@ import { calcularPlanoFire, numeroFire, type PlanoFire } from '@pontofire/engine
 import { useAuth } from '../auth/useAuth';
 import { concluirSemN2, salvarOnboardingN1, salvarOnboardingN2 } from '../data/users';
 import type { OnboardingN2 } from '../data/types';
+import { PORQUES } from '../data/humanizacao';
 import { formatBRL, formatDuracao, formatMesAno } from '../utils/format';
 import { Flame } from '../theme/Flame';
 
@@ -362,17 +363,6 @@ function Linha({ rotulo, valor }: { rotulo: string; valor: string }) {
     </div>
   );
 }
-
-const PORQUES = [
-  'Viver de renda',
-  'Tempo com quem amo',
-  'Sair de um trabalho que sufoca',
-  'Viajar sem pedir férias',
-  'Empreender sem medo',
-  'Segurança e paz',
-  'Ter opções',
-  'Cuidar da minha família',
-];
 
 function FormularioN2({
   salvando,

@@ -1,4 +1,5 @@
 import { useMemo, type ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 import {
   calcularPlanoFire,
   impactoAporteExtra,
@@ -56,6 +57,7 @@ export function Dashboard() {
         <Flame size={30} />
         <strong className="mono" style={{ flex: 1, letterSpacing: '-0.01em' }}>Ponto FIRE</strong>
         <span className="pf-pill">beta fechado</span>
+        <Link className="pf-btn-link" to="/perfil">Perfil</Link>
         <button className="pf-btn-link" onClick={() => void sair()}>Sair</button>
       </header>
 

@@ -1,4 +1,5 @@
 import {
+  deleteField,
   doc,
   getDoc,
   onSnapshot,
@@ -73,6 +74,18 @@ export async function salvarOnboardingN2(uid: string, n2: OnboardingN2): Promise
     patch[k] = v;
   }
   await setDoc(userRef(uid), patch, { merge: true });
+}
+
+/**
+ * Atualiza campos do perfil (edição pós-onboarding). Faz merge; campos com
+ * valor "vazio" (undefined) são removidos com deleteField para não sujar o doc.
+ */
+export async function atualizarPerfil(uid: string, patch: Partial<UserDoc>): Promise<void> {
+  const dados: Record<string, unknown> = { atualizadoEm: serverTimestamp() };
+  for (const [k, v] of Object.entries(patch)) {
+    dados[k] = v === undefined ? deleteField() : v;
+  }
+  await setDoc(userRef(uid), dados, { merge: true });
 }
 
 /** Conclui o onboarding pulando o N2 (usuário optou por "depois"). */
