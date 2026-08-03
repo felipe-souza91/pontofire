@@ -97,7 +97,7 @@ export function Dashboard() {
     <main className="pf-dash">
       <header style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-8)', position: 'relative', zIndex: 1 }}>
         <Flame size={30} />
-        <strong className="mono" style={{ flex: 1, letterSpacing: '-0.01em' }}>Ponto FIRE</strong>
+        <strong className="pf-logo" style={{ flex: 1 }}>Ponto FIRE</strong>
         <span className="pf-pill">beta fechado</span>
         <Link className="pf-btn-link" to="/lancar">Lançar</Link>
         <Link className="pf-btn-link" to="/bens">Bens</Link>

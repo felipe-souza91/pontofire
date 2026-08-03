@@ -135,24 +135,32 @@
    Componentes espelhados da landing (§12) — para o app falar a mesma língua.
 --------------------------------------------------------------------------- */
 
-/* label em mono âmbar (eyebrow/kicker/hc-label) */
+/* wordmark "Ponto FIRE" — Fraunces (igual ao .logo da landing) */
+.pf-logo {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 20px;
+  letter-spacing: -0.01em;
+}
+
+/* label em mono âmbar (eyebrow/kicker/hc-label da landing) */
 .pf-eyebrow {
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: 13px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--ember-2);
 }
 
-/* pill "beta fechado" */
+/* pill "beta fechado" — igual à landing */
 .pf-pill {
   display: inline-block;
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: 12px;
   color: var(--ember-2);
   border: 1px solid var(--line-2);
   border-radius: 100px;
-  padding: 5px 13px;
+  padding: 6px 14px;
   letter-spacing: 0.02em;
 }
 
@@ -179,14 +187,14 @@
 .pf-hc-date {
   font-family: var(--font-mono);
   font-weight: 700;
-  font-size: clamp(30px, 8vw, 46px);
+  font-size: clamp(30px, 5vw, 44px);
   color: var(--mint);
   letter-spacing: -0.01em;
   margin: 6px 0 2px;
 }
 .pf-hc-sub {
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 14px;
   margin-bottom: 18px;
 }
 
@@ -200,7 +208,7 @@
 .pf-bar > i {
   display: block;
   height: 100%;
-  background: var(--flame-grad);
+  background: var(--ember);
   border-radius: 100px;
   transition: width 0.6s ease;
 }
@@ -208,7 +216,7 @@
   display: flex;
   justify-content: space-between;
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: 12px;
   color: var(--muted);
   margin-top: 8px;
 }
