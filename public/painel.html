@@ -176,7 +176,7 @@ function listen(){
     render();
   }, err => {
     $('gate').style.display='block'; $('app').style.display='none';
-    $('gerr').textContent = 'Sem permissão de leitura (' + err.code + '). Confira as regras e seu UID.';
+    $('gerr').textContent = 'Sem permissão de leitura (' + err.code + '). Seu UID: ' + (auth.currentUser?.uid || '?') + ' — envie esse UID para liberar nas regras.';
     $('gerr').classList.add('show');
   });
 }
