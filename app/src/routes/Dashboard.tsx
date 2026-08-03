@@ -3,8 +3,11 @@ import { Link } from 'react-router-dom';
 import {
   calcularPlanoFire,
   impactoAporteExtra,
+  jaEhCoastFire,
+  patrimonioCoast,
   valorFuturo,
   type ParametrosFire,
+  type PlanoFire,
 } from '@pontofire/engine';
 import { useAuth } from '../auth/useAuth';
 import { useUserDoc } from '../hooks/useUserDoc';
@@ -132,8 +135,15 @@ export function Dashboard() {
             </section>
           )}
           <div className="pf-insight">
-            <Insight doc={doc} iMensal={plano.iMensal} status={plano.status} />
+            <Insight doc={doc} plano={plano} />
           </div>
+          <Coast doc={doc} plano={plano} />
+          {doc.retornoRealEsperado > 0.07 && (
+            <p className="pf-hint" style={{ margin: 0 }}>
+              ⚠️ {formatPct(doc.retornoRealEsperado)} de retorno real ao ano é otimista — no Brasil o
+              juro real de longo prazo costuma ser menor. Vale simular um cenário mais conservador.
+            </p>
+          )}
         </div>
       </div>
 
@@ -155,26 +165,106 @@ function Stat({ rot, val, tom }: { rot: string; val: string; tom?: 'mint' | 'emb
   );
 }
 
-function Insight({ doc, iMensal, status }: { doc: UserDoc; iMensal: number; status: string }) {
-  if (status === 'atingido') {
-    return <p style={{ margin: 0 }}>Seus rendimentos já sustentam seu custo de vida. Você pode parar quando quiser. 🔥</p>;
-  }
-  const base: ParametrosFire = { P: doc.patrimonioInicial, A: doc.aporteMensal, i: iMensal, M: doc.metaFire };
-  const imp = impactoAporteExtra(base, 500);
-  if (imp.deltaMeses !== null && imp.deltaMeses > 0.5) {
+function juntar(itens: string[]): string {
+  const l = itens.map((s) => s.toLowerCase());
+  if (l.length === 0) return '';
+  if (l.length === 1) return l[0]!;
+  return `${l.slice(0, -1).join(', ')} e ${l[l.length - 1]}`;
+}
+
+function Insight({ doc, plano }: { doc: UserDoc; plano: PlanoFire }) {
+  const nome = doc.apelido || doc.nome?.split(' ')[0];
+
+  if (plano.status === 'atingido') {
     return (
       <p style={{ margin: 0 }}>
-        Investir <span className="hl">R$ 500 a mais</span> por mês adianta sua liberdade em{' '}
-        <span className="hl">{formatDuracao(imp.deltaMeses)}</span>. A alavanca real é o aporte e o
-        retorno — não os microcortes.
+        Seus rendimentos já sustentam seu custo de vida{nome ? `, ${nome}` : ''}. Você pode parar
+        quando quiser. 🔥
       </p>
     );
   }
+
+  const base: ParametrosFire = { P: doc.patrimonioInicial, A: doc.aporteMensal, i: plano.iMensal, M: doc.metaFire };
+  const imp = impactoAporteExtra(base, 500);
+
+  const abertura =
+    plano.status === 'ok' && plano.meses !== null ? (
+      <>
+        Faltam <span className="hl">{formatDuracao(plano.meses)}</span>
+        {doc.nomeSonho ? (
+          <>
+            {' '}pro seu <span className="hl">{doc.nomeSonho}</span>
+          </>
+        ) : (
+          ' pra sua liberdade'
+        )}
+        {nome ? `, ${nome}` : ''}.
+        {doc.porQues && doc.porQues.length > 0 ? <> Por trás disso: {juntar(doc.porQues)}.</> : null}{' '}
+      </>
+    ) : null;
+
+  if (imp.deltaMeses !== null && imp.deltaMeses > 0.5) {
+    return (
+      <p style={{ margin: 0 }}>
+        {abertura}
+        Investir <span className="hl">R$ 500 a mais</span> por mês adianta isso em{' '}
+        <span className="hl">{formatDuracao(imp.deltaMeses)}</span> — a alavanca real é o aporte e o
+        retorno, não os microcortes.
+      </p>
+    );
+  }
+
   return (
     <p style={{ margin: 0 }}>
-      Com o aporte atual a meta não fecha. Aumentar quanto você investe por mês é o que muda a data —
-      dá pra simular sem compromisso.
+      {abertura}
+      Com o aporte atual a meta não fecha. Aumentar quanto você investe por mês é o que muda a data.
     </p>
+  );
+}
+
+function Coast({ doc, plano }: { doc: UserDoc; plano: PlanoFire }) {
+  const idadeAtual = idadeDe(doc.dataNascimento);
+  if (
+    !doc.idadeAlvo ||
+    idadeAtual === undefined ||
+    doc.idadeAlvo <= idadeAtual ||
+    plano.status !== 'ok' ||
+    plano.idadeNaLiberdade === null
+  ) {
+    return null;
+  }
+
+  const mesesAlvo = (doc.idadeAlvo - idadeAtual) * 12;
+  const coast = patrimonioCoast(doc.metaFire, plano.iMensal, mesesAlvo);
+  const jaCoast = jaEhCoastFire(doc.patrimonioInicial, doc.metaFire, plano.iMensal, mesesAlvo);
+  const idadeLib = Math.round(plano.idadeNaLiberdade);
+  const antes = doc.idadeAlvo - idadeLib;
+
+  return (
+    <div className="pf-stat" style={{ borderColor: 'rgba(63,214,155,0.3)' }}>
+      <div className="rot">Sua meta de idade · {doc.idadeAlvo} anos</div>
+      <p style={{ margin: 'var(--space-2) 0 0', fontSize: '0.95rem', lineHeight: 1.5 }}>
+        {antes > 0 ? (
+          <>
+            No seu ritmo você chega <span style={{ color: 'var(--mint)' }}>aos {idadeLib}</span> —{' '}
+            {formatDuracao(antes * 12)} antes da sua meta.{' '}
+          </>
+        ) : (
+          <>No seu ritmo você chega aos {idadeLib}. </>
+        )}
+        {jaCoast ? (
+          <span className="pf-insight" style={{ display: 'inline', border: 0, padding: 0, background: 'none', color: 'var(--mint)' }}>
+            Você já é CoastFIRE: podia parar de aportar hoje e ainda bateria a meta aos {doc.idadeAlvo},
+            só com os juros.
+          </span>
+        ) : (
+          <>
+            Pra bater a meta aos {doc.idadeAlvo} sem novos aportes, precisaria de{' '}
+            <span style={{ color: 'var(--ember-2)' }}>{formatBRLcompact(coast)}</span> investidos hoje.
+          </>
+        )}
+      </p>
+    </div>
   );
 }
 
