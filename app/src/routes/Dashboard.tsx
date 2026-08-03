@@ -11,7 +11,9 @@ import {
 } from '@pontofire/engine';
 import { useAuth } from '../auth/useAuth';
 import { useUserDoc } from '../hooks/useUserDoc';
+import { useSnapshots } from '../hooks/useSnapshots';
 import type { UserDoc } from '../data/types';
+import type { Snapshot } from '../data/snapshots';
 import { Flame } from '../theme/Flame';
 import { formatBRLcompact, formatDuracao, formatMesAno, formatPct } from '../utils/format';
 
@@ -29,11 +31,16 @@ function idadeDe(dataNascimento?: string): number | undefined {
 export function Dashboard() {
   const { user, sair } = useAuth();
   const { doc, carregando } = useUserDoc(user?.uid ?? null);
+  const { lista } = useSnapshots(user?.uid ?? null);
+
+  // patrimônio atual = último snapshot lançado; senão, o do onboarding
+  const ultimo = lista.length ? lista[lista.length - 1]! : null;
 
   const plano = useMemo(() => {
     if (!doc) return null;
+    const P = ultimo ? ultimo.patrimonioTotal : doc.patrimonioInicial;
     return calcularPlanoFire({
-      patrimonioInvestivel: doc.patrimonioInicial,
+      patrimonioInvestivel: P,
       aporteMensal: doc.aporteMensal,
       custoVidaMensal: doc.custoVidaMensal,
       retornoRealAnual: doc.retornoRealEsperado,
@@ -42,11 +49,12 @@ export function Dashboard() {
       idadeAtual: idadeDe(doc.dataNascimento),
       hoje: new Date(),
     });
-  }, [doc]);
+  }, [doc, ultimo]);
 
   if (carregando) return <Centro>Carregando…</Centro>;
   if (!doc || !plano) return <Centro>Sem dados ainda.</Centro>;
 
+  const P = ultimo ? ultimo.patrimonioTotal : doc.patrimonioInicial;
   const saudacao = doc.apelido || doc.nome?.split(' ')[0] || 'você';
   const progressoPct = Math.min(100, Math.max(0, plano.progresso * 100));
 
@@ -60,6 +68,7 @@ export function Dashboard() {
         <Flame size={30} />
         <strong className="mono" style={{ flex: 1, letterSpacing: '-0.01em' }}>Ponto FIRE</strong>
         <span className="pf-pill">beta fechado</span>
+        <Link className="pf-btn-link" to="/lancar">Lançar</Link>
         <Link className="pf-btn-link" to="/perfil">Perfil</Link>
         <button className="pf-btn-link" onClick={() => void sair()}>Sair</button>
       </header>
@@ -101,7 +110,7 @@ export function Dashboard() {
           <i style={{ width: `${progressoPct}%` }} />
         </div>
         <div className="pf-bar-row">
-          <span>{formatBRLcompact(doc.patrimonioInicial)}</span>
+          <span>{formatBRLcompact(P)}</span>
           <span>
             meta {formatBRLcompact(doc.metaFire)} · {progressoPct.toFixed(0)}%
           </span>
@@ -109,15 +118,46 @@ export function Dashboard() {
       </section>
 
       <div className="pf-cols-2" style={{ marginTop: 'var(--space-4)' }}>
-        {/* Números */}
-        <div className="pf-stats">
-          <Stat rot="Número FIRE" val={formatBRLcompact(doc.metaFire)} />
-          <Stat rot="Renda ao atingir" val={`${formatBRLcompact(plano.saqueMensalSustentavel)}/mês`} tom="mint" />
-          <Stat rot="Aporte mensal" val={`${formatBRLcompact(doc.aporteMensal)}/mês`} />
-          <Stat rot="Retorno real a.a." val={formatPct(doc.retornoRealEsperado)} tom="ember" />
+        {/* Coluna esquerda: números + evolução */}
+        <div style={{ display: 'grid', gap: 'var(--space-4)', alignContent: 'start' }}>
+          <div className="pf-stats">
+            <Stat rot="Número FIRE" val={formatBRLcompact(doc.metaFire)} />
+            <Stat rot="Renda ao atingir" val={`${formatBRLcompact(plano.saqueMensalSustentavel)}/mês`} tom="mint" />
+            {ultimo ? (
+              <>
+                <Stat rot="Taxa de poupança" val={formatPct(ultimo.taxaPoupanca)} tom="mint" />
+                <Stat rot="Aporte mensal" val={`${formatBRLcompact(doc.aporteMensal)}/mês`} />
+              </>
+            ) : (
+              <>
+                <Stat rot="Aporte mensal" val={`${formatBRLcompact(doc.aporteMensal)}/mês`} />
+                <Stat rot="Retorno real a.a." val={formatPct(doc.retornoRealEsperado)} tom="ember" />
+              </>
+            )}
+          </div>
+
+          {ultimo && <Stat rot="Retorno real a.a." val={formatPct(doc.retornoRealEsperado)} tom="ember" />}
+
+          {lista.length >= 1 && (
+            <section className="pf-hero-card">
+              <span className="pf-eyebrow">Evolução do patrimônio</span>
+              {lista.length >= 2 ? (
+                <>
+                  <p className="pf-hc-sub" style={{ marginTop: 'var(--space-2)', marginBottom: 0 }}>
+                    {lista.length} meses lançados
+                  </p>
+                  <GraficoEvolucao lista={lista} meta={doc.metaFire} />
+                </>
+              ) : (
+                <p className="pf-hc-sub" style={{ marginTop: 'var(--space-2)', marginBottom: 0 }}>
+                  seu 1º mês está registrado — lance mais um pra ver a curva crescer.
+                </p>
+              )}
+            </section>
+          )}
         </div>
 
-        {/* Projeção + insight */}
+        {/* Coluna direita: projeção + insight */}
         <div style={{ display: 'grid', gap: 'var(--space-4)', alignContent: 'start' }}>
           {mostraProjecao && (
             <section className="pf-hero-card">
@@ -125,19 +165,13 @@ export function Dashboard() {
               <p className="pf-hc-sub" style={{ marginTop: 'var(--space-2)', marginBottom: 0 }}>
                 do valor de hoje até a meta, no seu ritmo
               </p>
-              <GraficoProjecao
-                P={doc.patrimonioInicial}
-                A={doc.aporteMensal}
-                i={plano.iMensal}
-                M={doc.metaFire}
-                meses={plano.meses!}
-              />
+              <GraficoProjecao P={P} A={doc.aporteMensal} i={plano.iMensal} M={doc.metaFire} meses={plano.meses!} />
             </section>
           )}
           <div className="pf-insight">
-            <Insight doc={doc} plano={plano} />
+            <Insight doc={doc} plano={plano} P={P} />
           </div>
-          <Coast doc={doc} plano={plano} />
+          <Coast doc={doc} plano={plano} P={P} />
           {doc.retornoRealEsperado > 0.07 && (
             <p className="pf-hint" style={{ margin: 0 }}>
               ⚠️ {formatPct(doc.retornoRealEsperado)} de retorno real ao ano é otimista — no Brasil o
@@ -147,9 +181,20 @@ export function Dashboard() {
         </div>
       </div>
 
-      <p className="pf-hint" style={{ textAlign: 'center', marginTop: 'var(--space-8)' }}>
-        Lançar seu mês e cadastrar bens chega no M4.
-      </p>
+      {!ultimo ? (
+        <div style={{ textAlign: 'center', marginTop: 'var(--space-8)' }}>
+          <Link className="pf-btn pf-btn-primary" to="/lancar" style={{ display: 'inline-flex', width: 'auto', padding: '0.85rem 2rem', textDecoration: 'none' }}>
+            Lançar meu primeiro mês
+          </Link>
+          <p className="pf-hint" style={{ marginTop: 'var(--space-3)' }}>
+            Registre um mês pra ver taxa de poupança e evolução — e sua data começar a andar sozinha.
+          </p>
+        </div>
+      ) : (
+        <div style={{ textAlign: 'center', marginTop: 'var(--space-8)' }}>
+          <Link className="pf-btn-link" to="/lancar">+ Lançar novo mês</Link>
+        </div>
+      )}
     </main>
   );
 }
@@ -172,7 +217,7 @@ function juntar(itens: string[]): string {
   return `${l.slice(0, -1).join(', ')} e ${l[l.length - 1]}`;
 }
 
-function Insight({ doc, plano }: { doc: UserDoc; plano: PlanoFire }) {
+function Insight({ doc, plano, P }: { doc: UserDoc; plano: PlanoFire; P: number }) {
   const nome = doc.apelido || doc.nome?.split(' ')[0];
 
   if (plano.status === 'atingido') {
@@ -184,7 +229,7 @@ function Insight({ doc, plano }: { doc: UserDoc; plano: PlanoFire }) {
     );
   }
 
-  const base: ParametrosFire = { P: doc.patrimonioInicial, A: doc.aporteMensal, i: plano.iMensal, M: doc.metaFire };
+  const base: ParametrosFire = { P, A: doc.aporteMensal, i: plano.iMensal, M: doc.metaFire };
   const imp = impactoAporteExtra(base, 500);
 
   const abertura =
@@ -222,7 +267,7 @@ function Insight({ doc, plano }: { doc: UserDoc; plano: PlanoFire }) {
   );
 }
 
-function Coast({ doc, plano }: { doc: UserDoc; plano: PlanoFire }) {
+function Coast({ doc, plano, P }: { doc: UserDoc; plano: PlanoFire; P: number }) {
   const idadeAtual = idadeDe(doc.dataNascimento);
   if (
     !doc.idadeAlvo ||
@@ -236,7 +281,7 @@ function Coast({ doc, plano }: { doc: UserDoc; plano: PlanoFire }) {
 
   const mesesAlvo = (doc.idadeAlvo - idadeAtual) * 12;
   const coast = patrimonioCoast(doc.metaFire, plano.iMensal, mesesAlvo);
-  const jaCoast = jaEhCoastFire(doc.patrimonioInicial, doc.metaFire, plano.iMensal, mesesAlvo);
+  const jaCoast = jaEhCoastFire(P, doc.metaFire, plano.iMensal, mesesAlvo);
   const idadeLib = Math.round(plano.idadeNaLiberdade);
   const antes = doc.idadeAlvo - idadeLib;
 
@@ -294,6 +339,32 @@ function GraficoProjecao({ P, A, i, M, meses }: { P: number; A: number; i: numbe
       <line x1="0" y1={metaY} x2={w} y2={metaY} stroke="#3FD69B" strokeWidth="1" strokeDasharray="2 2" vectorEffect="non-scaling-stroke" opacity="0.7" />
       <path d={area} fill="url(#pf-proj)" />
       <path d={linha} fill="none" stroke="#FF7A45" strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function GraficoEvolucao({ lista, meta }: { lista: Snapshot[]; meta: number }) {
+  const w = 100;
+  const h = 42;
+  const n = lista.length;
+  const maxV = Math.max(meta, ...lista.map((s) => s.patrimonioTotal)) * 1.02;
+  const x = (i: number) => (i / (n - 1)) * w;
+  const y = (v: number) => h - (v / maxV) * h;
+  const pts = lista.map((s, i) => `${i ? 'L' : 'M'} ${x(i).toFixed(2)} ${y(s.patrimonioTotal).toFixed(2)}`).join(' ');
+  const area = `${pts} L ${w} ${h} L 0 ${h} Z`;
+  const metaY = y(meta);
+
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ width: '100%', height: '130px', marginTop: 'var(--space-3)', display: 'block' }} aria-hidden>
+      <defs>
+        <linearGradient id="pf-evo" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#3FD69B" stopOpacity="0.26" />
+          <stop offset="1" stopColor="#3FD69B" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <line x1="0" y1={metaY} x2={w} y2={metaY} stroke="#3FD69B" strokeWidth="1" strokeDasharray="2 2" vectorEffect="non-scaling-stroke" opacity="0.4" />
+      <path d={area} fill="url(#pf-evo)" />
+      <path d={pts} fill="none" stroke="#3FD69B" strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
     </svg>
   );
 }

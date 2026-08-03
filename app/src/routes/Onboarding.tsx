@@ -102,7 +102,7 @@ export function Onboarding() {
   const passos: PassoConfig[] = [
     {
       titulo: 'Quanto você gasta por mês, hoje?',
-      hint: 'Seu custo de vida médio. É o que define sua meta.',
+      hint: 'Só o que você consome pra viver — sem contar o que investe. É o que define sua meta.',
       campo: <Moeda value={custo} onChange={setCusto} autoFocus />,
       valido: custo > 0,
     },
