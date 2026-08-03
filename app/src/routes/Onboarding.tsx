@@ -6,10 +6,13 @@ import { concluirSemN2, salvarOnboardingN1, salvarOnboardingN2 } from '../data/u
 import type { OnboardingN2 } from '../data/types';
 import { PORQUES } from '../data/humanizacao';
 import { formatBRL, formatDuracao, formatMesAno } from '../utils/format';
+import { MoedaInput } from '../components/MoedaInput';
 import { Flame } from '../theme/Flame';
 
 const TSS = 0.04;
 const RETORNOS = [4, 5, 6];
+// juro real histórico do Brasil (Selic − IPCA) ≈ 5%
+const RETORNO_RECOMENDADO = 5;
 
 type Fase = 'consentimento' | 'perguntas' | 'aha' | 'n2';
 
@@ -26,7 +29,7 @@ export function Onboarding() {
   const [custo, setCusto] = useState(0);
   const [aporte, setAporte] = useState(0);
   const [patrimonio, setPatrimonio] = useState(0);
-  const [retornoPct, setRetornoPct] = useState(5);
+  const [retornoPct, setRetornoPct] = useState(RETORNO_RECOMENDADO);
   const [meta, setMeta] = useState(0);
   const [metaEditada, setMetaEditada] = useState(false);
 
@@ -103,24 +106,24 @@ export function Onboarding() {
     {
       titulo: 'Quanto você gasta por mês, hoje?',
       hint: 'Só o que você consome pra viver — sem contar o que investe. É o que define sua meta.',
-      campo: <Moeda value={custo} onChange={setCusto} autoFocus />,
+      campo: <MoedaInput value={custo} onChange={setCusto} autoFocus />,
       valido: custo > 0,
     },
     {
       titulo: 'Quanto consegue investir por mês?',
       hint: 'Seu aporte médio. Pode ajustar depois.',
-      campo: <Moeda value={aporte} onChange={setAporte} autoFocus />,
+      campo: <MoedaInput value={aporte} onChange={setAporte} autoFocus />,
       valido: aporte >= 0,
     },
     {
       titulo: 'Quanto você já tem investido?',
       hint: 'Só o que rende e é sacável (investimentos). Casa e carro entram depois.',
-      campo: <Moeda value={patrimonio} onChange={setPatrimonio} autoFocus />,
+      campo: <MoedaInput value={patrimonio} onChange={setPatrimonio} autoFocus />,
       valido: patrimonio >= 0,
     },
     {
       titulo: 'Que retorno real ao ano você espera?',
-      hint: 'Real = já descontada a inflação. Sê conservador: 4–6% é razoável no longo prazo.',
+      hint: 'A Selic média dos últimos ~20 anos foi ~10%/ano — mas isso é nominal. Descontada a inflação (IPCA), o juro real fica perto de 5%. Deixamos 5% como recomendação conservadora; ajuste se quiser.',
       campo: (
         <div>
           <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
@@ -132,6 +135,7 @@ export function Onboarding() {
                 onClick={() => setRetornoPct(r)}
               >
                 {r}%
+                {r === RETORNO_RECOMENDADO ? ' ★' : ''}
               </button>
             ))}
           </div>
@@ -144,6 +148,7 @@ export function Onboarding() {
             value={retornoPct}
             onChange={(e) => setRetornoPct(Number(e.target.value))}
           />
+          <p className="pf-hint" style={{ marginTop: 'var(--space-2)' }}>★ recomendado — juro real histórico do Brasil.</p>
         </div>
       ),
       valido: retornoPct > 0,
@@ -152,7 +157,7 @@ export function Onboarding() {
       titulo: 'Sua meta de patrimônio',
       hint: `Sugestão: 25× seu custo anual = ${formatBRL(metaSugerida)}. Pode ajustar.`,
       campo: (
-        <Moeda
+        <MoedaInput
           value={metaEditada ? meta : metaSugerida}
           onChange={(v) => {
             setMeta(v);
@@ -248,46 +253,6 @@ function Cabecalho({ titulo }: { titulo: string }) {
     <div style={{ textAlign: 'center', marginBottom: 'var(--space-6)' }}>
       <Flame size={48} flicker />
       <h1 style={{ marginTop: 'var(--space-4)', marginBottom: 0 }}>{titulo}</h1>
-    </div>
-  );
-}
-
-function Moeda({
-  value,
-  onChange,
-  autoFocus,
-}: {
-  value: number;
-  onChange: (v: number) => void;
-  autoFocus?: boolean;
-}) {
-  const display = value ? new Intl.NumberFormat('pt-BR').format(value) : '';
-  return (
-    <div style={{ position: 'relative' }}>
-      <span
-        aria-hidden
-        style={{
-          position: 'absolute',
-          left: '0.9rem',
-          top: '50%',
-          transform: 'translateY(-50%)',
-          color: 'var(--muted)',
-          fontFamily: 'var(--font-mono)',
-        }}
-      >
-        R$
-      </span>
-      <input
-        className="pf-input pf-num"
-        style={{ paddingLeft: '2.6rem', fontSize: '1.4rem' }}
-        inputMode="numeric"
-        autoFocus={autoFocus}
-        value={display}
-        onChange={(e) => {
-          const digits = e.target.value.replace(/\D/g, '');
-          onChange(digits ? parseInt(digits, 10) : 0);
-        }}
-      />
     </div>
   );
 }

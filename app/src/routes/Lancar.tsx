@@ -5,6 +5,7 @@ import { useAuth } from '../auth/useAuth';
 import { useSnapshots } from '../hooks/useSnapshots';
 import { salvarSnapshot } from '../data/snapshots';
 import { MoedaInput } from '../components/MoedaInput';
+import { Campo } from '../components/Campo';
 import { formatBRL, formatBRLcompact, formatMesAno, formatPct } from '../utils/format';
 
 function mesCorrente(): string {
@@ -81,28 +82,24 @@ export function Lancar() {
 
       <p className="pf-eyebrow" style={{ marginBottom: 'var(--space-4)' }}>Modo rápido · 3 números</p>
 
-      <label className="pf-field">
-        <span className="pf-label">Mês de referência</span>
+      <Campo rotulo="Mês de referência" dica="Qual mês você está lançando.">
         <input className="pf-input" type="month" value={mes} onChange={(e) => setMes(e.target.value)} />
-      </label>
+      </Campo>
 
-      <label className="pf-field">
-        <span className="pf-label">Patrimônio total hoje</span>
+      <Campo rotulo="Patrimônio total hoje" dica="Soma do que você tem investido hoje (marcação a mercado). Aceita centavos.">
         <MoedaInput value={patrimonio} onChange={setPatrimonio} />
-        <span className="pf-hint">Quanto você tem investido agora. O rendimento sai daqui (marcação a mercado).</span>
-      </label>
+        <span className="pf-hint">Quanto você tem investido agora. O rendimento sai daqui.</span>
+      </Campo>
 
-      <label className="pf-field">
-        <span className="pf-label">Receita do mês (o que entrou)</span>
+      <Campo rotulo="Receita do mês (o que entrou)" dica="Sua renda líquida do mês: salário + rendas que caíram na conta.">
         <MoedaInput value={receita} onChange={setReceita} />
         <span className="pf-hint">Sua renda líquida no mês.</span>
-      </label>
+      </Campo>
 
-      <label className="pf-field">
-        <span className="pf-label">Despesa do mês (o que você consumiu)</span>
+      <Campo rotulo="Despesa do mês (o que consumiu)" dica="Só o consumo pra viver — SEM contar o que você investiu. Receita = despesa + aporte.">
         <MoedaInput value={despesa} onChange={setDespesa} />
-        <span className="pf-hint">Só o consumo — sem contar o que você investiu. Receita = despesa + aporte.</span>
-      </label>
+        <span className="pf-hint">Só o consumo — sem contar o que você investiu.</span>
+      </Campo>
 
       {/* Preview do que o motor deriva */}
       <div className="pf-hero-card" style={{ marginTop: 'var(--space-4)' }}>

@@ -10,7 +10,10 @@ import {
   type TipoTransacao,
 } from '../data/transactions';
 import { atualizarSnapshot } from '../data/snapshots';
+import { CATEGORIAS, normalizarCategoria } from '../data/categorias';
 import { MoedaInput } from '../components/MoedaInput';
+import { CategoriaInput } from '../components/CategoriaInput';
+import { Campo } from '../components/Campo';
 import { formatBRL, formatMesAno } from '../utils/format';
 
 const TIPOS: TipoTransacao[] = ['saida', 'ativa', 'passiva', 'aporte'];
@@ -57,7 +60,7 @@ export function Detalhar() {
       await adicionarTransacao(user.uid, {
         mes,
         tipo,
-        categoria: categoria.trim(),
+        categoria: normalizarCategoria(categoria),
         valor,
         descricao: descricao.trim() || undefined,
         origem: 'manual',
@@ -112,18 +115,15 @@ export function Detalhar() {
               </button>
             ))}
           </div>
-          <label className="pf-field">
-            <span className="pf-label">Categoria</span>
-            <input className="pf-input" value={categoria} onChange={(e) => setCategoria(e.target.value)} placeholder="ex: mercado, aluguel, salário" />
-          </label>
-          <label className="pf-field">
-            <span className="pf-label">Valor</span>
+          <Campo rotulo="Categoria" dica="Escolha uma sugestão da lista ou digite a sua. Ex: Mercado, Aluguéis, Salário.">
+            <CategoriaInput value={categoria} onChange={setCategoria} opcoes={CATEGORIAS[tipo]} placeholder="escolha ou digite" />
+          </Campo>
+          <Campo rotulo="Valor" dica="Quanto foi neste item. Aceita centavos — ex: 47,90.">
             <MoedaInput value={valor} onChange={setValor} />
-          </label>
-          <label className="pf-field">
-            <span className="pf-label">Descrição (opcional)</span>
+          </Campo>
+          <Campo rotulo="Descrição" opcional dica="Uma nota pra você lembrar. Ex: 'mercado do mês', 'iFood de sexta'.">
             <input className="pf-input" value={descricao} onChange={(e) => setDescricao(e.target.value)} />
-          </label>
+          </Campo>
           <button className="pf-btn pf-btn-primary" disabled={ocupado || !categoria.trim() || valor <= 0} onClick={() => void adicionar()}>
             {ocupado ? 'Adicionando…' : 'Adicionar'}
           </button>

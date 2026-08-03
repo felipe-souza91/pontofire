@@ -4,7 +4,10 @@ import { resumoPatrimonio, type AssetTipo } from '@pontofire/engine';
 import { useAuth } from '../auth/useAuth';
 import { useAssets } from '../hooks/useAssets';
 import { adicionarAsset, removerAsset, ROTULO_ASSET } from '../data/assets';
+import { NOMES_BEM, normalizarCategoria } from '../data/categorias';
 import { MoedaInput } from '../components/MoedaInput';
+import { CategoriaInput } from '../components/CategoriaInput';
+import { Campo } from '../components/Campo';
 import { formatBRL } from '../utils/format';
 
 // financeiro fica de fora: seu investido já vem do modo rápido (patrimônio lançado)
@@ -37,7 +40,7 @@ export function Bens() {
     setOcupado(true);
     try {
       await adicionarAsset(user.uid, {
-        nome: nome.trim(),
+        nome: normalizarCategoria(nome),
         tipo,
         valor,
         dividaAssociada: divida || undefined,
@@ -86,11 +89,6 @@ export function Bens() {
 
       {/* Adicionar bem */}
       <p className="pf-eyebrow" style={{ margin: 'var(--space-8) 0 var(--space-3)' }}>Adicionar bem</p>
-      <label className="pf-field">
-        <span className="pf-label">Nome</span>
-        <input className="pf-input" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="ex: apartamento, carro, sítio" />
-      </label>
-
       <div className="pf-chips" style={{ marginBottom: 'var(--space-4)' }}>
         {TIPOS_BENS.map((t) => (
           <button key={t} type="button" className={`pf-chip ${tipo === t ? 'on' : ''}`} onClick={() => setTipo(t)}>
@@ -99,25 +97,25 @@ export function Bens() {
         ))}
       </div>
 
-      <label className="pf-field">
-        <span className="pf-label">Valor de mercado</span>
+      <Campo rotulo="Nome" dica="Um nome pra você identificar. Ex: Apartamento, Carro, Sítio.">
+        <CategoriaInput value={nome} onChange={setNome} opcoes={NOMES_BEM[tipo]} placeholder="escolha ou digite" />
+      </Campo>
+
+      <Campo rotulo="Valor de mercado" dica="Quanto o bem vale hoje se você vendesse. Aceita centavos.">
         <MoedaInput value={valor} onChange={setValor} />
-      </label>
-      <label className="pf-field">
-        <span className="pf-label">Dívida associada (financiamento)</span>
+      </Campo>
+      <Campo rotulo="Dívida associada" opcional dica="Saldo devedor do financiamento (ex: da casa/carro). Abate do patrimônio líquido.">
         <MoedaInput value={divida} onChange={setDivida} />
-        <span className="pf-hint">Opcional. Abate do patrimônio líquido.</span>
-      </label>
+      </Campo>
 
       <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-4)', cursor: 'pointer' }}>
         <input type="checkbox" checked={geraRenda} onChange={(e) => setGeraRenda(e.target.checked)} />
         <span>Gera renda (aluguel/arrendamento)</span>
       </label>
       {geraRenda && (
-        <label className="pf-field">
-          <span className="pf-label">Renda mensal líquida</span>
+        <Campo rotulo="Renda mensal líquida" dica="Aluguel/arrendamento que sobra por mês (já descontadas taxas). Entra na cobertura passiva.">
           <MoedaInput value={rendaMensal} onChange={setRendaMensal} />
-        </label>
+        </Campo>
       )}
 
       <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-2)', cursor: 'pointer' }}>

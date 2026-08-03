@@ -93,6 +93,16 @@
   color: var(--muted);
   margin-top: var(--space-2);
 }
+.pf-info {
+  cursor: help;
+  color: var(--muted);
+  font-size: 0.85em;
+  opacity: 0.8;
+}
+.pf-info:hover {
+  color: var(--ember-2);
+  opacity: 1;
+}
 .pf-error {
   color: var(--ember-2);
   font-size: 0.9rem;

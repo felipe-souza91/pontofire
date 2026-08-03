@@ -1,7 +1,9 @@
 const brl = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
   currency: 'BRL',
-  maximumFractionDigits: 0,
+  // mostra centavos só quando existem (R$ 47,90 / R$ 300.000)
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2,
 });
 
 const brlCent = new Intl.NumberFormat('pt-BR', {
