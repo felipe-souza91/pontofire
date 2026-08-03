@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Painel — FIRE Finances</title>
+<title>Painel — Ponto FIRE</title>
 <meta name="robots" content="noindex,nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -75,7 +75,14 @@
 <body>
 
 <div id="gate" class="gate">
-  <h1>Painel FIRE Finances</h1>
+  <svg width="40" height="50" viewBox="0 0 100 126" aria-hidden style="margin-bottom:12px">
+    <defs><linearGradient id="flg" x1="50" y1="6" x2="50" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFB27A"/><stop offset=".55" stop-color="#FF7A45"/><stop offset="1" stop-color="#E85A2A"/>
+    </linearGradient></defs>
+    <path d="M50 6 C 47 34, 73 42, 73 76 C 73 101, 61 120, 50 120 C 39 120, 27 103, 27 78 C 27 59, 44 53, 45 30 C 45.5 21, 48 12, 50 6 Z" fill="url(#flg)"/>
+    <path d="M53 52 C 51 67, 62 71, 62 87 C 62 101, 55 111, 49 111 C 43 111, 38 102, 38 91 C 38 81, 47 77, 47 65 C 47 60, 51 55, 53 52 Z" fill="#FFD9B8"/>
+  </svg>
+  <h1>Painel Ponto FIRE</h1>
   <p>Acesso restrito.</p>
   <button class="btn" id="login">Entrar com Google</button>
   <div class="err" id="gerr"></div>
@@ -83,7 +90,16 @@
 
 <div class="wrap" id="app" style="display:none">
   <nav>
-    <div class="logo"><span class="flame"></span> Painel da waitlist</div>
+    <div class="logo">
+      <svg width="20" height="25" viewBox="0 0 100 126" aria-hidden>
+        <defs><linearGradient id="fln" x1="50" y1="6" x2="50" y2="120" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stop-color="#FFB27A"/><stop offset=".55" stop-color="#FF7A45"/><stop offset="1" stop-color="#E85A2A"/>
+        </linearGradient></defs>
+        <path d="M50 6 C 47 34, 73 42, 73 76 C 73 101, 61 120, 50 120 C 39 120, 27 103, 27 78 C 27 59, 44 53, 45 30 C 45.5 21, 48 12, 50 6 Z" fill="url(#fln)"/>
+        <path d="M53 52 C 51 67, 62 71, 62 87 C 62 101, 55 111, 49 111 C 43 111, 38 102, 38 91 C 38 81, 47 77, 47 65 C 47 60, 51 55, 53 52 Z" fill="#FFD9B8"/>
+      </svg>
+      Ponto FIRE · waitlist
+    </div>
     <div class="who"><span class="live">ao vivo</span><span id="uemail"></span><button class="lnk" id="logout">sair</button></div>
   </nav>
 
