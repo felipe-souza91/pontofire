@@ -61,9 +61,13 @@ body {
 }
 
 body {
+  /* glow âmbar no canto superior direito (igual à landing) + índigo no topo */
   background:
+    radial-gradient(560px 560px at 100% 0%, rgba(255, 122, 69, 0.13) 0%, transparent 62%),
     radial-gradient(1200px 700px at 50% -10%, var(--ink-3) 0%, transparent 60%),
     var(--ink);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
   color: var(--paper);
   font-family: var(--font-body);
   font-size: 16px;

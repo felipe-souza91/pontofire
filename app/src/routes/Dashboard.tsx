@@ -95,8 +95,6 @@ export function Dashboard() {
 
   return (
     <main className="pf-dash">
-      <span className="pf-glow" style={{ top: '-140px', right: '-160px' }} aria-hidden />
-
       <header style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-8)', position: 'relative', zIndex: 1 }}>
         <Flame size={30} />
         <strong className="mono" style={{ flex: 1, letterSpacing: '-0.01em' }}>Ponto FIRE</strong>
