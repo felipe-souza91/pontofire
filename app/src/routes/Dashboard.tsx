@@ -2,6 +2,7 @@ import { useMemo, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import {
   calcularPlanoFire,
+  coberturaPassiva,
   impactoAporteExtra,
   jaEhCoastFire,
   patrimonioCoast,
@@ -61,10 +62,24 @@ export function Dashboard() {
   if (!doc || !plano) return <Centro>Sem dados ainda.</Centro>;
 
   const P = ultimo ? ultimo.patrimonioTotal : doc.patrimonioInicial;
+  const R = ultimo?.rendaPassiva ?? 0;
   const saudacao = doc.apelido || doc.nome?.split(' ')[0] || 'você';
   const progressoPct = Math.min(100, Math.max(0, plano.progresso * 100));
 
   const mostraProjecao = plano.status === 'ok' && plano.meses !== null;
+
+  const stats: { rot: string; val: string; tom?: 'mint' | 'ember' }[] = [
+    { rot: 'Número FIRE', val: formatBRLcompact(doc.metaFire) },
+    { rot: 'Renda ao atingir', val: `${formatBRLcompact(plano.saqueMensalSustentavel)}/mês`, tom: 'mint' },
+  ];
+  if (ultimo) {
+    stats.push({ rot: 'Taxa de poupança', val: formatPct(ultimo.taxaPoupanca), tom: 'mint' });
+    if (R > 0) {
+      stats.push({ rot: 'Cobertura passiva', val: formatPct(coberturaPassiva(R, doc.custoVidaMensal)), tom: 'mint' });
+    }
+  }
+  stats.push({ rot: 'Aporte mensal', val: `${formatBRLcompact(doc.aporteMensal)}/mês` });
+  stats.push({ rot: 'Retorno real a.a.', val: formatPct(doc.retornoRealEsperado), tom: 'ember' });
 
   return (
     <main className="pf-dash">
@@ -127,22 +142,10 @@ export function Dashboard() {
         {/* Coluna esquerda: números + evolução */}
         <div style={{ display: 'grid', gap: 'var(--space-4)', alignContent: 'start' }}>
           <div className="pf-stats">
-            <Stat rot="Número FIRE" val={formatBRLcompact(doc.metaFire)} />
-            <Stat rot="Renda ao atingir" val={`${formatBRLcompact(plano.saqueMensalSustentavel)}/mês`} tom="mint" />
-            {ultimo ? (
-              <>
-                <Stat rot="Taxa de poupança" val={formatPct(ultimo.taxaPoupanca)} tom="mint" />
-                <Stat rot="Aporte mensal" val={`${formatBRLcompact(doc.aporteMensal)}/mês`} />
-              </>
-            ) : (
-              <>
-                <Stat rot="Aporte mensal" val={`${formatBRLcompact(doc.aporteMensal)}/mês`} />
-                <Stat rot="Retorno real a.a." val={formatPct(doc.retornoRealEsperado)} tom="ember" />
-              </>
-            )}
+            {stats.map((s) => (
+              <Stat key={s.rot} rot={s.rot} val={s.val} tom={s.tom} />
+            ))}
           </div>
-
-          {ultimo && <Stat rot="Retorno real a.a." val={formatPct(doc.retornoRealEsperado)} tom="ember" />}
 
           {lista.length >= 1 && (
             <section className="pf-hero-card">

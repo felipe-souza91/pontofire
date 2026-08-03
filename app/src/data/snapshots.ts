@@ -19,6 +19,7 @@ export interface Snapshot {
   aportesMes: number; // derivado: receita − gasto (sobra investida)
   rendimentosMes: number; // derivado por marcação a mercado
   taxaPoupanca: number; // derivado: (receita − gasto)/receita
+  rendaPassiva?: number; // soma das transações do tipo passiva (modo detalhado) → R
 }
 
 function mesesRef(uid: string) {
@@ -29,6 +30,15 @@ export async function salvarSnapshot(uid: string, snap: Snapshot): Promise<void>
   await setDoc(
     doc(db, 'snapshots', uid, 'meses', snap.mes),
     { ...snap, atualizadoEm: serverTimestamp() },
+    { merge: true },
+  );
+}
+
+/** Atualização parcial de um snapshot (ex.: gravar rendaPassiva derivada). */
+export async function atualizarSnapshot(uid: string, mes: string, patch: Partial<Snapshot>): Promise<void> {
+  await setDoc(
+    doc(db, 'snapshots', uid, 'meses', mes),
+    { ...patch, atualizadoEm: serverTimestamp() },
     { merge: true },
   );
 }

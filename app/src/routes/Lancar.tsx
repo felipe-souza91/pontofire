@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { rendimentoMes, taxaPoupanca } from '@pontofire/engine';
 import { useAuth } from '../auth/useAuth';
 import { useSnapshots } from '../hooks/useSnapshots';
@@ -130,31 +130,41 @@ export function Lancar() {
         {salvando ? 'Salvando…' : lista.some((s) => s.mes === mes) ? 'Atualizar mês' : 'Salvar mês'}
       </button>
 
+      {lista.some((s) => s.mes === mes) && (
+        <div style={{ textAlign: 'center', marginTop: 'var(--space-3)' }}>
+          <Link className="pf-btn-link" to={`/detalhar/${mes}`}>Detalhar este mês por categoria →</Link>
+        </div>
+      )}
+
       {lista.length > 0 && (
         <section style={{ marginTop: 'var(--space-8)' }}>
           <p className="pf-eyebrow" style={{ marginBottom: 'var(--space-3)' }}>Meses lançados</p>
           <div style={{ display: 'grid', gap: 'var(--space-2)' }}>
             {[...lista].reverse().map((s) => (
-              <button
+              <div
                 key={s.mes}
-                type="button"
-                onClick={() => setMes(s.mes)}
                 className="pf-stat"
                 style={{
-                  cursor: 'pointer',
                   display: 'flex',
-                  justifyContent: 'space-between',
                   alignItems: 'center',
                   gap: 'var(--space-3)',
                   padding: 'var(--space-3) var(--space-4)',
                   borderColor: s.mes === mes ? 'var(--ember)' : 'var(--line)',
                 }}
               >
-                <span style={{ textTransform: 'capitalize' }}>{formatMesAno(new Date(`${s.mes}-01T00:00:00`))}</span>
-                <span className="mono" style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setMes(s.mes)}
+                  className="pf-btn-link"
+                  style={{ flex: 1, textAlign: 'left', padding: 0, color: 'var(--paper)', textTransform: 'capitalize', textDecoration: 'none' }}
+                >
+                  {formatMesAno(new Date(`${s.mes}-01T00:00:00`))}
+                </button>
+                <span className="mono" style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>
                   {formatBRLcompact(s.patrimonioTotal)} · {formatPct(s.taxaPoupanca)}
                 </span>
-              </button>
+                <Link className="pf-btn-link" style={{ padding: 0 }} to={`/detalhar/${s.mes}`}>detalhar</Link>
+              </div>
             ))}
           </div>
           <p className="pf-hint" style={{ marginTop: 'var(--space-2)' }}>Toque num mês pra editar.</p>
