@@ -17,6 +17,12 @@ import type { Snapshot } from '../data/snapshots';
 import { Flame } from '../theme/Flame';
 import { formatBRLcompact, formatDuracao, formatMesAno, formatPct } from '../utils/format';
 
+const MESES_ABREV = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+function mesCurto(m: string): string {
+  const [ano, mm] = m.split('-');
+  return `${MESES_ABREV[parseInt(mm ?? '1', 10) - 1]}/${(ano ?? '').slice(2)}`;
+}
+
 function idadeDe(dataNascimento?: string): number | undefined {
   if (!dataNascimento) return undefined;
   const d = new Date(dataNascimento);
@@ -146,7 +152,11 @@ export function Dashboard() {
                   <p className="pf-hc-sub" style={{ marginTop: 'var(--space-2)', marginBottom: 0 }}>
                     {lista.length} meses lançados
                   </p>
-                  <GraficoEvolucao lista={lista} meta={doc.metaFire} />
+                  <GraficoEvolucao lista={lista} />
+                  <div className="pf-bar-row">
+                    <span>{mesCurto(lista[0]!.mes)} · {formatBRLcompact(lista[0]!.patrimonioTotal)}</span>
+                    <span>{mesCurto(lista[lista.length - 1]!.mes)} · {formatBRLcompact(lista[lista.length - 1]!.patrimonioTotal)}</span>
+                  </div>
                 </>
               ) : (
                 <p className="pf-hc-sub" style={{ marginTop: 'var(--space-2)', marginBottom: 0 }}>
@@ -343,26 +353,30 @@ function GraficoProjecao({ P, A, i, M, meses }: { P: number; A: number; i: numbe
   );
 }
 
-function GraficoEvolucao({ lista, meta }: { lista: Snapshot[]; meta: number }) {
+function GraficoEvolucao({ lista }: { lista: Snapshot[] }) {
   const w = 100;
   const h = 42;
   const n = lista.length;
-  const maxV = Math.max(meta, ...lista.map((s) => s.patrimonioTotal)) * 1.02;
+  const vals = lista.map((s) => s.patrimonioTotal);
+  const min = Math.min(...vals);
+  const max = Math.max(...vals);
+  // escala nos PRÓPRIOS dados (com folga) para o movimento aparecer
+  const span = max - min || max || 1;
+  const lo = min - span * 0.18;
+  const hi = max + span * 0.18;
   const x = (i: number) => (i / (n - 1)) * w;
-  const y = (v: number) => h - (v / maxV) * h;
+  const y = (v: number) => h - ((v - lo) / (hi - lo)) * h;
   const pts = lista.map((s, i) => `${i ? 'L' : 'M'} ${x(i).toFixed(2)} ${y(s.patrimonioTotal).toFixed(2)}`).join(' ');
   const area = `${pts} L ${w} ${h} L 0 ${h} Z`;
-  const metaY = y(meta);
 
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ width: '100%', height: '130px', marginTop: 'var(--space-3)', display: 'block' }} aria-hidden>
+    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ width: '100%', height: '120px', marginTop: 'var(--space-3)', display: 'block' }} aria-hidden>
       <defs>
         <linearGradient id="pf-evo" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#3FD69B" stopOpacity="0.26" />
           <stop offset="1" stopColor="#3FD69B" stopOpacity="0" />
         </linearGradient>
       </defs>
-      <line x1="0" y1={metaY} x2={w} y2={metaY} stroke="#3FD69B" strokeWidth="1" strokeDasharray="2 2" vectorEffect="non-scaling-stroke" opacity="0.4" />
       <path d={area} fill="url(#pf-evo)" />
       <path d={pts} fill="none" stroke="#3FD69B" strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
     </svg>

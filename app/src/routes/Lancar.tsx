@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { rendimentoMes, taxaPoupanca } from '@pontofire/engine';
 import { useAuth } from '../auth/useAuth';
 import { useSnapshots } from '../hooks/useSnapshots';
 import { salvarSnapshot } from '../data/snapshots';
 import { MoedaInput } from '../components/MoedaInput';
-import { formatBRL, formatMesAno, formatPct } from '../utils/format';
+import { formatBRL, formatBRLcompact, formatMesAno, formatPct } from '../utils/format';
 
 function mesCorrente(): string {
   const d = new Date();
@@ -23,6 +23,20 @@ export function Lancar() {
   const [despesa, setDespesa] = useState(0);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+
+  // ao escolher um mês, carrega o que já foi lançado (ou zera, se for novo)
+  useEffect(() => {
+    const existente = lista.find((s) => s.mes === mes);
+    if (existente) {
+      setPatrimonio(existente.patrimonioTotal);
+      setReceita(existente.receitaLiquida);
+      setDespesa(existente.gastoTotal);
+    } else {
+      setPatrimonio(0);
+      setReceita(0);
+      setDespesa(0);
+    }
+  }, [mes, lista]);
 
   // patrimônio do mês anterior (maior mês < selecionado) → deriva o rendimento
   const anterior = useMemo(() => {
@@ -113,8 +127,39 @@ export function Lancar() {
       {erro && <p className="pf-error">{erro}</p>}
 
       <button className="pf-btn pf-btn-primary" style={{ marginTop: 'var(--space-6)' }} disabled={!valido || salvando} onClick={() => void salvar()}>
-        {salvando ? 'Salvando…' : 'Salvar mês'}
+        {salvando ? 'Salvando…' : lista.some((s) => s.mes === mes) ? 'Atualizar mês' : 'Salvar mês'}
       </button>
+
+      {lista.length > 0 && (
+        <section style={{ marginTop: 'var(--space-8)' }}>
+          <p className="pf-eyebrow" style={{ marginBottom: 'var(--space-3)' }}>Meses lançados</p>
+          <div style={{ display: 'grid', gap: 'var(--space-2)' }}>
+            {[...lista].reverse().map((s) => (
+              <button
+                key={s.mes}
+                type="button"
+                onClick={() => setMes(s.mes)}
+                className="pf-stat"
+                style={{
+                  cursor: 'pointer',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: 'var(--space-3)',
+                  padding: 'var(--space-3) var(--space-4)',
+                  borderColor: s.mes === mes ? 'var(--ember)' : 'var(--line)',
+                }}
+              >
+                <span style={{ textTransform: 'capitalize' }}>{formatMesAno(new Date(`${s.mes}-01T00:00:00`))}</span>
+                <span className="mono" style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>
+                  {formatBRLcompact(s.patrimonioTotal)} · {formatPct(s.taxaPoupanca)}
+                </span>
+              </button>
+            ))}
+          </div>
+          <p className="pf-hint" style={{ marginTop: 'var(--space-2)' }}>Toque num mês pra editar.</p>
+        </section>
+      )}
     </main>
   );
 }
