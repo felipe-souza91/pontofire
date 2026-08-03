@@ -125,6 +125,12 @@ bem (downsize):** vender casa/bem e liberar equity → parte do valor vira inves
 ## Pendências de input do dono (não travam o design; necessárias na implementação)
 - Preço do Pro (a testar). · `messagingSenderId` + VAPID key. · Confirmar código INPC no SGS.
 
+## Limitações conhecidas (monitorar no beta)
+- **App Check em aba anônima / cookies de 3º bloqueados:** o reCAPTCHA Enterprise falha (403
+  `appCheck/initial-throttle`) → com Firestore *enforced*, app e painel não carregam. Funciona
+  normal em aba comum. Fatia pequena de usuários, mas real — avaliar tela amigável ou revisão do
+  modo do App Check se incomodar.
+
 ## Verificação
 - **Motor:** testes unitários cobrindo edge cases (i≈0, inalcançável, P≥M, real↔nominal).
 - **Importador:** fixtures OFX/CSV anonimizados; caso fatura×extrato não duplica.

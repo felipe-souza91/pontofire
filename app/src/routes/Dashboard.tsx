@@ -6,6 +6,7 @@ import {
   impactoAporteExtra,
   jaEhCoastFire,
   patrimonioCoast,
+  resumoPatrimonio,
   valorFuturo,
   type ParametrosFire,
   type PlanoFire,
@@ -13,6 +14,7 @@ import {
 import { useAuth } from '../auth/useAuth';
 import { useUserDoc } from '../hooks/useUserDoc';
 import { useSnapshots } from '../hooks/useSnapshots';
+import { useAssets } from '../hooks/useAssets';
 import type { UserDoc } from '../data/types';
 import type { Snapshot } from '../data/snapshots';
 import { Flame } from '../theme/Flame';
@@ -39,15 +41,19 @@ export function Dashboard() {
   const { user, sair } = useAuth();
   const { doc, carregando } = useUserDoc(user?.uid ?? null);
   const { lista } = useSnapshots(user?.uid ?? null);
+  const { lista: bens } = useAssets(user?.uid ?? null);
 
   // patrimônio atual = último snapshot lançado; senão, o do onboarding
   const ultimo = lista.length ? lista[lista.length - 1]! : null;
+  const resumoBens = useMemo(() => resumoPatrimonio(bens), [bens]);
 
   const plano = useMemo(() => {
     if (!doc) return null;
-    const P = ultimo ? ultimo.patrimonioTotal : doc.patrimonioInicial;
+    const pBase = ultimo ? ultimo.patrimonioTotal : doc.patrimonioInicial;
+    // base do FIRE = investido + bens marcados "incluir no FIRE"
+    const pFire = pBase + resumoBens.patrimonioInvestivel;
     return calcularPlanoFire({
-      patrimonioInvestivel: P,
+      patrimonioInvestivel: pFire,
       aporteMensal: doc.aporteMensal,
       custoVidaMensal: doc.custoVidaMensal,
       retornoRealAnual: doc.retornoRealEsperado,
@@ -56,13 +62,16 @@ export function Dashboard() {
       idadeAtual: idadeDe(doc.dataNascimento),
       hoje: new Date(),
     });
-  }, [doc, ultimo]);
+  }, [doc, ultimo, resumoBens]);
 
   if (carregando) return <Centro>Carregando…</Centro>;
   if (!doc || !plano) return <Centro>Sem dados ainda.</Centro>;
 
-  const P = ultimo ? ultimo.patrimonioTotal : doc.patrimonioInicial;
-  const R = ultimo?.rendaPassiva ?? 0;
+  const pBase = ultimo ? ultimo.patrimonioTotal : doc.patrimonioInicial;
+  const P = pBase + resumoBens.patrimonioInvestivel; // base do FIRE
+  const netWorth = pBase + resumoBens.patrimonioLiquidoTotal; // patrimônio líquido total
+  // renda passiva = detalhado (transações passiva) + aluguéis dos bens
+  const R = (ultimo?.rendaPassiva ?? 0) + resumoBens.rendaPassivaBens;
   const saudacao = doc.apelido || doc.nome?.split(' ')[0] || 'você';
   const progressoPct = Math.min(100, Math.max(0, plano.progresso * 100));
 
@@ -72,11 +81,14 @@ export function Dashboard() {
     { rot: 'Número FIRE', val: formatBRLcompact(doc.metaFire) },
     { rot: 'Renda ao atingir', val: `${formatBRLcompact(plano.saqueMensalSustentavel)}/mês`, tom: 'mint' },
   ];
+  if (bens.length > 0) {
+    stats.push({ rot: 'Patrimônio líquido', val: formatBRLcompact(netWorth), tom: 'mint' });
+  }
   if (ultimo) {
     stats.push({ rot: 'Taxa de poupança', val: formatPct(ultimo.taxaPoupanca), tom: 'mint' });
-    if (R > 0) {
-      stats.push({ rot: 'Cobertura passiva', val: formatPct(coberturaPassiva(R, doc.custoVidaMensal)), tom: 'mint' });
-    }
+  }
+  if (R > 0) {
+    stats.push({ rot: 'Cobertura passiva', val: formatPct(coberturaPassiva(R, doc.custoVidaMensal)), tom: 'mint' });
   }
   stats.push({ rot: 'Aporte mensal', val: `${formatBRLcompact(doc.aporteMensal)}/mês` });
   stats.push({ rot: 'Retorno real a.a.', val: formatPct(doc.retornoRealEsperado), tom: 'ember' });
@@ -90,6 +102,7 @@ export function Dashboard() {
         <strong className="mono" style={{ flex: 1, letterSpacing: '-0.01em' }}>Ponto FIRE</strong>
         <span className="pf-pill">beta fechado</span>
         <Link className="pf-btn-link" to="/lancar">Lançar</Link>
+        <Link className="pf-btn-link" to="/bens">Bens</Link>
         <Link className="pf-btn-link" to="/perfil">Perfil</Link>
         <button className="pf-btn-link" onClick={() => void sair()}>Sair</button>
       </header>

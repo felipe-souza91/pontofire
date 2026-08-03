@@ -7,6 +7,7 @@ import { Dashboard } from './routes/Dashboard';
 import { Perfil } from './routes/Perfil';
 import { Lancar } from './routes/Lancar';
 import { Detalhar } from './routes/Detalhar';
+import { Bens } from './routes/Bens';
 import { Flame } from './theme/Flame';
 
 /** Tela de carregamento — chama "queimando". */
@@ -89,6 +90,10 @@ function RotasLogado({ uid }: { uid: string }) {
       <Route
         path="/detalhar/:mes"
         element={precisaOnboarding ? <Navigate to="/onboarding" replace /> : <Detalhar />}
+      />
+      <Route
+        path="/bens"
+        element={precisaOnboarding ? <Navigate to="/onboarding" replace /> : <Bens />}
       />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
