@@ -113,8 +113,16 @@ firebase.json  firestore.rules  firestore.indexes.json  .firebaserc
   à vista×parcelado) + versões no app.
 - **M10 — Monetização (gate desligado):** extensão Stripe; entitlement `plano`; gating de features
   (beta = tudo liberado).
-- **M11 — Polish/QA:** PWA offline, export de dados (LGPD), acessibilidade/`prefers-reduced-motion`,
+- **M11 — Polish/QA:** PWA offline, export de dados (LGPD), **excluir conta + todos os dados (LGPD)**,
+  **resetar dados** (limpa lançamentos e reinicia onboarding), acessibilidade/`prefers-reduced-motion`,
   responsivo, deploy.
+  - *Excluir conta (LGPD — requisito legal antes do beta público):* apagar tudo sob o `uid`
+    (`users`, `snapshots/*/meses`, `transactions/*/itens`, `assets/*/itens`, `goals`, `achievements`,
+    `invites`, `feedback` do usuário) **+** a conta no Auth. Subcoleções exigem **delete recursivo**
+    (iterar no client, ou Cloud Function com Admin SDK `recursiveDelete`); `deleteUser` exige **login
+    recente** (reautenticar) ou uma Function admin. Confirmar com dupla confirmação (digitar EXCLUIR).
+  - *Resetar dados:* apaga `snapshots`/`transactions`/`assets` (mantém a conta) e zera
+    `onboardingCompleto`/`onboardingNivel` → cai de volta no onboarding. Mais leve que excluir.
 
 ## Fase 2 / Backlog (fora do MVP)
 Simulador "e se", goal-seek (motor reverso), Monte Carlo/faixa de confiança, "suas alavancas",
