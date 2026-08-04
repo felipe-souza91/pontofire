@@ -51,7 +51,7 @@ export const CONQUISTAS: Conquista[] = [
     id: 'um-ano',
     titulo: 'Um ano de história',
     descricao: 'Doze meses registrados — dá pra ver tendência de verdade.',
-    icone: '🗓️',
+    icone: '📅',
     ordem: 30,
     atingida: (c) => c.snapshots.length >= 12,
   },
@@ -107,7 +107,7 @@ export const CONQUISTAS: Conquista[] = [
     id: 'progresso-25',
     titulo: 'Um quarto',
     descricao: '25% do seu número FIRE.',
-    icone: '🧭',
+    icone: '⛺',
     ordem: 100,
     atingida: (c) => c.progresso >= 0.25,
   },
@@ -155,7 +155,7 @@ export const CONQUISTAS: Conquista[] = [
     id: 'coast-fire',
     titulo: 'CoastFIRE',
     descricao: 'Pode parar de aportar hoje e ainda chega à meta só com juros.',
-    icone: '🛟',
+    icone: '⛵',
     ordem: 160,
     atingida: (c) => {
       if (c.idadeAlvo === undefined || c.idadeAtual === undefined) return false;

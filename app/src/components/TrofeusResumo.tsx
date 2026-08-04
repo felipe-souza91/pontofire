@@ -19,11 +19,13 @@ export function TrofeusResumo({ ids }: { ids: Set<string> }) {
     <Link
       to="/conquistas"
       className="pf-trofeus"
-      title={`${lista.length} conquistas — ver todas`}
       aria-label={`${lista.length} conquistas desbloqueadas. Ver todas.`}
     >
+      <span className="mono rot">
+        {lista.length} {lista.length === 1 ? 'conquista' : 'conquistas'}
+      </span>
       {visiveis.map((c) => (
-        <span key={c.id} title={`${c.titulo} — ${c.descricao}`} aria-hidden>
+        <span key={c.id} className="medalha" title={`${c.titulo} — ${c.descricao}`}>
           {c.icone}
         </span>
       ))}

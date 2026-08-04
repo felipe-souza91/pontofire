@@ -95,6 +95,7 @@ export function Dashboard() {
         }}
       >
         <span className="pf-eyebrow">Olá, {saudacao}</span>
+        <span style={{ flex: 1 }} />
         <TrofeusResumo ids={trofeus} />
       </div>
 
