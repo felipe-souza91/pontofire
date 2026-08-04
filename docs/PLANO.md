@@ -133,6 +133,16 @@ bem (downsize):** vender casa/bem e liberar equity → parte do valor vira inves
 ## Pendências de input do dono (não travam o design; necessárias na implementação)
 - Preço do Pro (a testar). · `messagingSenderId` + VAPID key. · Confirmar código INPC no SGS.
 
+## Depende do plano Blaze (pendente — projeto ainda no Spark)
+Cloud Functions exigem Blaze. **Não esquecer desta evolução.** O que fica esperando:
+- **M6 — cron diário BACEN → `indicadores`** (hoje resolvido *client-side cacheado*, alternativa
+  prevista no §9; migrar para a function quando houver Blaze: tira a chamada do client, centraliza
+  cache e habilita histórico).
+- **M7 — push (FCM)**: digest semanal e eventos precisam de function agendada.
+- **M10 — webhook do Stripe** (extensão Firebase também exige Blaze).
+- **M11 — exclusão de conta (LGPD)**: `recursiveDelete` no Admin SDK seria o caminho limpo; sem
+  Blaze, dá pra fazer no client (mais lento e sem garantia atômica).
+
 ## Limitações conhecidas (monitorar no beta)
 - **App Check em aba anônima / cookies de 3º bloqueados:** o reCAPTCHA Enterprise falha (403
   `appCheck/initial-throttle`) → com Firestore *enforced*, app e painel não carregam. Funciona

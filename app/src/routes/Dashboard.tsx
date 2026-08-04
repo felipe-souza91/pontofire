@@ -19,6 +19,7 @@ import type { UserDoc } from '../data/types';
 import type { Snapshot } from '../data/snapshots';
 import { Flame } from '../theme/Flame';
 import { CardINSS } from '../components/CardINSS';
+import { CardEconomico } from '../components/CardEconomico';
 import { formatBRLcompact, formatDuracao, formatMesAno, formatPct } from '../utils/format';
 
 const MESES_ABREV = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
@@ -198,6 +199,7 @@ export function Dashboard() {
           </div>
           <Coast doc={doc} plano={plano} P={P} />
           <CardINSS doc={doc} plano={plano} />
+          <CardEconomico doc={doc} />
           {doc.retornoRealEsperado > 0.07 && (
             <p className="pf-hint" style={{ margin: 0 }}>
               ⚠️ {formatPct(doc.retornoRealEsperado)} de retorno real ao ano é otimista — no Brasil o
