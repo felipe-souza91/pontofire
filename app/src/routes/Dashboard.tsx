@@ -3,12 +3,10 @@ import { Link } from 'react-router-dom';
 import {
   calcularPlanoFire,
   coberturaPassiva,
-  impactoAporteExtra,
   jaEhCoastFire,
   patrimonioCoast,
   resumoPatrimonio,
   valorFuturo,
-  type ParametrosFire,
   type PlanoFire,
 } from '@pontofire/engine';
 import { useAuth } from '../auth/useAuth';
@@ -18,8 +16,11 @@ import { useAssets } from '../hooks/useAssets';
 import type { UserDoc } from '../data/types';
 import type { Snapshot } from '../data/snapshots';
 import { Flame } from '../theme/Flame';
+import { gerarInsights } from '@pontofire/insights';
 import { CardINSS } from '../components/CardINSS';
 import { CardEconomico } from '../components/CardEconomico';
+import { CardsInsights } from '../components/CardsInsights';
+import { useTransactions } from '../hooks/useTransactions';
 import { formatBRLcompact, formatDuracao, formatMesAno, formatPct } from '../utils/format';
 
 const MESES_ABREV = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
@@ -47,6 +48,7 @@ export function Dashboard() {
 
   // patrimônio atual = último snapshot lançado; senão, o do onboarding
   const ultimo = lista.length ? lista[lista.length - 1]! : null;
+  const { lista: transacoesMes } = useTransactions(user?.uid ?? null, ultimo?.mes ?? '');
   const resumoBens = useMemo(() => resumoPatrimonio(bens), [bens]);
 
   const plano = useMemo(() => {
@@ -78,6 +80,36 @@ export function Dashboard() {
   const progressoPct = Math.min(100, Math.max(0, plano.progresso * 100));
 
   const mostraProjecao = plano.status === 'ok' && plano.meses !== null;
+
+  // assistente (§7): catálogo de regras determinístico
+  const temCardCoast = !!doc.idadeAlvo && idadeDe(doc.dataNascimento) !== undefined;
+  const insights = gerarInsights(
+    {
+      apelido: doc.apelido || doc.nome?.split(' ')[0],
+      nomeSonho: doc.nomeSonho,
+      porQues: doc.porQues,
+      custoVidaMensal: doc.custoVidaMensal,
+      metaFire: doc.metaFire,
+      aporteMensal: doc.aporteMensal,
+      iMensal: plano.iMensal,
+      patrimonioAtual: P,
+      progresso: plano.progresso,
+      coberturaPassiva: doc.custoVidaMensal > 0 ? R / doc.custoVidaMensal : 0,
+      mesesAteFire: plano.meses,
+      statusFire: plano.status,
+      idadeAlvo: doc.idadeAlvo,
+      idadeAtual: idadeDe(doc.dataNascimento),
+      snapshots: lista,
+      transacoesMes,
+    },
+    {
+      moeda: (v) => formatBRLcompact(v),
+      duracao: (m) => formatDuracao(m),
+      pct: (v) => formatPct(v, 0),
+    },
+    // o Coast já tem card dedicado; não repetir a mesma notícia
+    { limite: 4, excluir: temCardCoast ? ['coast-atingido'] : [] },
+  );
 
   const stats: { rot: string; val: string; tom?: 'mint' | 'ember' }[] = [
     { rot: 'Número FIRE', val: formatBRLcompact(doc.metaFire) },
@@ -194,9 +226,7 @@ export function Dashboard() {
               <GraficoProjecao P={P} A={doc.aporteMensal} i={plano.iMensal} M={doc.metaFire} meses={plano.meses!} />
             </section>
           )}
-          <div className="pf-insight">
-            <Insight doc={doc} plano={plano} P={P} />
-          </div>
+          <CardsInsights insights={insights} />
           <Coast doc={doc} plano={plano} P={P} />
           <CardINSS doc={doc} plano={plano} />
           <CardEconomico doc={doc} />
@@ -235,63 +265,6 @@ function Stat({ rot, val, tom }: { rot: string; val: string; tom?: 'mint' | 'emb
       <div className="rot">{rot}</div>
       <div className={`val ${tom ?? ''}`}>{val}</div>
     </div>
-  );
-}
-
-function juntar(itens: string[]): string {
-  const l = itens.map((s) => s.toLowerCase());
-  if (l.length === 0) return '';
-  if (l.length === 1) return l[0]!;
-  return `${l.slice(0, -1).join(', ')} e ${l[l.length - 1]}`;
-}
-
-function Insight({ doc, plano, P }: { doc: UserDoc; plano: PlanoFire; P: number }) {
-  const nome = doc.apelido || doc.nome?.split(' ')[0];
-
-  if (plano.status === 'atingido') {
-    return (
-      <p style={{ margin: 0 }}>
-        Seus rendimentos já sustentam seu custo de vida{nome ? `, ${nome}` : ''}. Você pode parar
-        quando quiser. 🔥
-      </p>
-    );
-  }
-
-  const base: ParametrosFire = { P, A: doc.aporteMensal, i: plano.iMensal, M: doc.metaFire };
-  const imp = impactoAporteExtra(base, 500);
-
-  const abertura =
-    plano.status === 'ok' && plano.meses !== null ? (
-      <>
-        Faltam <span className="hl">{formatDuracao(plano.meses)}</span>
-        {doc.nomeSonho ? (
-          <>
-            {' '}pro seu <span className="hl">{doc.nomeSonho}</span>
-          </>
-        ) : (
-          ' pra sua liberdade'
-        )}
-        {nome ? `, ${nome}` : ''}.
-        {doc.porQues && doc.porQues.length > 0 ? <> Por trás disso: {juntar(doc.porQues)}.</> : null}{' '}
-      </>
-    ) : null;
-
-  if (imp.deltaMeses !== null && imp.deltaMeses > 0.5) {
-    return (
-      <p style={{ margin: 0 }}>
-        {abertura}
-        Investir <span className="hl">R$ 500 a mais</span> por mês adianta isso em{' '}
-        <span className="hl">{formatDuracao(imp.deltaMeses)}</span> — a alavanca real é o aporte e o
-        retorno, não os microcortes.
-      </p>
-    );
-  }
-
-  return (
-    <p style={{ margin: 0 }}>
-      {abertura}
-      Com o aporte atual a meta não fecha. Aumentar quanto você investe por mês é o que muda a data.
-    </p>
   );
 }
 
