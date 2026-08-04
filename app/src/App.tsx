@@ -9,6 +9,7 @@ import { Lancar } from './routes/Lancar';
 import { Detalhar } from './routes/Detalhar';
 import { Bens } from './routes/Bens';
 import { Conquistas } from './routes/Conquistas';
+import { Ferramentas } from './routes/Ferramentas';
 import { BotaoFeedback } from './components/BotaoFeedback';
 import { Flame } from './theme/Flame';
 
@@ -99,6 +100,10 @@ function RotasLogado({ uid }: { uid: string }) {
       <Route
         path="/bens"
         element={precisaOnboarding ? <Navigate to="/onboarding" replace /> : <Bens />}
+      />
+      <Route
+        path="/ferramentas"
+        element={precisaOnboarding ? <Navigate to="/onboarding" replace /> : <Ferramentas />}
       />
       <Route
         path="/conquistas"

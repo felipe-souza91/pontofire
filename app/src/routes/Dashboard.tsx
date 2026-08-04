@@ -81,6 +81,7 @@ export function Dashboard() {
         <Link className="pf-btn-link" to="/lancar">Lançar</Link>
         <Link className="pf-btn-link" to="/bens">Bens</Link>
         <Link className="pf-btn-link" to="/conquistas">Conquistas</Link>
+        <Link className="pf-btn-link" to="/ferramentas">Ferramentas</Link>
         <Link className="pf-btn-link" to="/perfil">Perfil</Link>
         <button className="pf-btn-link" onClick={() => void sair()}>Sair</button>
       </header>

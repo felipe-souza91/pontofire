@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Álcool ou Gasolina? Calculadora — Ponto FIRE</title>
+<meta name="description" content="Descubra na hora se compensa abastecer com álcool ou gasolina. Com a regra dos 70% ou o consumo real do seu carro.">
+<link rel="canonical" href="https://pontofire.com.br/ferramentas/alcool-ou-gasolina.html">
+<meta property="og:title" content="Álcool ou Gasolina? Calculadora — Ponto FIRE">
+<meta property="og:description" content="Descubra na hora se compensa abastecer com álcool ou gasolina. Com a regra dos 70% ou o consumo real do seu carro.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://pontofire.com.br/ferramentas/alcool-ou-gasolina.html">
+<meta property="og:image" content="https://pontofire.com.br/preview.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Instrument+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/ferramentas/ferramentas.css">
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <a class="logo" href="/"><svg width="22" height="27" viewBox="0 0 100 126" aria-hidden><defs><linearGradient id="fl" x1="50" y1="6" x2="50" y2="120" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFB27A"/><stop offset=".55" stop-color="#FF7A45"/><stop offset="1" stop-color="#E85A2A"/></linearGradient></defs><path d="M50 6 C 47 34, 73 42, 73 76 C 73 101, 61 120, 50 120 C 39 120, 27 103, 27 78 C 27 59, 44 53, 45 30 C 45.5 21, 48 12, 50 6 Z" fill="url(#fl)"/><path d="M53 52 C 51 67, 62 71, 62 87 C 62 101, 55 111, 49 111 C 43 111, 38 102, 38 91 C 38 81, 47 77, 47 65 C 47 60, 51 55, 53 52 Z" fill="#FFD9B8"/></svg> Ponto FIRE</a>
+    <a class="logo" style="font-size:13px;font-family:var(--mono);color:var(--muted)" href="/ferramentas/">ferramentas</a>
+  </nav>
+
+  <p class="eyebrow">ferramenta gratuita</p>
+  <h1>Álcool ou gasolina?</h1>
+  <p class="lead">A regra dos 70% resolve na maioria dos casos — mas com o consumo do seu carro a resposta fica exata.</p>
+
+  <div class="card">
+    <div class="grid2">
+      <label><span>Preço do álcool (R$/litro)</span><input id="pa" inputmode="decimal" value="3,89"></label>
+      <label><span>Preço da gasolina (R$/litro)</span><input id="pg" inputmode="decimal" value="5,79"></label>
+    </div>
+    <p class="nota" style="margin-top:0">Sabe o consumo do seu carro? Preencha para uma resposta exata (opcional).</p>
+    <div class="grid2">
+      <label><span>Km/litro no álcool</span><input id="ka" inputmode="decimal" placeholder="opcional"></label>
+      <label><span>Km/litro na gasolina</span><input id="kg" inputmode="decimal" placeholder="opcional"></label>
+    </div>
+
+    <div class="res">
+      <div style="text-align:center">
+        <div style="color:var(--muted);font-size:14px">Compensa abastecer com</div>
+        <div class="destaque" id="vencedor">—</div>
+        <div style="color:var(--muted);font-size:14px" id="economia"></div>
+      </div>
+      <div style="margin-top:18px">
+        <div class="res-linha"><span>Razão álcool ÷ gasolina</span><span id="razao">—</span></div>
+        <div class="res-linha"><span>Limite do seu carro</span><span id="limite">—</span></div>
+      </div>
+      <p class="nota" id="nota"></p>
+    </div>
+  </div>
+
+  <div class="cta">
+    <h3>E a sua data de liberdade?</h3>
+    <p>O Ponto FIRE calcula, mês a mês, quando seus rendimentos passam a pagar sua vida.</p>
+    <a class="btn" href="/">Quero descobrir</a>
+  </div>
+
+  <footer>
+    <a href="/ferramentas/">Todas as ferramentas</a> · <a href="/">Ponto FIRE</a><br>
+    Conteúdo informativo — não é recomendação de investimento.
+  </footer>
+</div>
+<script type="module">
+import { compararCombustivel, pct, num } from '/ferramentas/calc.js';
+const $ = (id) => document.getElementById(id);
+function calc() {
+  const r = compararCombustivel(num($('pa')), num($('pg')), num($('ka')), num($('kg')));
+  const nomes = { alcool: 'Álcool', gasolina: 'Gasolina', empate: 'Tanto faz' };
+  $('vencedor').textContent = nomes[r.vencedor];
+  $('vencedor').style.color = r.vencedor === 'empate' ? 'var(--muted)' : 'var(--mint)';
+  $('economia').textContent = r.vencedor === 'empate' ? 'os dois custam o mesmo por km' : `economia de ${pct(r.economiaPct, 1)} por km rodado`;
+  $('razao').textContent = isFinite(r.razao) ? r.razao.toFixed(3).replace('.', ',') : '—';
+  $('limite').textContent = r.limite.toFixed(2).replace('.', ',');
+  const custom = num($('ka')) > 0 && num($('kg')) > 0;
+  $('nota').textContent = custom
+    ? 'Cálculo com o consumo real do seu carro — mais preciso que a regra dos 70%.'
+    : 'Usamos a regra dos 70%: o álcool costuma render ~70% do que a gasolina rende. Informe o consumo do seu carro para precisão real.';
+}
+['pa','pg','ka','kg'].forEach(id => $(id).addEventListener('input', calc));
+calc();
+</script>
+</body>
+</html>

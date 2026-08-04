@@ -9,3 +9,4 @@ export * from './patrimonio';
 export * from './scenarios';
 export * from './plano';
 export * from './inss';
+export * from './calculadoras';
