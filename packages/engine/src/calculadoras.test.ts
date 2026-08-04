@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  compararCompra,
   anualParaMensal,
   calcularJuros,
   compararCombustivel,
@@ -92,6 +93,80 @@ describe('à vista × parcelado', () => {
     const r = compararParcelado(1000, 100, 10, 0);
     expect(r.valorPresente).toBe(1000);
     expect(r.melhor).toBe('avista'); // empate → não vale antecipar risco
+  });
+});
+
+describe('comparador completo de formas de pagamento', () => {
+  const base = {
+    precoAVista: 1000,
+    precoCartao: 1000,
+    maxParcelas: 12,
+    rendimentoMensal: 0.008,
+  };
+
+  it('lista PIX + cada quantidade de parcelas até o máximo', () => {
+    const r = compararCompra(base);
+    expect(r.opcoes).toHaveLength(13); // PIX + 1× a 12×
+    expect(r.opcoes.some((o) => o.id === 'pix')).toBe(true);
+    expect(r.opcoes.some((o) => o.id === 'cartao-12')).toBe(true);
+  });
+
+  it('sem desconto no PIX, parcelar no máximo ganha (dinheiro rendendo)', () => {
+    const r = compararCompra(base);
+    expect(r.melhor.id).toBe('cartao-12');
+    expect(r.pior.id).toBe('pix');
+    expect(r.economiaMaxima).toBeGreaterThan(0);
+  });
+
+  it('cartão à vista já ganha do PIX pelo float da fatura', () => {
+    const r = compararCompra(base);
+    const pix = r.opcoes.find((o) => o.id === 'pix')!;
+    const cartao1 = r.opcoes.find((o) => o.id === 'cartao-1')!;
+    expect(cartao1.custoHoje).toBeLessThan(pix.custoHoje);
+    // 1000 pago daqui a 1 mês a 0,8% ≈ 992,06 hoje
+    expect(cartao1.custoHoje).toBeCloseTo(1000 / 1.008, 2);
+  });
+
+  it('desconto no PIX pode virar o jogo', () => {
+    const r = compararCompra({ ...base, precoAVista: 880 }); // 12% de desconto
+    expect(r.melhor.id).toBe('pix');
+  });
+
+  it('parcelamento COM juros: o total no cartão é maior e o PIX ganha', () => {
+    const r = compararCompra({ ...base, precoCartao: 1300 });
+    expect(r.melhor.id).toBe('pix');
+    expect(r.taxaEmbutida).not.toBeNull();
+  });
+
+  it('cashback reduz o custo das opções no cartão', () => {
+    const sem = compararCompra(base);
+    const com = compararCompra({ ...base, cashback: 0.02 });
+    const c12sem = sem.opcoes.find((o) => o.id === 'cartao-12')!;
+    const c12com = com.opcoes.find((o) => o.id === 'cartao-12')!;
+    expect(c12com.custoHoje).toBeLessThan(c12sem.custoHoje);
+    expect(c12com.cashbackRecebido).toBeCloseTo(20, 6);
+    // o PIX não recebe cashback
+    expect(com.opcoes.find((o) => o.id === 'pix')!.cashbackRecebido).toBe(0);
+  });
+
+  it('mais parcelas nunca é pior quando o total no cartão é fixo', () => {
+    const r = compararCompra(base);
+    const cartoes = r.opcoes.filter((o) => o.parcelas > 0).sort((a, b) => a.parcelas - b.parcelas);
+    for (let k = 1; k < cartoes.length; k++) {
+      expect(cartoes[k]!.custoHoje).toBeLessThanOrEqual(cartoes[k - 1]!.custoHoje + 1e-9);
+    }
+  });
+
+  it('rendimento zero: sem float nem juros, PIX e cartão empatam pelo preço', () => {
+    const r = compararCompra({ ...base, rendimentoMensal: 0 });
+    expect(r.melhor.custoHoje).toBeCloseTo(1000, 6);
+    expect(r.economiaMaxima).toBeCloseTo(0, 6);
+  });
+
+  it('a diferença vs a melhor opção é sempre >= 0 e zero na primeira', () => {
+    const r = compararCompra({ ...base, cashback: 0.01 });
+    expect(r.opcoes[0]!.diferencaVsMelhor).toBe(0);
+    for (const o of r.opcoes) expect(o.diferencaVsMelhor).toBeGreaterThanOrEqual(0);
   });
 });
 

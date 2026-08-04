@@ -4,7 +4,7 @@ import {
   anualParaMensal,
   calcularJuros,
   compararCombustivel,
-  compararParcelado,
+  compararCompra,
 } from '@pontofire/engine';
 import { MoedaInput } from '../components/MoedaInput';
 import { Campo } from '../components/Campo';
@@ -162,75 +162,94 @@ function CalcCombustivel() {
 }
 
 function CalcParcelado() {
-  const [avista, setAvista] = useState(1000);
-  const [parcela, setParcela] = useState(100);
-  const [n, setN] = useState(12);
+  const [precoAVista, setPrecoAVista] = useState(1000);
+  const [precoCartao, setPrecoCartao] = useState(1000);
+  const [maxParcelas, setMaxParcelas] = useState(12);
   const [rendPct, setRendPct] = useState(0.8);
   const [cashbackPct, setCashbackPct] = useState(0);
-  const [aVistaNoCartao, setAVistaNoCartao] = useState(false);
 
-  const rend = rendPct / 100;
-  const r = compararParcelado(avista, parcela, n, rend, {
+  const r = compararCompra({
+    precoAVista,
+    precoCartao,
+    maxParcelas,
+    rendimentoMensal: rendPct / 100,
     cashback: cashbackPct / 100,
-    aVistaNoCartao,
   });
+
+  // mostra o PIX, a melhor e as vizinhas — sem despejar 12 linhas iguais
+  const destaques = r.opcoes.filter(
+    (o, idx) => o.id === 'pix' || idx < 3 || o.parcelas === 1 || o.parcelas === maxParcelas,
+  );
 
   return (
     <>
-      <Campo rotulo="Preço à vista">
-        <MoedaInput value={avista} onChange={setAvista} />
+      <Campo rotulo="Preço no PIX / dinheiro" dica="O preço à vista, já com o desconto que a loja der.">
+        <MoedaInput value={precoAVista} onChange={setPrecoAVista} />
       </Campo>
-      <Campo rotulo="Valor da parcela">
-        <MoedaInput value={parcela} onChange={setParcela} />
+      <Campo rotulo="Preço total no cartão" dica="O preço cheio, que será dividido nas parcelas. Se não houver desconto no PIX, é o mesmo valor.">
+        <MoedaInput value={precoCartao} onChange={setPrecoCartao} />
       </Campo>
-      <Campo rotulo="Número de parcelas">
-        <input className="pf-input pf-num" type="number" step={1} value={n} onChange={(e) => setN(Number(e.target.value))} />
+      <Campo rotulo="Número máximo de parcelas" dica="Até quantas vezes a loja parcela. Comparamos todas as quantidades.">
+        <input className="pf-input pf-num" type="number" min={1} max={48} step={1} value={maxParcelas} onChange={(e) => setMaxParcelas(Number(e.target.value))} />
       </Campo>
-      <Campo rotulo="Seu dinheiro rende (% ao mês)" dica="Quanto rende o dinheiro que ficaria no seu bolso se você parcelasse.">
+      <Campo rotulo="Seu dinheiro rende (% ao mês)" dica="Quanto rende o dinheiro que fica na sua conta enquanto você não paga.">
         <input className="pf-input pf-num" type="number" step={0.1} value={rendPct} onChange={(e) => setRendPct(Number(e.target.value))} />
       </Campo>
-      <Campo rotulo="Cashback do cartão (%)" opcional dica="O cashback volta junto de cada parcela e abate o custo real da compra.">
+      <Campo rotulo="Cashback do cartão (%)" opcional dica="Volta junto de cada parcela e abate o custo real. Não vale no PIX.">
         <input className="pf-input pf-num" type="number" step={0.1} min={0} value={cashbackPct || ''} onChange={(e) => setCashbackPct(Number(e.target.value))} />
       </Campo>
-      {cashbackPct > 0 && (
-        <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-4)', cursor: 'pointer' }}>
-          <input type="checkbox" checked={aVistaNoCartao} onChange={(e) => setAVistaNoCartao(e.target.checked)} />
-          <span>O preço à vista também é no cartão (não é PIX/dinheiro)</span>
-        </label>
-      )}
 
       <div className="pf-hero-card" style={{ marginTop: 'var(--space-4)' }}>
         <Destaque
-          rotulo="Melhor opção"
-          valor={r.melhor === 'parcelar' ? 'Parcelar' : 'Pagar à vista'}
-          sub={`vantagem de ${formatBRL(r.diferenca)} em valor de hoje`}
+          rotulo="Melhor forma de pagar"
+          valor={r.melhor.rotulo}
+          sub={
+            r.economiaMaxima > 0.005
+              ? `economia de ${formatBRL(r.economiaMaxima)} sobre a pior opção`
+              : 'todas as formas custam praticamente o mesmo'
+          }
         />
-        <Resultado rotulo="Total parcelado" valor={formatBRL(r.totalParcelado)} />
-        <Resultado rotulo="Acréscimo sobre o à vista" valor={r.acrescimo > 0 ? formatBRL(r.acrescimo) : 'sem acréscimo'} />
-        <Resultado
-          rotulo="Juros embutidos"
-          valor={r.taxaEmbutida === null ? 'sem juros' : `${formatPct(r.taxaEmbutida, 2)} a.m.`}
-          tom="ember"
-        />
-        {r.cashbackParcelado > 0 && (
-          <Resultado rotulo="Cashback parcelando" valor={`+${formatBRL(r.cashbackParcelado)}`} tom="mint" />
-        )}
-        {r.cashbackAVista > 0 && (
-          <Resultado rotulo="Cashback à vista" valor={`+${formatBRL(r.cashbackAVista)}`} tom="mint" />
-        )}
-        <Resultado rotulo="Custo à vista (líquido)" valor={formatBRL(r.custoAVista)} />
-        <Resultado rotulo="Parcelas em valor de hoje" valor={formatBRL(r.valorPresente)} />
-        {r.cashbackNeutro ? (
-          <p className="pf-hint">
-            Como o cashback incide nas duas opções, ele <strong>não muda a decisão</strong> — abate os
-            dois lados igualmente. Ele só vira desempate quando o preço à vista é PIX/dinheiro.
+
+        <div style={{ borderTop: '1px solid var(--line)', paddingTop: 'var(--space-3)' }}>
+          <p className="pf-eyebrow" style={{ marginBottom: 'var(--space-2)' }}>Custo em valor de hoje</p>
+          {destaques.map((o) => (
+            <div
+              key={o.id}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                gap: 'var(--space-3)',
+                padding: 'var(--space-2) 0',
+                color: o.id === r.melhor.id ? 'var(--mint)' : 'var(--paper)',
+              }}
+            >
+              <span>
+                {o.rotulo}
+                {o.parcelas > 1 && (
+                  <span className="pf-hint" style={{ margin: 0 }}> · {formatBRL(o.valorParcela)}/mês</span>
+                )}
+              </span>
+              <span className="mono">
+                {formatBRL(o.custoHoje)}
+                {o.diferencaVsMelhor > 0.005 && (
+                  <span style={{ color: 'var(--muted)', fontSize: '0.8em' }}> (+{formatBRL(o.diferencaVsMelhor)})</span>
+                )}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {r.taxaEmbutida !== null && (
+          <p className="pf-hint" style={{ marginTop: 'var(--space-3)', color: 'var(--ember-2)' }}>
+            O cartão custa mais caro que o PIX — são {formatPct(r.taxaEmbutida, 2)} a.m. de juros
+            embutidos no parcelamento.
           </p>
-        ) : (
-          <p className="pf-hint">
-            Parcelar só ganha se o dinheiro que fica no seu bolso — mais o cashback — superar os juros
-            embutidos.
-          </p>
         )}
+
+        <p className="pf-hint" style={{ marginTop: 'var(--space-3)' }}>
+          Consideramos que a 1ª cobrança do cartão cai daqui a ~1 mês: até lá o dinheiro rende na sua
+          conta. É por isso que o cartão à vista já leva vantagem sobre o PIX quando não há desconto.
+        </p>
       </div>
     </>
   );

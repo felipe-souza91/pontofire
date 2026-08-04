@@ -82,3 +82,38 @@ export const num = (el) => {
   const v = parseFloat(t);
   return Number.isFinite(v) ? v : 0;
 };
+
+export function compararCompra(e) {
+  const cb = Math.max(0, e.cashback || 0);
+  const i = e.rendimentoMensal;
+  const atraso = e.mesesAteFatura === undefined ? 1 : e.mesesAteFatura;
+  const precoCartao = e.precoCartao > 0 ? e.precoCartao : e.precoAVista;
+  const maxN = Math.max(1, Math.floor(e.maxParcelas || 1));
+  const desconta = (v, m) => (Math.abs(i) < 1e-12 ? v : v / Math.pow(1 + i, m));
+
+  const opcoes = [{
+    id: 'pix', rotulo: 'PIX / dinheiro à vista', parcelas: 0,
+    valorParcela: e.precoAVista, totalPago: e.precoAVista,
+    cashbackRecebido: 0, custoHoje: e.precoAVista, diferencaVsMelhor: 0,
+  }];
+  for (let k = 1; k <= maxN; k++) {
+    const parcela = precoCartao / k;
+    const liquida = parcela * (1 - cb);
+    let custoHoje = 0;
+    for (let j = 1; j <= k; j++) custoHoje += desconta(liquida, atraso + j - 1);
+    opcoes.push({
+      id: 'cartao-' + k,
+      rotulo: k === 1 ? 'Cartão à vista (1×)' : 'Cartão em ' + k + '×',
+      parcelas: k, valorParcela: parcela, totalPago: precoCartao,
+      cashbackRecebido: precoCartao * cb, custoHoje, diferencaVsMelhor: 0,
+    });
+  }
+  opcoes.sort((a, b) => a.custoHoje - b.custoHoje);
+  const melhor = opcoes[0], pior = opcoes[opcoes.length - 1];
+  opcoes.forEach(o => { o.diferencaVsMelhor = o.custoHoje - melhor.custoHoje; });
+  return {
+    opcoes, melhor, pior,
+    economiaMaxima: pior.custoHoje - melhor.custoHoje,
+    taxaEmbutida: precoCartao > e.precoAVista ? taxaEmbutida(e.precoAVista, precoCartao / maxN, maxN) : null,
+  };
+}

@@ -115,6 +115,112 @@ export function compararCombustivel(
 // À vista × parcelado
 // ---------------------------------------------------------------------------
 
+export interface EntradaCompra {
+  /** preço pagando no PIX/dinheiro hoje (costuma ter desconto) */
+  precoAVista: number;
+  /** preço TOTAL no cartão (à vista ou parcelado). Igual ao à vista = sem desconto no PIX */
+  precoCartao: number;
+  /** máximo de parcelas oferecido pela loja */
+  maxParcelas: number;
+  /** quanto SEU dinheiro rende ao mês (ex.: 0,008) */
+  rendimentoMensal: number;
+  /** cashback do cartão (ex.: 0,02) */
+  cashback?: number;
+  /**
+   * Meses até a 1ª cobrança do cartão cair (float da fatura). Default 1.
+   * É a vantagem real do cartão sobre o PIX: o dinheiro rende nesse meio-tempo.
+   */
+  mesesAteFatura?: number;
+}
+
+export interface OpcaoCompra {
+  id: string;
+  rotulo: string;
+  /** 0 = PIX/dinheiro */
+  parcelas: number;
+  valorParcela: number;
+  totalPago: number;
+  cashbackRecebido: number;
+  /** custo em VALOR DE HOJE — é isto que decide */
+  custoHoje: number;
+  /** quanto esta opção custa a mais que a melhor */
+  diferencaVsMelhor: number;
+}
+
+export interface ResultadoCompra {
+  /** todas as formas, da melhor (menor custo hoje) para a pior */
+  opcoes: OpcaoCompra[];
+  melhor: OpcaoCompra;
+  pior: OpcaoCompra;
+  /** diferença entre a melhor e a pior, em valor de hoje */
+  economiaMaxima: number;
+  /** juros embutidos no parcelamento cheio (null se o cartão não é mais caro) */
+  taxaEmbutida: number | null;
+}
+
+/**
+ * Compara TODAS as formas de pagamento: PIX à vista, cartão à vista e cada
+ * quantidade de parcelas até o máximo — tudo em valor presente.
+ *
+ * O cartão ganha "de graça" o float da fatura (você paga depois, o dinheiro
+ * rende até lá) e o cashback; o PIX ganha quando tem desconto.
+ */
+export function compararCompra(e: EntradaCompra): ResultadoCompra {
+  const cb = Math.max(0, e.cashback ?? 0);
+  const i = e.rendimentoMensal;
+  const atraso = e.mesesAteFatura ?? 1;
+  const precoCartao = e.precoCartao > 0 ? e.precoCartao : e.precoAVista;
+  const maxN = Math.max(1, Math.floor(e.maxParcelas || 1));
+
+  const desconta = (valor: number, meses: number) =>
+    Math.abs(i) < 1e-12 ? valor : valor / Math.pow(1 + i, meses);
+
+  const opcoes: OpcaoCompra[] = [
+    {
+      id: 'pix',
+      rotulo: 'PIX / dinheiro à vista',
+      parcelas: 0,
+      valorParcela: e.precoAVista,
+      totalPago: e.precoAVista,
+      cashbackRecebido: 0,
+      custoHoje: e.precoAVista, // pago hoje: já está em valor de hoje
+      diferencaVsMelhor: 0,
+    },
+  ];
+
+  for (let k = 1; k <= maxN; k++) {
+    const parcela = precoCartao / k;
+    const liquida = parcela * (1 - cb);
+    let custoHoje = 0;
+    // parcela j cai em (atraso + j − 1) meses
+    for (let j = 1; j <= k; j++) custoHoje += desconta(liquida, atraso + j - 1);
+
+    opcoes.push({
+      id: `cartao-${k}`,
+      rotulo: k === 1 ? 'Cartão à vista (1×)' : `Cartão em ${k}×`,
+      parcelas: k,
+      valorParcela: parcela,
+      totalPago: precoCartao,
+      cashbackRecebido: precoCartao * cb,
+      custoHoje,
+      diferencaVsMelhor: 0,
+    });
+  }
+
+  opcoes.sort((a, b) => a.custoHoje - b.custoHoje);
+  const melhor = opcoes[0]!;
+  const pior = opcoes[opcoes.length - 1]!;
+  for (const o of opcoes) o.diferencaVsMelhor = o.custoHoje - melhor.custoHoje;
+
+  return {
+    opcoes,
+    melhor,
+    pior,
+    economiaMaxima: pior.custoHoje - melhor.custoHoje,
+    taxaEmbutida: precoCartao > e.precoAVista ? taxaEmbutida(e.precoAVista, precoCartao / maxN, maxN) : null,
+  };
+}
+
 export interface ResultadoParcelado {
   totalParcelado: number;
   /** quanto o parcelamento custa a mais, em reais */

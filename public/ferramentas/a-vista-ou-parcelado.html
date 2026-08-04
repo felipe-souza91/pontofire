@@ -4,10 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>À vista ou parcelado? Calculadora — Ponto FIRE</title>
-<meta name="description" content="Descubra se vale mais pagar à vista ou parcelar: juros embutidos, quanto seu dinheiro rende e o cashback do cartão.">
+<meta name="description" content="Compare PIX à vista, cartão à vista e cada quantidade de parcelas — com juros embutidos, rendimento do seu dinheiro e cashback.">
 <link rel="canonical" href="https://pontofire.com.br/ferramentas/a-vista-ou-parcelado.html">
 <meta property="og:title" content="À vista ou parcelado? Calculadora — Ponto FIRE">
-<meta property="og:description" content="Descubra se vale mais pagar à vista ou parcelar: juros embutidos, quanto seu dinheiro rende e o cashback do cartão.">
+<meta property="og:description" content="Compare PIX à vista, cartão à vista e cada quantidade de parcelas — com juros embutidos, rendimento do seu dinheiro e cashback.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://pontofire.com.br/ferramentas/a-vista-ou-parcelado.html">
 <meta property="og:image" content="https://pontofire.com.br/preview.png">
@@ -26,39 +26,31 @@
 
   <p class="eyebrow">ferramenta gratuita</p>
   <h1>À vista ou parcelado?</h1>
-  <p class="lead">Desconto à vista ou parcelamento "sem juros"? A conta depende de quanto seu dinheiro rende enquanto você paga.</p>
+  <p class="lead">Comparamos todas as formas de pagamento em valor de hoje: PIX, cartão à vista e cada número de parcelas.</p>
 
   <div class="card">
     <div class="grid2">
-      <label><span>Preço à vista (R$)</span><input id="avista" inputmode="decimal" value="1.000"></label>
-      <label><span>Valor da parcela (R$)</span><input id="parcela" inputmode="decimal" value="100"></label>
+      <label><span>Preço no PIX / dinheiro</span><input id="pix" inputmode="decimal" value="1.000"></label>
+      <label><span>Preço total no cartão</span><input id="cartao" inputmode="decimal" value="1.000"></label>
     </div>
     <div class="grid2">
-      <label><span>Número de parcelas</span><input id="n" inputmode="decimal" value="12"></label>
+      <label><span>Número máximo de parcelas</span><input id="n" inputmode="decimal" value="12"></label>
       <label><span>Seu dinheiro rende (% ao mês)</span><input id="rend" inputmode="decimal" value="0,8"></label>
     </div>
-    <div class="grid2">
-      <label><span>Cashback do cartão (% — opcional)</span><input id="cb" inputmode="decimal" placeholder="ex: 2"></label>
-      <label><span>O preço à vista é…</span><select id="avCartao"><option value="0">PIX / dinheiro (sem cashback)</option><option value="1">no cartão (com cashback)</option></select></label>
-    </div>
+    <label><span>Cashback do cartão (% — opcional)</span><input id="cb" inputmode="decimal" placeholder="ex: 2"></label>
 
     <div class="res">
       <div style="text-align:center">
-        <div style="color:var(--muted);font-size:14px">Melhor opção</div>
+        <div style="color:var(--muted);font-size:14px">Melhor forma de pagar</div>
         <div class="destaque" id="melhor">—</div>
-        <div style="color:var(--muted);font-size:14px" id="difTxt"></div>
+        <div style="color:var(--muted);font-size:14px" id="econ"></div>
       </div>
       <div style="margin-top:18px">
-        <div class="res-linha"><span>Total parcelado</span><span id="total">—</span></div>
-        <div class="res-linha"><span>Acréscimo sobre o à vista</span><span id="acres">—</span></div>
-        <div class="res-linha"><span>Juros embutidos no parcelamento</span><span id="taxa">—</span></div>
-        <div class="res-linha" id="l-cbp" style="display:none"><span>Cashback parcelando</span><span id="cbp" style="color:var(--mint)">—</span></div>
-        <div class="res-linha" id="l-cba" style="display:none"><span>Cashback à vista</span><span id="cba" style="color:var(--mint)">—</span></div>
-        <div class="res-linha"><span>Custo à vista (líquido)</span><span id="ca">—</span></div>
-        <div class="res-linha"><span>Parcelas em valor de hoje</span><span id="vp">—</span></div>
+        <p class="eyebrow" style="font-size:11px;margin-bottom:6px">Custo em valor de hoje</p>
+        <div id="ranking"></div>
       </div>
-      <div class="veredito" id="veredito"></div>
-      <p class="nota">Comparamos o valor presente: parcelar só ganha se o dinheiro que fica no seu bolso render mais do que os juros embutidos.</p>
+      <div class="veredito" id="veredito" style="display:none"></div>
+      <p class="nota">Consideramos que a 1ª cobrança do cartão cai daqui a ~1 mês: até lá o dinheiro rende na sua conta. É por isso que o cartão à vista já leva vantagem sobre o PIX quando não há desconto.</p>
     </div>
   </div>
 
@@ -74,35 +66,33 @@
   </footer>
 </div>
 <script type="module">
-import { compararParcelado, brl, pct, num } from '/ferramentas/calc.js';
+import { compararCompra, brl, pct, num } from '/ferramentas/calc.js';
 const $ = (id) => document.getElementById(id);
 function calc() {
-  const av = num($('avista')), p = num($('parcela')), n = Math.round(num($('n'))), rend = num($('rend')) / 100;
-  const cb = num($('cb')) / 100, avCartao = $('avCartao').value === '1';
-  const r = compararParcelado(av, p, n, rend, { cashback: cb, aVistaNoCartao: avCartao });
-  $('melhor').textContent = r.melhor === 'parcelar' ? 'Parcelar' : 'Pagar à vista';
-  $('difTxt').textContent = `vantagem de ${brl(r.diferenca)} em valor de hoje`;
-  $('total').textContent = brl(r.totalParcelado);
-  $('acres').textContent = r.acrescimo > 0 ? brl(r.acrescimo) : 'sem acréscimo';
-  $('taxa').textContent = r.taxaEmbutida === null ? 'sem juros' : `${pct(r.taxaEmbutida)} a.m.`;
-  $('vp').textContent = brl(r.valorPresente);
-  $('ca').textContent = brl(r.custoAVista);
-  $('l-cbp').style.display = r.cashbackParcelado > 0 ? 'flex' : 'none';
-  $('cbp').textContent = '+' + brl(r.cashbackParcelado);
-  $('l-cba').style.display = r.cashbackAVista > 0 ? 'flex' : 'none';
-  $('cba').textContent = '+' + brl(r.cashbackAVista);
-  if (r.cashbackNeutro) {
-    $('veredito').textContent = 'O cashback incide nas duas opções, então ele não muda a decisão — só abate os dois lados. Ele vira desempate quando o à vista é PIX/dinheiro.';
-    return;
-  }
-  $('veredito').textContent = r.taxaEmbutida === null
-    ? 'Parcelamento sem juros: mantendo o dinheiro rendendo, parcelar costuma valer a pena.'
-    : (r.taxaEmbutida > rend
-        ? `Os juros do parcelamento (${pct(r.taxaEmbutida)} a.m.) são maiores do que seu dinheiro rende (${pct(rend)} a.m.).`
-        : `Seu dinheiro rende mais (${pct(rend)} a.m.) do que os juros cobrados (${pct(r.taxaEmbutida)} a.m.).`);
+  const r = compararCompra({
+    precoAVista: num($('pix')),
+    precoCartao: num($('cartao')),
+    maxParcelas: Math.round(num($('n'))),
+    rendimentoMensal: num($('rend')) / 100,
+    cashback: num($('cb')) / 100,
+  });
+  $('melhor').textContent = r.melhor.rotulo;
+  $('econ').textContent = r.economiaMaxima > 0.005
+    ? `economia de ${brl(r.economiaMaxima)} sobre a pior opção`
+    : 'todas as formas custam praticamente o mesmo';
+  const maxN = Math.round(num($('n')));
+  const mostra = r.opcoes.filter((o, idx) => o.id === 'pix' || idx < 3 || o.parcelas === 1 || o.parcelas === maxN);
+  $('ranking').innerHTML = mostra.map(o => `<div class="res-linha" style="color:${o.id === r.melhor.id ? 'var(--mint)' : 'var(--paper)'}">
+      <span>${o.rotulo}${o.parcelas > 1 ? ` <span style="color:var(--muted);font-size:12.5px">· ${brl(o.valorParcela)}/mês</span>` : ''}</span>
+      <span>${brl(o.custoHoje)}${o.diferencaVsMelhor > 0.005 ? ` <span style="color:var(--muted);font-size:12px">(+${brl(o.diferencaVsMelhor)})</span>` : ''}</span>
+    </div>`).join('');
+  const v = $('veredito');
+  if (r.taxaEmbutida !== null) {
+    v.style.display = 'block';
+    v.textContent = `O cartão custa mais caro que o PIX — são ${pct(r.taxaEmbutida)} a.m. de juros embutidos no parcelamento.`;
+  } else { v.style.display = 'none'; }
 }
-['avista','parcela','n','rend','cb'].forEach(id => $(id).addEventListener('input', calc));
-$('avCartao').addEventListener('change', calc);
+['pix','cartao','n','rend','cb'].forEach(id => $(id).addEventListener('input', calc));
 calc();
 </script>
 </body>
