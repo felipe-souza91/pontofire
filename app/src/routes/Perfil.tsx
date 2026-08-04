@@ -5,6 +5,7 @@ import { useUserDoc } from '../hooks/useUserDoc';
 import { atualizarPerfil } from '../data/users';
 import { PORQUES } from '../data/humanizacao';
 import { MoedaInput } from '../components/MoedaInput';
+import { Campo } from '../components/Campo';
 import { Flame } from '../theme/Flame';
 
 export function Perfil() {
@@ -30,7 +31,8 @@ export function Perfil() {
   // INSS
   const [dataNascimento, setDataNascimento] = useState('');
   const [inicioContribuicao, setInicioContribuicao] = useState('');
-  const [salario, setSalario] = useState('');
+  const [salario, setSalario] = useState(0);
+  const [sexoINSS, setSexoINSS] = useState<'F' | 'M' | undefined>(undefined);
 
   useEffect(() => {
     if (!doc || pronto) return;
@@ -46,7 +48,8 @@ export function Perfil() {
     setRetornoPct(Math.round((doc.retornoRealEsperado ?? 0.05) * 1000) / 10);
     setDataNascimento(doc.dataNascimento ?? '');
     setInicioContribuicao(doc.inicioContribuicao ?? '');
-    setSalario(doc.salario ? String(doc.salario) : '');
+    setSalario(doc.salario ?? 0);
+    setSexoINSS(doc.sexoINSS);
     setPronto(true);
   }, [doc, pronto]);
 
@@ -71,7 +74,8 @@ export function Perfil() {
         retornoRealEsperado: retornoPct / 100,
         dataNascimento: dataNascimento || undefined,
         inicioContribuicao: inicioContribuicao || undefined,
-        salario: salario ? parseInt(salario, 10) : undefined,
+        salario: salario || undefined,
+        sexoINSS,
       });
       navigate('/');
     } finally {
@@ -154,14 +158,26 @@ export function Perfil() {
 
       {/* INSS */}
       <Secao titulo="INSS (opcional)">
-        <Campo rotulo="Data de nascimento">
+        <p className="pf-hint" style={{ marginTop: 0 }}>
+          Serve pra comparar sua liberdade com a aposentadoria do INSS.
+        </p>
+        <Campo rotulo="Data de nascimento" dica="Define sua idade e quando você atinge a idade mínima do INSS.">
           <input className="pf-input" type="date" value={dataNascimento} onChange={(e) => setDataNascimento(e.target.value)} />
         </Campo>
-        <Campo rotulo="Início das contribuições">
+        <Campo rotulo="Início das contribuições" dica="Mês/ano da sua 1ª contribuição. Define o tempo de contribuição e se você cai nas regras de transição (antes de nov/2019).">
           <input className="pf-input" type="month" value={inicioContribuicao} onChange={(e) => setInicioContribuicao(e.target.value)} />
         </Campo>
-        <Campo rotulo="Salário bruto atual">
-          <input className="pf-input pf-num" inputMode="numeric" value={salario} onChange={(e) => setSalario(e.target.value.replace(/\D/g, ''))} />
+        <Campo rotulo="Salário bruto atual" dica="Usado como estimativa da média das contribuições. Aceita centavos.">
+          <MoedaInput value={salario} onChange={setSalario} />
+        </Campo>
+        <Campo rotulo="Regra do INSS" dica="A lei do INSS exige idade e tempo de contribuição diferentes: 62 anos/15 anos (feminino) e 65 anos/20 anos (masculino).">
+          <div className="pf-chips">
+            {([['F', 'Feminino'], ['M', 'Masculino']] as const).map(([v, label]) => (
+              <button key={v} type="button" className={`pf-chip ${sexoINSS === v ? 'on' : ''}`} onClick={() => setSexoINSS(sexoINSS === v ? undefined : v)}>
+                {label}
+              </button>
+            ))}
+          </div>
         </Campo>
       </Secao>
 
@@ -181,11 +197,3 @@ function Secao({ titulo, children }: { titulo: string; children: ReactNode }) {
   );
 }
 
-function Campo({ rotulo, children }: { rotulo: string; children: ReactNode }) {
-  return (
-    <label className="pf-field">
-      <span className="pf-label">{rotulo}</span>
-      {children}
-    </label>
-  );
-}

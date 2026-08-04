@@ -8,6 +8,7 @@ export interface UserDoc {
   dataNascimento?: string; // ISO yyyy-mm-dd
   inicioContribuicao?: string; // yyyy-mm (para o módulo INSS, M6)
   salario?: number;
+  sexoINSS?: 'F' | 'M'; // a lei do INSS usa idade/tempo distintos por sexo
 
   // núcleo do motor (N1)
   custoVidaMensal: number;
@@ -57,4 +58,5 @@ export interface OnboardingN2 {
   dataNascimento?: string;
   inicioContribuicao?: string;
   salario?: number;
+  sexoINSS?: 'F' | 'M';
 }

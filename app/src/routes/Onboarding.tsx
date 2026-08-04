@@ -348,7 +348,8 @@ function FormularioN2({
   const [idadeAlvo, setIdadeAlvo] = useState('');
   const [dataNascimento, setDataNascimento] = useState('');
   const [inicioContribuicao, setInicioContribuicao] = useState('');
-  const [salario, setSalario] = useState('');
+  const [salario, setSalario] = useState(0);
+  const [sexoINSS, setSexoINSS] = useState<'F' | 'M' | undefined>(undefined);
 
   function toggle(p: string) {
     setPorQues((prev) => (prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]));
@@ -363,7 +364,8 @@ function FormularioN2({
       idadeAlvo: idadeAlvo ? parseInt(idadeAlvo, 10) : undefined,
       dataNascimento: dataNascimento || undefined,
       inicioContribuicao: inicioContribuicao || undefined,
-      salario: salario ? parseInt(salario, 10) : undefined,
+      salario: salario || undefined,
+      sexoINSS,
     });
   }
 
@@ -455,12 +457,22 @@ function FormularioN2({
             <input className="pf-input" type="month" value={inicioContribuicao} onChange={(e) => setInicioContribuicao(e.target.value)} />
           </Campo>
           <Campo rotulo="Salário bruto atual">
-            <input
-              className="pf-input pf-num"
-              inputMode="numeric"
-              value={salario}
-              onChange={(e) => setSalario(e.target.value.replace(/\D/g, ''))}
-            />
+            <MoedaInput value={salario} onChange={setSalario} />
+          </Campo>
+          <Campo rotulo="Regra do INSS">
+            <div className="pf-chips">
+              {([['F', 'Feminino'], ['M', 'Masculino']] as const).map(([v, label]) => (
+                <button
+                  key={v}
+                  type="button"
+                  className={`pf-chip ${sexoINSS === v ? 'on' : ''}`}
+                  onClick={() => setSexoINSS(sexoINSS === v ? undefined : v)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <span className="pf-hint">A lei exige idade e tempo diferentes: 62/15 anos (F) e 65/20 anos (M).</span>
           </Campo>
         </div>
       ),
