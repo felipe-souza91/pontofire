@@ -94,3 +94,38 @@ describe('à vista × parcelado', () => {
     expect(r.melhor).toBe('avista'); // empate → não vale antecipar risco
   });
 });
+
+describe('cashback do cartão', () => {
+  it('cashback só no parcelado (à vista no PIX) reduz o custo de parcelar', () => {
+    const sem = compararParcelado(1000, 100, 12, 0.008);
+    const com = compararParcelado(1000, 100, 12, 0.008, { cashback: 0.02 });
+    expect(com.cashbackParcelado).toBeCloseTo(24, 6); // 2% de 1.200
+    expect(com.cashbackAVista).toBe(0);
+    expect(com.valorPresente).toBeLessThan(sem.valorPresente);
+  });
+
+  it('pode virar a decisão quando os juros são pequenos', () => {
+    // 1.000 à vista × 12× de 87 (total 1.044): sem cashback o à vista ganha
+    const sem = compararParcelado(1000, 87, 12, 0.005);
+    expect(sem.melhor).toBe('avista');
+    // com 5% de cashback no cartão, parcelar passa a compensar
+    const com = compararParcelado(1000, 87, 12, 0.005, { cashback: 0.05 });
+    expect(com.melhor).toBe('parcelar');
+  });
+
+  it('cashback nos DOIS lados não muda a decisão — só escala os valores', () => {
+    const sem = compararParcelado(1000, 100, 12, 0.008);
+    const com = compararParcelado(1000, 100, 12, 0.008, { cashback: 0.03, aVistaNoCartao: true });
+    expect(com.cashbackNeutro).toBe(true);
+    expect(com.melhor).toBe(sem.melhor);
+    expect(com.custoAVista).toBeCloseTo(1000 * 0.97, 6);
+    expect(com.valorPresente).toBeCloseTo(sem.valorPresente * 0.97, 6);
+  });
+
+  it('sem cashback informado, o resultado é o de antes', () => {
+    const a = compararParcelado(1000, 120, 12, 0.008);
+    const b = compararParcelado(1000, 120, 12, 0.008, { cashback: 0 });
+    expect(b.valorPresente).toBeCloseTo(a.valorPresente, 10);
+    expect(b.cashbackNeutro).toBe(false);
+  });
+});

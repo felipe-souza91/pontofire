@@ -49,18 +49,27 @@ export function taxaEmbutida(precoAVista, parcela, n) {
   return (lo + hi) / 2;
 }
 
-export function compararParcelado(precoAVista, parcela, n, rendimentoMensal) {
+export function compararParcelado(precoAVista, parcela, n, rendimentoMensal, opcoes = {}) {
+  const cb = Math.max(0, opcoes.cashback || 0);
+  const aVistaNoCartao = !!opcoes.aVistaNoCartao;
   const totalParcelado = parcela * n;
   const i = rendimentoMensal;
-  const valorPresente =
-    Math.abs(i) < 1e-12 ? totalParcelado : parcela * ((1 - Math.pow(1 + i, -n)) / i);
+  const fator = Math.abs(i) < 1e-12 ? n : (1 - Math.pow(1 + i, -n)) / i;
+  const valorPresente = parcela * (1 - cb) * fator;
+  const cashbackParcelado = totalParcelado * cb;
+  const cashbackAVista = aVistaNoCartao ? precoAVista * cb : 0;
+  const custoAVista = precoAVista - cashbackAVista;
   return {
     totalParcelado,
     acrescimo: totalParcelado - precoAVista,
     taxaEmbutida: taxaEmbutida(precoAVista, parcela, n),
     valorPresente,
-    melhor: valorPresente < precoAVista ? 'parcelar' : 'avista',
-    diferenca: Math.abs(precoAVista - valorPresente),
+    melhor: valorPresente < custoAVista ? 'parcelar' : 'avista',
+    diferenca: Math.abs(custoAVista - valorPresente),
+    cashbackParcelado,
+    cashbackAVista,
+    custoAVista,
+    cashbackNeutro: cb > 0 && aVistaNoCartao,
   };
 }
 

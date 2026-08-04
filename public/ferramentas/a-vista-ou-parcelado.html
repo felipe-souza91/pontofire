@@ -4,10 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>À vista ou parcelado? Calculadora — Ponto FIRE</title>
-<meta name="description" content="Descubra se vale mais pagar à vista ou parcelar, considerando os juros embutidos e quanto seu dinheiro rende.">
+<meta name="description" content="Descubra se vale mais pagar à vista ou parcelar: juros embutidos, quanto seu dinheiro rende e o cashback do cartão.">
 <link rel="canonical" href="https://pontofire.com.br/ferramentas/a-vista-ou-parcelado.html">
 <meta property="og:title" content="À vista ou parcelado? Calculadora — Ponto FIRE">
-<meta property="og:description" content="Descubra se vale mais pagar à vista ou parcelar, considerando os juros embutidos e quanto seu dinheiro rende.">
+<meta property="og:description" content="Descubra se vale mais pagar à vista ou parcelar: juros embutidos, quanto seu dinheiro rende e o cashback do cartão.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://pontofire.com.br/ferramentas/a-vista-ou-parcelado.html">
 <meta property="og:image" content="https://pontofire.com.br/preview.png">
@@ -37,6 +37,10 @@
       <label><span>Número de parcelas</span><input id="n" inputmode="decimal" value="12"></label>
       <label><span>Seu dinheiro rende (% ao mês)</span><input id="rend" inputmode="decimal" value="0,8"></label>
     </div>
+    <div class="grid2">
+      <label><span>Cashback do cartão (% — opcional)</span><input id="cb" inputmode="decimal" placeholder="ex: 2"></label>
+      <label><span>O preço à vista é…</span><select id="avCartao"><option value="0">PIX / dinheiro (sem cashback)</option><option value="1">no cartão (com cashback)</option></select></label>
+    </div>
 
     <div class="res">
       <div style="text-align:center">
@@ -48,6 +52,9 @@
         <div class="res-linha"><span>Total parcelado</span><span id="total">—</span></div>
         <div class="res-linha"><span>Acréscimo sobre o à vista</span><span id="acres">—</span></div>
         <div class="res-linha"><span>Juros embutidos no parcelamento</span><span id="taxa">—</span></div>
+        <div class="res-linha" id="l-cbp" style="display:none"><span>Cashback parcelando</span><span id="cbp" style="color:var(--mint)">—</span></div>
+        <div class="res-linha" id="l-cba" style="display:none"><span>Cashback à vista</span><span id="cba" style="color:var(--mint)">—</span></div>
+        <div class="res-linha"><span>Custo à vista (líquido)</span><span id="ca">—</span></div>
         <div class="res-linha"><span>Parcelas em valor de hoje</span><span id="vp">—</span></div>
       </div>
       <div class="veredito" id="veredito"></div>
@@ -71,20 +78,31 @@ import { compararParcelado, brl, pct, num } from '/ferramentas/calc.js';
 const $ = (id) => document.getElementById(id);
 function calc() {
   const av = num($('avista')), p = num($('parcela')), n = Math.round(num($('n'))), rend = num($('rend')) / 100;
-  const r = compararParcelado(av, p, n, rend);
+  const cb = num($('cb')) / 100, avCartao = $('avCartao').value === '1';
+  const r = compararParcelado(av, p, n, rend, { cashback: cb, aVistaNoCartao: avCartao });
   $('melhor').textContent = r.melhor === 'parcelar' ? 'Parcelar' : 'Pagar à vista';
   $('difTxt').textContent = `vantagem de ${brl(r.diferenca)} em valor de hoje`;
   $('total').textContent = brl(r.totalParcelado);
   $('acres').textContent = r.acrescimo > 0 ? brl(r.acrescimo) : 'sem acréscimo';
   $('taxa').textContent = r.taxaEmbutida === null ? 'sem juros' : `${pct(r.taxaEmbutida)} a.m.`;
   $('vp').textContent = brl(r.valorPresente);
+  $('ca').textContent = brl(r.custoAVista);
+  $('l-cbp').style.display = r.cashbackParcelado > 0 ? 'flex' : 'none';
+  $('cbp').textContent = '+' + brl(r.cashbackParcelado);
+  $('l-cba').style.display = r.cashbackAVista > 0 ? 'flex' : 'none';
+  $('cba').textContent = '+' + brl(r.cashbackAVista);
+  if (r.cashbackNeutro) {
+    $('veredito').textContent = 'O cashback incide nas duas opções, então ele não muda a decisão — só abate os dois lados. Ele vira desempate quando o à vista é PIX/dinheiro.';
+    return;
+  }
   $('veredito').textContent = r.taxaEmbutida === null
     ? 'Parcelamento sem juros: mantendo o dinheiro rendendo, parcelar costuma valer a pena.'
     : (r.taxaEmbutida > rend
         ? `Os juros do parcelamento (${pct(r.taxaEmbutida)} a.m.) são maiores do que seu dinheiro rende (${pct(rend)} a.m.).`
         : `Seu dinheiro rende mais (${pct(rend)} a.m.) do que os juros cobrados (${pct(r.taxaEmbutida)} a.m.).`);
 }
-['avista','parcela','n','rend'].forEach(id => $(id).addEventListener('input', calc));
+['avista','parcela','n','rend','cb'].forEach(id => $(id).addEventListener('input', calc));
+$('avCartao').addEventListener('change', calc);
 calc();
 </script>
 </body>

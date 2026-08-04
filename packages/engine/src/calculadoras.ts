@@ -123,10 +123,25 @@ export interface ResultadoParcelado {
   taxaEmbutida: number | null;
   /** valor presente das parcelas descontadas pelo seu rendimento */
   valorPresente: number;
-  /** 'parcelar' se o VP das parcelas < preço à vista */
+  /** 'parcelar' se o custo do parcelamento em valor de hoje < custo à vista */
   melhor: 'avista' | 'parcelar';
   /** diferença absoluta entre as opções, em valor de hoje */
   diferenca: number;
+  /** cashback total recebido no parcelamento (R$) */
+  cashbackParcelado: number;
+  /** cashback recebido pagando à vista (R$) — 0 se for PIX/dinheiro */
+  cashbackAVista: number;
+  /** custo efetivo à vista, já abatido o cashback */
+  custoAVista: number;
+  /** o cashback incide nos dois lados e portanto não muda a decisão */
+  cashbackNeutro: boolean;
+}
+
+export interface OpcoesParcelado {
+  /** % de cashback do cartão (ex.: 0,02 = 2%) */
+  cashback?: number;
+  /** o preço à vista também é pago no cartão? (false = PIX/dinheiro) */
+  aVistaNoCartao?: boolean;
 }
 
 /** Taxa mensal que iguala o preço à vista ao fluxo das parcelas (bisseção). */
@@ -156,15 +171,27 @@ export function compararParcelado(
   parcela: number,
   n: number,
   rendimentoMensal: number,
+  opcoes: OpcoesParcelado = {},
 ): ResultadoParcelado {
+  const cb = Math.max(0, opcoes.cashback ?? 0);
+  const aVistaNoCartao = opcoes.aVistaNoCartao ?? false;
+
   const totalParcelado = parcela * n;
   const i = rendimentoMensal;
 
-  const valorPresente =
-    Math.abs(i) < 1e-12 ? totalParcelado : parcela * ((1 - Math.pow(1 + i, -n)) / i);
+  // fator de anuidade: soma de 1/(1+i)^k, k = 1..n
+  const fator = Math.abs(i) < 1e-12 ? n : (1 - Math.pow(1 + i, -n)) / i;
 
-  const diferenca = Math.abs(precoAVista - valorPresente);
-  const melhor: ResultadoParcelado['melhor'] = valorPresente < precoAVista ? 'parcelar' : 'avista';
+  // o cashback volta junto de cada parcela → abate o valor efetivo dela
+  const parcelaLiquida = parcela * (1 - cb);
+  const valorPresente = parcelaLiquida * fator;
+
+  const cashbackParcelado = totalParcelado * cb;
+  const cashbackAVista = aVistaNoCartao ? precoAVista * cb : 0;
+  const custoAVista = precoAVista - cashbackAVista;
+
+  const diferenca = Math.abs(custoAVista - valorPresente);
+  const melhor: ResultadoParcelado['melhor'] = valorPresente < custoAVista ? 'parcelar' : 'avista';
 
   return {
     totalParcelado,
@@ -173,5 +200,10 @@ export function compararParcelado(
     valorPresente,
     melhor,
     diferenca,
+    cashbackParcelado,
+    cashbackAVista,
+    custoAVista,
+    // se o cashback incide nos dois lados, ele escala ambos igualmente
+    cashbackNeutro: cb > 0 && aVistaNoCartao,
   };
 }

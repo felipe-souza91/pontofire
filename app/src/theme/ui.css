@@ -308,6 +308,50 @@
   font-weight: 500;
 }
 
+/* seletor de ferramentas — cartões lado a lado com ícone */
+.pf-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+@media (max-width: 520px) {
+  .pf-tabs {
+    grid-template-columns: 1fr;
+  }
+}
+.pf-tab {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  padding: 0.85rem 0.9rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--ink-2);
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.pf-tab .ic {
+  font-size: 1.15rem;
+  line-height: 1;
+  flex: none;
+}
+.pf-tab:hover {
+  border-color: var(--line-2);
+  color: var(--paper);
+}
+.pf-tab.on {
+  color: var(--paper);
+  border-color: var(--ember);
+  background: linear-gradient(120deg, rgba(255, 122, 69, 0.16), rgba(255, 122, 69, 0.04));
+}
+
 /* conquistas no Início — medalhas à direita da linha, longe do nome */
 .pf-trofeus {
   display: inline-flex;

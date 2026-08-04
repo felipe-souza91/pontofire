@@ -12,10 +12,10 @@ import { formatBRL, formatPct } from '../utils/format';
 
 type Aba = 'juros' | 'combustivel' | 'parcelado';
 
-const ABAS: { id: Aba; rotulo: string }[] = [
-  { id: 'juros', rotulo: 'Juros compostos' },
-  { id: 'combustivel', rotulo: 'Álcool ou gasolina' },
-  { id: 'parcelado', rotulo: 'À vista ou parcelado' },
+const ABAS: { id: Aba; rotulo: string; icone: string }[] = [
+  { id: 'juros', rotulo: 'Juros compostos', icone: '📈' },
+  { id: 'combustivel', rotulo: 'Álcool ou gasolina', icone: '⛽' },
+  { id: 'parcelado', rotulo: 'À vista ou parcelado', icone: '💳' },
 ];
 
 export function Ferramentas() {
@@ -30,9 +30,16 @@ export function Ferramentas() {
         <span style={{ width: '3rem' }} />
       </header>
 
-      <div className="pf-chips" style={{ marginBottom: 'var(--space-6)' }}>
+      <div className="pf-tabs">
         {ABAS.map((a) => (
-          <button key={a.id} type="button" className={`pf-chip ${aba === a.id ? 'on' : ''}`} onClick={() => setAba(a.id)}>
+          <button
+            key={a.id}
+            type="button"
+            className={`pf-tab ${aba === a.id ? 'on' : ''}`}
+            onClick={() => setAba(a.id)}
+            aria-pressed={aba === a.id}
+          >
+            <span className="ic" aria-hidden>{a.icone}</span>
             {a.rotulo}
           </button>
         ))}
@@ -159,9 +166,14 @@ function CalcParcelado() {
   const [parcela, setParcela] = useState(100);
   const [n, setN] = useState(12);
   const [rendPct, setRendPct] = useState(0.8);
+  const [cashbackPct, setCashbackPct] = useState(0);
+  const [aVistaNoCartao, setAVistaNoCartao] = useState(false);
 
   const rend = rendPct / 100;
-  const r = compararParcelado(avista, parcela, n, rend);
+  const r = compararParcelado(avista, parcela, n, rend, {
+    cashback: cashbackPct / 100,
+    aVistaNoCartao,
+  });
 
   return (
     <>
@@ -177,6 +189,15 @@ function CalcParcelado() {
       <Campo rotulo="Seu dinheiro rende (% ao mês)" dica="Quanto rende o dinheiro que ficaria no seu bolso se você parcelasse.">
         <input className="pf-input pf-num" type="number" step={0.1} value={rendPct} onChange={(e) => setRendPct(Number(e.target.value))} />
       </Campo>
+      <Campo rotulo="Cashback do cartão (%)" opcional dica="O cashback volta junto de cada parcela e abate o custo real da compra.">
+        <input className="pf-input pf-num" type="number" step={0.1} min={0} value={cashbackPct || ''} onChange={(e) => setCashbackPct(Number(e.target.value))} />
+      </Campo>
+      {cashbackPct > 0 && (
+        <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-4)', cursor: 'pointer' }}>
+          <input type="checkbox" checked={aVistaNoCartao} onChange={(e) => setAVistaNoCartao(e.target.checked)} />
+          <span>O preço à vista também é no cartão (não é PIX/dinheiro)</span>
+        </label>
+      )}
 
       <div className="pf-hero-card" style={{ marginTop: 'var(--space-4)' }}>
         <Destaque
@@ -191,10 +212,25 @@ function CalcParcelado() {
           valor={r.taxaEmbutida === null ? 'sem juros' : `${formatPct(r.taxaEmbutida, 2)} a.m.`}
           tom="ember"
         />
+        {r.cashbackParcelado > 0 && (
+          <Resultado rotulo="Cashback parcelando" valor={`+${formatBRL(r.cashbackParcelado)}`} tom="mint" />
+        )}
+        {r.cashbackAVista > 0 && (
+          <Resultado rotulo="Cashback à vista" valor={`+${formatBRL(r.cashbackAVista)}`} tom="mint" />
+        )}
+        <Resultado rotulo="Custo à vista (líquido)" valor={formatBRL(r.custoAVista)} />
         <Resultado rotulo="Parcelas em valor de hoje" valor={formatBRL(r.valorPresente)} />
-        <p className="pf-hint">
-          Parcelar só ganha se o dinheiro que fica no seu bolso render mais que os juros embutidos.
-        </p>
+        {r.cashbackNeutro ? (
+          <p className="pf-hint">
+            Como o cashback incide nas duas opções, ele <strong>não muda a decisão</strong> — abate os
+            dois lados igualmente. Ele só vira desempate quando o preço à vista é PIX/dinheiro.
+          </p>
+        ) : (
+          <p className="pf-hint">
+            Parcelar só ganha se o dinheiro que fica no seu bolso — mais o cashback — superar os juros
+            embutidos.
+          </p>
+        )}
       </div>
     </>
   );
