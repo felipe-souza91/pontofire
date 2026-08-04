@@ -9,6 +9,7 @@ import { Lancar } from './routes/Lancar';
 import { Detalhar } from './routes/Detalhar';
 import { Bens } from './routes/Bens';
 import { Conquistas } from './routes/Conquistas';
+import { BotaoFeedback } from './components/BotaoFeedback';
 import { Flame } from './theme/Flame';
 
 /** Tela de carregamento — chama "queimando". */
@@ -70,7 +71,10 @@ function RotasLogado({ uid }: { uid: string }) {
   const precisaOnboarding = !doc?.onboardingCompleto;
 
   return (
-    <Routes>
+    <>
+      {/* feedback mão única — disponível em todo o app logado */}
+      {!precisaOnboarding && <BotaoFeedback plano={doc?.plano ?? 'free'} />}
+      <Routes>
       <Route path="/entrar" element={<Navigate to="/" replace />} />
       <Route
         path="/onboarding"
@@ -100,7 +104,8 @@ function RotasLogado({ uid }: { uid: string }) {
         path="/conquistas"
         element={precisaOnboarding ? <Navigate to="/onboarding" replace /> : <Conquistas />}
       />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
   );
 }

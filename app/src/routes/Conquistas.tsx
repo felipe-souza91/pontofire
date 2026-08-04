@@ -3,6 +3,7 @@ import { CONQUISTAS, conquistasAtingidas, streakAtual } from '@pontofire/insight
 import { useAuth } from '../auth/useAuth';
 import { usePainel } from '../hooks/usePainel';
 import { useConquistas } from '../hooks/useConquistas';
+import { CardConvites } from '../components/CardConvites';
 import { Flame } from '../theme/Flame';
 
 export function Conquistas() {
@@ -47,6 +48,13 @@ export function Conquistas() {
           </div>
         </div>
       </div>
+
+      {/* convites (viral) */}
+      {user && (
+        <div style={{ marginTop: 'var(--space-4)' }}>
+          <CardConvites uid={user.uid} />
+        </div>
+      )}
 
       {/* lista */}
       <div style={{ display: 'grid', gap: 'var(--space-3)', marginTop: 'var(--space-6)' }}>

@@ -308,6 +308,50 @@
   font-weight: 500;
 }
 
+/* botão flutuante de feedback */
+.pf-fab {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1px solid var(--line-2);
+  background: var(--ink-2);
+  color: var(--paper);
+  font-size: 1.2rem;
+  cursor: pointer;
+  z-index: 40;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.pf-fab:hover {
+  border-color: var(--ember);
+  transform: translateY(-2px);
+}
+
+/* modal */
+.pf-modal-fundo {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 8, 22, 0.72);
+  backdrop-filter: blur(3px);
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  z-index: 50;
+}
+.pf-modal {
+  width: 100%;
+  max-width: 27rem;
+  background: var(--ink-2);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-lg);
+  padding: var(--space-8);
+  max-height: 90dvh;
+  overflow: auto;
+}
+
 /* chips de seleção (onboarding humanizado — o "porquê") */
 .pf-chips {
   display: flex;

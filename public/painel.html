@@ -131,6 +131,18 @@
   </div>
 
   <div class="panel">
+    <h2>Feedback dos usuários</h2>
+    <p class="hint">Mão única — o app agradece, você lê aqui. Mais recentes primeiro.</p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Tipo</th><th>Mensagem</th><th>Onde</th><th>Quando</th></tr></thead>
+        <tbody id="tb-fb"></tbody>
+      </table>
+      <div class="empty" id="e-fb">Nenhum feedback ainda.</div>
+    </div>
+  </div>
+
+  <div class="panel">
     <h2>Inscritos</h2>
     <p class="hint">Ordem: mais recentes primeiro.</p>
     <div class="tools">
@@ -194,6 +206,20 @@ function listen(){
     $('gate').style.display='block'; $('app').style.display='none';
     $('gerr').textContent = 'Sem permissão de leitura (' + err.code + '). Seu UID: ' + (auth.currentUser?.uid || '?') + ' — envie esse UID para liberar nas regras.';
     $('gerr').classList.add('show');
+  });
+
+  // feedback (mão única): falha aqui não derruba a waitlist
+  onSnapshot(query(collection(db,'feedback'), orderBy('created','desc')), snap => {
+    const rows = snap.docs.map(d => d.data());
+    $('e-fb').style.display = rows.length ? 'none' : 'block';
+    $('tb-fb').innerHTML = rows.map(r => `<tr>
+      <td><span class="tag">${r.tipo || '—'}</span></td>
+      <td>${(r.texto||'').replace(/[<>]/g, '')}</td>
+      <td class="mono">${r.rota || '—'}</td>
+      <td class="mono">${dfmt(r.created)}</td></tr>`).join('');
+  }, err => {
+    $('e-fb').textContent = 'Não consegui ler o feedback (' + err.code + ').';
+    $('e-fb').style.display = 'block';
   });
 }
 
