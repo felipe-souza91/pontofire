@@ -7,3 +7,4 @@
 export * from './tipos';
 export * from './regras';
 export * from './gerar';
+export * from './conquistas';

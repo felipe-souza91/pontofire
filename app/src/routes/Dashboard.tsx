@@ -1,26 +1,22 @@
-import { useMemo, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  calcularPlanoFire,
   coberturaPassiva,
   jaEhCoastFire,
   patrimonioCoast,
-  resumoPatrimonio,
   valorFuturo,
   type PlanoFire,
 } from '@pontofire/engine';
 import { useAuth } from '../auth/useAuth';
-import { useUserDoc } from '../hooks/useUserDoc';
-import { useSnapshots } from '../hooks/useSnapshots';
-import { useAssets } from '../hooks/useAssets';
+import { usePainel, idadeDe } from '../hooks/usePainel';
+import { useConquistas } from '../hooks/useConquistas';
 import type { UserDoc } from '../data/types';
 import type { Snapshot } from '../data/snapshots';
 import { Flame } from '../theme/Flame';
-import { gerarInsights } from '@pontofire/insights';
+import { gerarInsights, conquistasAtingidas } from '@pontofire/insights';
 import { CardINSS } from '../components/CardINSS';
 import { CardEconomico } from '../components/CardEconomico';
 import { CardsInsights } from '../components/CardsInsights';
-import { useTransactions } from '../hooks/useTransactions';
 import { formatBRLcompact, formatDuracao, formatMesAno, formatPct } from '../utils/format';
 
 const MESES_ABREV = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
@@ -29,53 +25,17 @@ function mesCurto(m: string): string {
   return `${MESES_ABREV[parseInt(mm ?? '1', 10) - 1]}/${(ano ?? '').slice(2)}`;
 }
 
-function idadeDe(dataNascimento?: string): number | undefined {
-  if (!dataNascimento) return undefined;
-  const d = new Date(dataNascimento);
-  if (Number.isNaN(d.getTime())) return undefined;
-  const hoje = new Date();
-  let idade = hoje.getFullYear() - d.getFullYear();
-  const m = hoje.getMonth() - d.getMonth();
-  if (m < 0 || (m === 0 && hoje.getDate() < d.getDate())) idade--;
-  return idade;
-}
-
 export function Dashboard() {
   const { user, sair } = useAuth();
-  const { doc, carregando } = useUserDoc(user?.uid ?? null);
-  const { lista } = useSnapshots(user?.uid ?? null);
-  const { lista: bens } = useAssets(user?.uid ?? null);
-
-  // patrimônio atual = último snapshot lançado; senão, o do onboarding
-  const ultimo = lista.length ? lista[lista.length - 1]! : null;
-  const { lista: transacoesMes } = useTransactions(user?.uid ?? null, ultimo?.mes ?? '');
-  const resumoBens = useMemo(() => resumoPatrimonio(bens), [bens]);
-
-  const plano = useMemo(() => {
-    if (!doc) return null;
-    const pBase = ultimo ? ultimo.patrimonioTotal : doc.patrimonioInicial;
-    // base do FIRE = investido + bens marcados "incluir no FIRE"
-    const pFire = pBase + resumoBens.patrimonioInvestivel;
-    return calcularPlanoFire({
-      patrimonioInvestivel: pFire,
-      aporteMensal: doc.aporteMensal,
-      custoVidaMensal: doc.custoVidaMensal,
-      retornoRealAnual: doc.retornoRealEsperado,
-      metaFire: doc.metaFire,
-      tss: doc.taxaSaqueSegura,
-      idadeAtual: idadeDe(doc.dataNascimento),
-      hoje: new Date(),
-    });
-  }, [doc, ultimo, resumoBens]);
+  const { doc, plano, ctx, P, R, netWorth, snapshots: lista, ultimo, bens, carregando } = usePainel(
+    user?.uid ?? null,
+  );
+  const atingidas = ctx ? conquistasAtingidas(ctx) : [];
+  useConquistas(user?.uid ?? null, atingidas);
 
   if (carregando) return <Centro>Carregando…</Centro>;
-  if (!doc || !plano) return <Centro>Sem dados ainda.</Centro>;
+  if (!doc || !plano || !ctx) return <Centro>Sem dados ainda.</Centro>;
 
-  const pBase = ultimo ? ultimo.patrimonioTotal : doc.patrimonioInicial;
-  const P = pBase + resumoBens.patrimonioInvestivel; // base do FIRE
-  const netWorth = pBase + resumoBens.patrimonioLiquidoTotal; // patrimônio líquido total
-  // renda passiva = detalhado (transações passiva) + aluguéis dos bens
-  const R = (ultimo?.rendaPassiva ?? 0) + resumoBens.rendaPassivaBens;
   const saudacao = doc.apelido || doc.nome?.split(' ')[0] || 'você';
   const progressoPct = Math.min(100, Math.max(0, plano.progresso * 100));
 
@@ -84,24 +44,7 @@ export function Dashboard() {
   // assistente (§7): catálogo de regras determinístico
   const temCardCoast = !!doc.idadeAlvo && idadeDe(doc.dataNascimento) !== undefined;
   const insights = gerarInsights(
-    {
-      apelido: doc.apelido || doc.nome?.split(' ')[0],
-      nomeSonho: doc.nomeSonho,
-      porQues: doc.porQues,
-      custoVidaMensal: doc.custoVidaMensal,
-      metaFire: doc.metaFire,
-      aporteMensal: doc.aporteMensal,
-      iMensal: plano.iMensal,
-      patrimonioAtual: P,
-      progresso: plano.progresso,
-      coberturaPassiva: doc.custoVidaMensal > 0 ? R / doc.custoVidaMensal : 0,
-      mesesAteFire: plano.meses,
-      statusFire: plano.status,
-      idadeAlvo: doc.idadeAlvo,
-      idadeAtual: idadeDe(doc.dataNascimento),
-      snapshots: lista,
-      transacoesMes,
-    },
+    ctx,
     {
       moeda: (v) => formatBRLcompact(v),
       duracao: (m) => formatDuracao(m),
@@ -135,6 +78,7 @@ export function Dashboard() {
         <span className="pf-pill">beta fechado</span>
         <Link className="pf-btn-link" to="/lancar">Lançar</Link>
         <Link className="pf-btn-link" to="/bens">Bens</Link>
+        <Link className="pf-btn-link" to="/conquistas">Conquistas</Link>
         <Link className="pf-btn-link" to="/perfil">Perfil</Link>
         <button className="pf-btn-link" onClick={() => void sair()}>Sair</button>
       </header>
