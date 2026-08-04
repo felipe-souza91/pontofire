@@ -4,7 +4,7 @@ import {
   ReCaptchaEnterpriseProvider,
 } from 'firebase/app-check';
 import { getAuth, type Auth } from 'firebase/auth';
-import { getFirestore, type Firestore } from 'firebase/firestore';
+import { initializeFirestore, type Firestore } from 'firebase/firestore';
 
 // Config web (não é segredo) vinda de env — ver app/.env.example.
 const firebaseConfig = {
@@ -40,4 +40,6 @@ if (recaptchaKey) {
 }
 
 export const auth: Auth = getAuth(app);
-export const db: Firestore = getFirestore(app);
+// ignoreUndefinedProperties: campos undefined (ex.: dívida/renda não preenchidas)
+// são ignorados em vez de dar erro no addDoc/setDoc.
+export const db: Firestore = initializeFirestore(app, { ignoreUndefinedProperties: true });
