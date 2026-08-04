@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   compararCompra,
+  simularCompra,
   anualParaMensal,
   calcularJuros,
   compararCombustivel,
@@ -167,6 +168,57 @@ describe('comparador completo de formas de pagamento', () => {
     const r = compararCompra({ ...base, cashback: 0.01 });
     expect(r.opcoes[0]!.diferencaVsMelhor).toBe(0);
     for (const o of r.opcoes) expect(o.diferencaVsMelhor).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe('simulação mês a mês (a "prova" visual)', () => {
+  const base = {
+    precoAVista: 1000,
+    precoCartao: 1000,
+    maxParcelas: 20,
+    rendimentoMensal: 0.008,
+  };
+
+  it('parte do mesmo dinheiro nos dois caminhos', () => {
+    const s = simularCompra(base, 20);
+    expect(s.capitalInicial).toBe(1000);
+    expect(s.serie[0]!.cartao).toBe(1000); // manteve tudo rendendo
+    expect(s.serie[0]!.avista).toBe(0); // gastou tudo à vista
+  });
+
+  it('a série cobre do mês 0 até a última parcela', () => {
+    const s = simularCompra(base, 20);
+    expect(s.horizonte).toBe(20); // float de 1 mês + 20 parcelas − 1
+    expect(s.serie).toHaveLength(21);
+    expect(s.serie[s.serie.length - 1]!.mes).toBe(20);
+  });
+
+  it('INVARIANTE: a diferença final é a economia de hoje capitalizada', () => {
+    const r = compararCompra(base);
+    const s = simularCompra(base, 20);
+    const pix = r.opcoes.find((o) => o.id === 'pix')!;
+    const c20 = r.opcoes.find((o) => o.id === 'cartao-20')!;
+    const esperado = (pix.custoHoje - c20.custoHoje) * Math.pow(1.008, s.horizonte);
+    expect(s.vantagemCartao).toBeCloseTo(esperado, 6);
+  });
+
+  it('com desconto forte no PIX, o à vista termina na frente', () => {
+    const s = simularCompra({ ...base, precoAVista: 800 }, 20);
+    expect(s.vantagemCartao).toBeLessThan(0);
+    expect(s.saldoFinalAVista).toBeGreaterThan(s.saldoFinalCartao);
+  });
+
+  it('cashback melhora o saldo final de quem parcelou', () => {
+    const sem = simularCompra(base, 20);
+    const com = simularCompra({ ...base, cashback: 0.02 }, 20);
+    expect(com.saldoFinalCartao).toBeGreaterThan(sem.saldoFinalCartao);
+    expect(com.saldoFinalAVista).toBeCloseTo(sem.saldoFinalAVista, 6); // PIX não muda
+  });
+
+  it('sem rendimento, quem parcela termina zerado (só pagou o preço)', () => {
+    const s = simularCompra({ ...base, rendimentoMensal: 0 }, 20);
+    expect(s.saldoFinalCartao).toBeCloseTo(0, 6);
+    expect(s.vantagemCartao).toBeCloseTo(0, 6);
   });
 });
 

@@ -5,9 +5,11 @@ import {
   calcularJuros,
   compararCombustivel,
   compararCompra,
+  simularCompra,
 } from '@pontofire/engine';
 import { MoedaInput } from '../components/MoedaInput';
 import { Campo } from '../components/Campo';
+import { GraficoCompra } from '../components/GraficoCompra';
 import { formatBRL, formatPct } from '../utils/format';
 
 type Aba = 'juros' | 'combustivel' | 'parcelado';
@@ -176,6 +178,13 @@ function CalcParcelado() {
     cashback: cashbackPct / 100,
   });
 
+  // simula o melhor cartão (ou o parcelamento cheio) contra o PIX
+  const parcelasSim = r.melhor.parcelas > 0 ? r.melhor.parcelas : maxParcelas;
+  const sim = simularCompra(
+    { precoAVista, precoCartao, maxParcelas, rendimentoMensal: rendPct / 100, cashback: cashbackPct / 100 },
+    parcelasSim,
+  );
+
   // mostra o PIX, a melhor e as vizinhas — sem despejar 12 linhas iguais
   const destaques = r.opcoes.filter(
     (o, idx) => o.id === 'pix' || idx < 3 || o.parcelas === 1 || o.parcelas === maxParcelas,
@@ -250,6 +259,18 @@ function CalcParcelado() {
           Consideramos que a 1ª cobrança do cartão cai daqui a ~1 mês: até lá o dinheiro rende na sua
           conta. É por isso que o cartão à vista já leva vantagem sobre o PIX quando não há desconto.
         </p>
+      </div>
+
+      <div className="pf-hero-card" style={{ marginTop: 'var(--space-4)' }}>
+        <span className="pf-eyebrow">A prova, mês a mês</span>
+        <p className="pf-hc-sub" style={{ marginTop: 'var(--space-2)' }}>
+          quanto dinheiro sobra em cada caminho
+        </p>
+        <GraficoCompra
+          sim={sim}
+          parcelas={parcelasSim}
+          rotuloCartao={parcelasSim === 1 ? 'Cartão à vista' : `Cartão em ${parcelasSim}×`}
+        />
       </div>
     </>
   );

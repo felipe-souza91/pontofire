@@ -221,6 +221,66 @@ export function compararCompra(e: EntradaCompra): ResultadoCompra {
   };
 }
 
+export interface PontoSaldo {
+  mes: number;
+  /** saldo de quem pagou à vista e ficou com o troco rendendo */
+  avista: number;
+  /** saldo de quem manteve o dinheiro rendendo e paga as parcelas dele */
+  cartao: number;
+}
+
+export interface SimulacaoCompra {
+  serie: PontoSaldo[];
+  capitalInicial: number;
+  saldoFinalAVista: number;
+  saldoFinalCartao: number;
+  /** quanto o cartão termina à frente (negativo = à vista ganhou) */
+  vantagemCartao: number;
+  /** último mês simulado */
+  horizonte: number;
+}
+
+/**
+ * Simula os dois caminhos mês a mês, partindo do MESMO dinheiro disponível:
+ *  - à vista: paga agora e deixa o troco rendendo;
+ *  - cartão:  mantém tudo rendendo e as parcelas saem desse dinheiro.
+ *
+ * É a "prova" visual do ranking: a diferença final é exatamente a economia
+ * em valor de hoje, capitalizada até o fim do parcelamento.
+ */
+export function simularCompra(e: EntradaCompra, parcelas: number): SimulacaoCompra {
+  const cb = Math.max(0, e.cashback ?? 0);
+  const i = e.rendimentoMensal;
+  const atraso = e.mesesAteFatura ?? 1;
+  const precoCartao = e.precoCartao > 0 ? e.precoCartao : e.precoAVista;
+  const k = Math.max(1, Math.floor(parcelas));
+
+  const capitalInicial = Math.max(e.precoAVista, precoCartao);
+  const parcelaLiquida = (precoCartao / k) * (1 - cb);
+  const horizonte = atraso + k - 1;
+
+  let avista = capitalInicial - e.precoAVista;
+  let cartao = capitalInicial;
+  const serie: PontoSaldo[] = [{ mes: 0, avista, cartao }];
+
+  for (let m = 1; m <= horizonte; m++) {
+    avista *= 1 + i;
+    cartao *= 1 + i;
+    // a parcela j cai no mês (atraso + j − 1)
+    if (m >= atraso && m <= atraso + k - 1) cartao -= parcelaLiquida;
+    serie.push({ mes: m, avista, cartao });
+  }
+
+  return {
+    serie,
+    capitalInicial,
+    saldoFinalAVista: avista,
+    saldoFinalCartao: cartao,
+    vantagemCartao: cartao - avista,
+    horizonte,
+  };
+}
+
 export interface ResultadoParcelado {
   totalParcelado: number;
   /** quanto o parcelamento custa a mais, em reais */
