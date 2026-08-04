@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { estimarINSS, type PlanoFire } from '@pontofire/engine';
 import type { UserDoc } from '../data/types';
-import { formatBRL, formatMesAno } from '../utils/format';
+import { formatBRL, formatBRLcompact, formatMesAno } from '../utils/format';
 
 /**
  * INSS vs. Liberdade (§8) — o choque de realidade.
@@ -49,9 +49,11 @@ export function CardINSS({ doc, plano }: { doc: UserDoc; plano: PlanoFire }) {
           </div>
           <div className="pf-hint" style={{ margin: '2px 0 0' }}>
             por mês, aos {Math.round(est.idadeElegivel)} anos
-            <br />
-            ({formatMesAno(est.dataElegivel)})
           </div>
+          <div className="pf-patrim" style={{ color: 'var(--muted)' }}>
+            com <strong className="mono">R$ 0</strong> de patrimônio
+          </div>
+          <div className="pf-hint" style={{ margin: '2px 0 0' }}>({formatMesAno(est.dataElegivel)})</div>
         </div>
 
         {/* FIRE */}
@@ -63,18 +65,19 @@ export function CardINSS({ doc, plano }: { doc: UserDoc; plano: PlanoFire }) {
             {formatBRL(plano.saqueMensalSustentavel)}
           </div>
           <div className="pf-hint" style={{ margin: '2px 0 0' }}>
-            {plano.status === 'ok' && plano.dataLiberdade ? (
-              <>
-                por mês
-                {plano.idadeNaLiberdade !== null && `, aos ${Math.round(plano.idadeNaLiberdade)} anos`}
-                <br />({formatMesAno(plano.dataLiberdade)})
-              </>
-            ) : plano.status === 'atingido' ? (
-              'por mês — você já chegou lá'
-            ) : (
-              'por mês, quando a meta fechar'
-            )}
+            por mês
+            {plano.status === 'ok' && plano.idadeNaLiberdade !== null
+              ? `, aos ${Math.round(plano.idadeNaLiberdade)} anos`
+              : plano.status === 'atingido'
+                ? ' — você já chegou lá'
+                : ', quando a meta fechar'}
           </div>
+          <div className="pf-patrim" style={{ color: 'var(--mint)' }}>
+            com <strong className="mono">{formatBRLcompact(doc.metaFire)}</strong> de patrimônio
+          </div>
+          {plano.status === 'ok' && plano.dataLiberdade && (
+            <div className="pf-hint" style={{ margin: '2px 0 0' }}>({formatMesAno(plano.dataLiberdade)})</div>
+          )}
         </div>
       </div>
 
@@ -90,6 +93,10 @@ export function CardINSS({ doc, plano }: { doc: UserDoc; plano: PlanoFire }) {
           Seu salário está acima do teto do INSS — por mais que você ganhe, o benefício para no teto.
         </p>
       ) : null}
+      <p className="pf-hint" style={{ marginTop: 'var(--space-2)' }}>
+        O INSS paga enquanto você viver, mas não deixa patrimônio. O seu Ponto FIRE é um capital que
+        continua seu — e passa adiante.
+      </p>
 
       <p className="pf-hint" style={{ marginTop: 'var(--space-4)', borderTop: '1px solid var(--line)', paddingTop: 'var(--space-3)' }}>
         ⓘ <strong>Estimativa</strong>, não promessa. Usamos seu salário atual como proxy da média —
