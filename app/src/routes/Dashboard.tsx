@@ -17,6 +17,7 @@ import { gerarInsights, conquistasAtingidas } from '@pontofire/insights';
 import { CardINSS } from '../components/CardINSS';
 import { CardEconomico } from '../components/CardEconomico';
 import { CardsInsights } from '../components/CardsInsights';
+import { TrofeusResumo } from '../components/TrofeusResumo';
 import { formatBRLcompact, formatDuracao, formatMesAno, formatPct } from '../utils/format';
 
 const MESES_ABREV = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
@@ -31,7 +32,8 @@ export function Dashboard() {
     user?.uid ?? null,
   );
   const atingidas = ctx ? conquistasAtingidas(ctx) : [];
-  useConquistas(user?.uid ?? null, atingidas);
+  const { salvas } = useConquistas(user?.uid ?? null, atingidas);
+  const trofeus = new Set([...atingidas, ...salvas]);
 
   if (carregando) return <Centro>Carregando…</Centro>;
   if (!doc || !plano || !ctx) return <Centro>Sem dados ainda.</Centro>;
@@ -83,7 +85,18 @@ export function Dashboard() {
         <button className="pf-btn-link" onClick={() => void sair()}>Sair</button>
       </header>
 
-      <p className="pf-eyebrow" style={{ marginBottom: 'var(--space-4)' }}>Olá, {saudacao}</p>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 'var(--space-4)',
+          flexWrap: 'wrap',
+          marginBottom: 'var(--space-4)',
+        }}
+      >
+        <span className="pf-eyebrow">Olá, {saudacao}</span>
+        <TrofeusResumo ids={trofeus} />
+      </div>
 
       {/* Card da data — termômetro + contagem regressiva (full width) */}
       <section className="pf-hero-card">

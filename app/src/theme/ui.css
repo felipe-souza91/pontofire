@@ -308,6 +308,32 @@
   font-weight: 500;
 }
 
+/* fita de conquistas no Início — discreta, na linha da saudação */
+.pf-trofeus {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  text-decoration: none;
+  font-size: 1rem;
+  line-height: 1;
+  opacity: 0.85;
+  transition: opacity 0.15s ease;
+}
+.pf-trofeus:hover {
+  opacity: 1;
+}
+.pf-trofeus > span {
+  transition: transform 0.15s ease;
+}
+.pf-trofeus:hover > span {
+  transform: translateY(-1px);
+}
+.pf-trofeus .resto {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
 /* botão flutuante de feedback */
 .pf-fab {
   position: fixed;
