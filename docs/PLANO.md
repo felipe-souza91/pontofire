@@ -84,6 +84,12 @@ firebase.json  firestore.rules  firestore.indexes.json  .firebaserc
 - `feedback`: create por usuário logado; read/update/delete negados (só admin via console/painel).
 - `indicadores`: read liberado (logado); write negado (só Admin SDK da function).
 
+## Status (atualizado)
+✅ **M0** fundação · ✅ **M1** motor (49 testes) · ✅ **M2** auth + onboarding humanizado + perfil ·
+✅ **M3** Início · ✅ **M4** lançar/detalhado/bens · ✅ **M6** INSS + econômico (client-side).
+⏳ Faltam: **M5** importador · **M7** insights (+push quando houver Blaze) · **M8** gamificação/viral/
+feedback · **M9** calculadoras · **M10** monetização (Blaze) · **M11** polish/QA + LGPD.
+
 ## Sequência de build (por dependência)
 - **M0 — Fundação:** versionar landing/painel/config; scaffold React+Vite+PWA; tema compartilhado;
   init Firebase (Auth, Firestore, App Check); Hosting rewrites; fix regras waitlist + regras do app.
