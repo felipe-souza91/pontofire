@@ -16,7 +16,7 @@ type Aba = 'juros' | 'combustivel' | 'parcelado';
 
 const ABAS: { id: Aba; rotulo: string; icone: string }[] = [
   { id: 'juros', rotulo: 'Juros compostos', icone: '📈' },
-  { id: 'combustivel', rotulo: 'Álcool ou gasolina', icone: '⛽' },
+  { id: 'combustivel', rotulo: 'Etanol ou gasolina', icone: '⛽' },
   { id: 'parcelado', rotulo: 'À vista ou parcelado', icone: '💳' },
 ];
 
@@ -128,17 +128,17 @@ function CalcCombustivel() {
   const [kg, setKg] = useState(0);
 
   const r = compararCombustivel(pa, pg, ka || undefined, kg || undefined);
-  const nomes = { alcool: 'Álcool', gasolina: 'Gasolina', empate: 'Tanto faz' } as const;
+  const nomes = { etanol: 'Etanol', gasolina: 'Gasolina', empate: 'Tanto faz' } as const;
 
   return (
     <>
-      <Campo rotulo="Preço do álcool (R$/litro)">
+      <Campo rotulo="Preço do etanol (R$/litro)">
         <MoedaInput value={pa} onChange={setPa} />
       </Campo>
       <Campo rotulo="Preço da gasolina (R$/litro)">
         <MoedaInput value={pg} onChange={setPg} />
       </Campo>
-      <Campo rotulo="Km/litro no álcool" opcional dica="Sabendo o consumo real do seu carro, o cálculo deixa de usar a regra dos 70% e fica exato.">
+      <Campo rotulo="Km/litro no etanol" opcional dica="Sabendo o consumo real do seu carro, o cálculo deixa de usar a regra dos 70% e fica exato.">
         <input className="pf-input pf-num" type="number" step={0.5} value={ka || ''} onChange={(e) => setKa(Number(e.target.value))} />
       </Campo>
       <Campo rotulo="Km/litro na gasolina" opcional>
@@ -151,7 +151,7 @@ function CalcCombustivel() {
           valor={nomes[r.vencedor]}
           sub={r.vencedor === 'empate' ? 'os dois custam o mesmo por km' : `economia de ${formatPct(r.economiaPct, 1)} por km`}
         />
-        <Resultado rotulo="Razão álcool ÷ gasolina" valor={r.razao.toFixed(3).replace('.', ',')} />
+        <Resultado rotulo="Razão etanol ÷ gasolina" valor={r.razao.toFixed(3).replace('.', ',')} />
         <Resultado rotulo="Limite do seu carro" valor={r.limite.toFixed(2).replace('.', ',')} />
         <p className="pf-hint">
           {ka > 0 && kg > 0

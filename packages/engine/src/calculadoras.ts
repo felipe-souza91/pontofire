@@ -64,48 +64,48 @@ export function anualParaMensal(taxaAnual: number): number {
 }
 
 // ---------------------------------------------------------------------------
-// Combustível: álcool × gasolina
+// Combustível: etanol × gasolina
 // ---------------------------------------------------------------------------
 
 export interface ResultadoCombustivel {
-  /** razão preço álcool ÷ preço gasolina */
+  /** razão preço etanol ÷ preço gasolina */
   razao: number;
   /** limite a partir do qual a gasolina compensa (default 0,70) */
   limite: number;
-  vencedor: 'alcool' | 'gasolina' | 'empate';
+  vencedor: 'etanol' | 'gasolina' | 'empate';
   /** economia percentual do vencedor por km rodado */
   economiaPct: number;
 }
 
 /**
  * Compara por CUSTO POR KM. O clássico "70%" é o caso em que o carro faz 70%
- * da autonomia com álcool; se o usuário souber os consumos reais, o limite
- * vira `kmAlcool / kmGasolina`.
+ * da autonomia com etanol; se o usuário souber os consumos reais, o limite
+ * vira `kmEtanol / kmGasolina`.
  */
 export function compararCombustivel(
-  precoAlcool: number,
+  precoEtanol: number,
   precoGasolina: number,
-  kmPorLitroAlcool?: number,
+  kmPorLitroEtanol?: number,
   kmPorLitroGasolina?: number,
 ): ResultadoCombustivel {
   const temConsumo =
-    kmPorLitroAlcool !== undefined &&
+    kmPorLitroEtanol !== undefined &&
     kmPorLitroGasolina !== undefined &&
-    kmPorLitroAlcool > 0 &&
+    kmPorLitroEtanol > 0 &&
     kmPorLitroGasolina > 0;
 
-  const limite = temConsumo ? kmPorLitroAlcool! / kmPorLitroGasolina! : 0.7;
-  const razao = precoGasolina > 0 ? precoAlcool / precoGasolina : Infinity;
+  const limite = temConsumo ? kmPorLitroEtanol! / kmPorLitroGasolina! : 0.7;
+  const razao = precoGasolina > 0 ? precoEtanol / precoGasolina : Infinity;
 
-  // custo por km (normalizado): álcool = preco/km_a, gasolina = preco/km_g
-  const custoAlcool = temConsumo ? precoAlcool / kmPorLitroAlcool! : precoAlcool / (0.7 * 10);
+  // custo por km (normalizado): etanol = preco/km_e, gasolina = preco/km_g
+  const custoEtanol = temConsumo ? precoEtanol / kmPorLitroEtanol! : precoEtanol / (0.7 * 10);
   const custoGasolina = temConsumo ? precoGasolina / kmPorLitroGasolina! : precoGasolina / 10;
 
-  const diff = custoGasolina - custoAlcool;
+  const diff = custoGasolina - custoEtanol;
   const vencedor: ResultadoCombustivel['vencedor'] =
-    Math.abs(diff) < 1e-6 ? 'empate' : diff > 0 ? 'alcool' : 'gasolina';
+    Math.abs(diff) < 1e-6 ? 'empate' : diff > 0 ? 'etanol' : 'gasolina';
 
-  const maior = Math.max(custoAlcool, custoGasolina);
+  const maior = Math.max(custoEtanol, custoGasolina);
   const economiaPct = maior > 0 ? Math.abs(diff) / maior : 0;
 
   return { razao, limite, vencedor, economiaPct };

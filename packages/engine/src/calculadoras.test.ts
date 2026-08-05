@@ -36,11 +36,11 @@ describe('juros compostos × simples', () => {
   });
 });
 
-describe('álcool × gasolina', () => {
-  it('regra dos 70%: abaixo compensa álcool', () => {
+describe('etanol × gasolina', () => {
+  it('regra dos 70%: abaixo compensa etanol', () => {
     const r = compararCombustivel(3.5, 6.0); // razão 0,583
     expect(r.razao).toBeCloseTo(0.5833, 3);
-    expect(r.vencedor).toBe('alcool');
+    expect(r.vencedor).toBe('etanol');
   });
 
   it('acima de 70% compensa gasolina', () => {
@@ -55,10 +55,10 @@ describe('álcool × gasolina', () => {
   });
 
   it('com consumo real, o limite deixa de ser 70%', () => {
-    // carro que faz 8 km/l no álcool e 10 na gasolina → limite 0,80
+    // carro que faz 8 km/l no etanol e 10 na gasolina → limite 0,80
     const r = compararCombustivel(4.5, 6.0, 8, 10);
     expect(r.limite).toBeCloseTo(0.8, 6);
-    expect(r.vencedor).toBe('alcool'); // razão 0,75 < 0,80
+    expect(r.vencedor).toBe('etanol'); // razão 0,75 < 0,80
   });
 });
 

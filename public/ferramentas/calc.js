@@ -23,15 +23,15 @@ export function calcularJuros({ inicial, aporteMensal: A, taxaMensal: i, meses: 
 
 export const anualParaMensal = (a) => Math.pow(1 + a, 1 / 12) - 1;
 
-export function compararCombustivel(precoAlcool, precoGasolina, kmA, kmG) {
+export function compararCombustivel(precoEtanol, precoGasolina, kmA, kmG) {
   const temConsumo = kmA > 0 && kmG > 0;
   const limite = temConsumo ? kmA / kmG : 0.7;
-  const razao = precoGasolina > 0 ? precoAlcool / precoGasolina : Infinity;
-  const custoAlcool = temConsumo ? precoAlcool / kmA : precoAlcool / (0.7 * 10);
+  const razao = precoGasolina > 0 ? precoEtanol / precoGasolina : Infinity;
+  const custoEtanol = temConsumo ? precoEtanol / kmA : precoEtanol / (0.7 * 10);
   const custoGasolina = temConsumo ? precoGasolina / kmG : precoGasolina / 10;
-  const diff = custoGasolina - custoAlcool;
-  const vencedor = Math.abs(diff) < 1e-6 ? 'empate' : diff > 0 ? 'alcool' : 'gasolina';
-  const maior = Math.max(custoAlcool, custoGasolina);
+  const diff = custoGasolina - custoEtanol;
+  const vencedor = Math.abs(diff) < 1e-6 ? 'empate' : diff > 0 ? 'etanol' : 'gasolina';
+  const maior = Math.max(custoEtanol, custoGasolina);
   return { razao, limite, vencedor, economiaPct: maior > 0 ? Math.abs(diff) / maior : 0 };
 }
 
