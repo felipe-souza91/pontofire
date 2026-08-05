@@ -6,6 +6,7 @@ import { atualizarPerfil } from '../data/users';
 import { PORQUES } from '../data/humanizacao';
 import { MoedaInput } from '../components/MoedaInput';
 import { Campo } from '../components/Campo';
+import { ZonaDePerigo } from '../components/ZonaDePerigo';
 import { Flame } from '../theme/Flame';
 
 export function Perfil() {
@@ -184,6 +185,8 @@ export function Perfil() {
       <button className="pf-btn pf-btn-primary" disabled={salvando} onClick={() => void salvar()}>
         {salvando ? 'Salvando…' : 'Salvar'}
       </button>
+
+      {user && <ZonaDePerigo user={user} />}
     </main>
   );
 }
