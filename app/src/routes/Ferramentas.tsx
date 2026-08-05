@@ -264,11 +264,12 @@ function CalcParcelado() {
       <div className="pf-hero-card" style={{ marginTop: 'var(--space-4)' }}>
         <span className="pf-eyebrow">A prova, mês a mês</span>
         <p className="pf-hc-sub" style={{ marginTop: 'var(--space-2)' }}>
-          quanto dinheiro sobra em cada caminho
+          o mesmo produto, dois jeitos de pagar — e quanto sobra no bolso
         </p>
         <GraficoCompra
           sim={sim}
           parcelas={parcelasSim}
+          valorParcela={precoCartao / parcelasSim}
           rotuloCartao={parcelasSim === 1 ? 'Cartão à vista' : `Cartão em ${parcelasSim}×`}
         />
       </div>

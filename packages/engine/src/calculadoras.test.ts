@@ -186,6 +186,16 @@ describe('simulação mês a mês (a "prova" visual)', () => {
     expect(s.serie[0]!.avista).toBe(0); // gastou tudo à vista
   });
 
+  it('os DOIS saldos crescem — quem pagou à vista investe a parcela', () => {
+    const s = simularCompra(base, 20);
+    for (let k = 1; k < s.serie.length; k++) {
+      expect(s.serie[k]!.avista).toBeGreaterThan(s.serie[k - 1]!.avista);
+      expect(s.serie[k]!.cartao).toBeGreaterThanOrEqual(s.serie[k - 1]!.cartao);
+    }
+    // quem pagou à vista sai do zero e termina com um bom saldo
+    expect(s.saldoFinalAVista).toBeGreaterThan(1000);
+  });
+
   it('a série cobre do mês 0 até a última parcela', () => {
     const s = simularCompra(base, 20);
     expect(s.horizonte).toBe(20); // float de 1 mês + 20 parcelas − 1
@@ -215,9 +225,9 @@ describe('simulação mês a mês (a "prova" visual)', () => {
     expect(com.saldoFinalAVista).toBeCloseTo(sem.saldoFinalAVista, 6); // PIX não muda
   });
 
-  it('sem rendimento, quem parcela termina zerado (só pagou o preço)', () => {
+  it('sem rendimento, os dois terminam iguais (nada a ganhar esperando)', () => {
     const s = simularCompra({ ...base, rendimentoMensal: 0 }, 20);
-    expect(s.saldoFinalCartao).toBeCloseTo(0, 6);
+    expect(s.saldoFinalCartao).toBeCloseTo(s.saldoFinalAVista, 6);
     expect(s.vantagemCartao).toBeCloseTo(0, 6);
   });
 });

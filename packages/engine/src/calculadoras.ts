@@ -241,10 +241,14 @@ export interface SimulacaoCompra {
 }
 
 /**
- * Simula os dois caminhos mês a mês, partindo do MESMO dinheiro disponível:
- *  - à vista: paga agora e deixa o troco rendendo;
- *  - cartão:  mantém tudo rendendo e as parcelas saem desse dinheiro.
+ * Simula os dois caminhos mês a mês, partindo do MESMO dinheiro e da MESMA
+ * renda mensal:
+ *  - à vista: gasta o dinheiro agora e, como não tem fatura, investe todo mês
+ *    o valor que seria a parcela;
+ *  - parcelando: mantém o dinheiro rendendo e paga a parcela da renda (o
+ *    cashback volta e também é investido).
  *
+ * Nos dois casos o saldo CRESCE — o que muda é a distância entre eles.
  * É a "prova" visual do ranking: a diferença final é exatamente a economia
  * em valor de hoje, capitalizada até o fim do parcelamento.
  */
@@ -256,18 +260,22 @@ export function simularCompra(e: EntradaCompra, parcelas: number): SimulacaoComp
   const k = Math.max(1, Math.floor(parcelas));
 
   const capitalInicial = Math.max(e.precoAVista, precoCartao);
-  const parcelaLiquida = (precoCartao / k) * (1 - cb);
+  const parcela = precoCartao / k;
   const horizonte = atraso + k - 1;
 
-  let avista = capitalInicial - e.precoAVista;
-  let cartao = capitalInicial;
+  let avista = capitalInicial - e.precoAVista; // gastou o preço à vista
+  let cartao = capitalInicial; // manteve tudo rendendo
   const serie: PontoSaldo[] = [{ mes: 0, avista, cartao }];
 
   for (let m = 1; m <= horizonte; m++) {
     avista *= 1 + i;
     cartao *= 1 + i;
-    // a parcela j cai no mês (atraso + j − 1)
-    if (m >= atraso && m <= atraso + k - 1) cartao -= parcelaLiquida;
+    // nos meses de fatura: quem pagou à vista investe a parcela;
+    // quem parcelou paga a fatura da renda e recebe o cashback de volta
+    if (m >= atraso && m <= atraso + k - 1) {
+      avista += parcela;
+      cartao += parcela * cb;
+    }
     serie.push({ mes: m, avista, cartao });
   }
 
