@@ -169,4 +169,36 @@ a {
   .flame-loading {
     animation: flame-glow 2s ease-in-out infinite;
   }
+  /* respeita quem pediu menos movimento em TODA a interface */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* foco visível e consistente (acessibilidade) */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--ember);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* atalho para pular direto ao conteúdo (leitores de tela / teclado) */
+.pf-skip {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  background: var(--ink-2);
+  color: var(--paper);
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--ember);
+  border-radius: 0 0 var(--radius) 0;
+}
+.pf-skip:focus {
+  left: 0;
 }

@@ -11,12 +11,18 @@ import { Bens } from './routes/Bens';
 import { Conquistas } from './routes/Conquistas';
 import { Ferramentas } from './routes/Ferramentas';
 import { BotaoFeedback } from './components/BotaoFeedback';
+import { useTituloDaPagina } from './hooks/useTituloDaPagina';
 import { Flame } from './theme/Flame';
 
 /** Tela de carregamento — chama "queimando". */
 function Splash() {
   return (
-    <main style={{ minHeight: '100dvh', display: 'grid', placeItems: 'center' }}>
+    <main
+      style={{ minHeight: '100dvh', display: 'grid', placeItems: 'center' }}
+      role="status"
+      aria-live="polite"
+      aria-label="Carregando"
+    >
       <Flame size={72} className="flame-loading" title="Carregando" />
     </main>
   );
@@ -24,6 +30,7 @@ function Splash() {
 
 export function App() {
   const { user, carregando } = useAuth();
+  useTituloDaPagina();
 
   if (carregando) return <Splash />;
 
