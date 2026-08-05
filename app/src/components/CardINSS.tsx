@@ -38,7 +38,8 @@ export function CardINSS({ doc, plano }: { doc: UserDoc; plano: PlanoFire }) {
     <section className="pf-hero-card">
       <span className="pf-eyebrow">INSS vs. sua liberdade</span>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)', marginTop: 'var(--space-4)' }}>
+      <div className="pf-inss-grid">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
         {/* INSS */}
         <div>
           <div className="mono" style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--muted)' }}>
@@ -81,9 +82,10 @@ export function CardINSS({ doc, plano }: { doc: UserDoc; plano: PlanoFire }) {
         </div>
       </div>
 
+      <div>
       {/* o gancho */}
       {fireAntes !== null && fireAntes > 0 && (
-        <p style={{ marginTop: 'var(--space-4)', marginBottom: 0 }}>
+        <p style={{ marginTop: 0, marginBottom: 0 }}>
           Sua liberdade chega <span style={{ color: 'var(--mint)' }}>{fireAntes} anos antes</span> da
           aposentadoria do INSS.
         </p>
@@ -103,6 +105,8 @@ export function CardINSS({ doc, plano }: { doc: UserDoc; plano: PlanoFire }) {
         o INSS considera todas as contribuições desde jul/1994 corrigidas. Confira o valor oficial no{' '}
         <a href="https://meu.inss.gov.br" target="_blank" rel="noreferrer">Meu INSS</a>.
       </p>
+      </div>
+      </div>
     </section>
   );
 }

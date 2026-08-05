@@ -457,3 +457,18 @@
   border-color: var(--ember);
   color: var(--ember-2);
 }
+
+/* comparativo INSS em faixa cheia: números | narrativa lado a lado */
+.pf-inss-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-6);
+  margin-top: var(--space-4);
+  align-items: start;
+}
+@media (min-width: 860px) {
+  .pf-inss-grid {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: var(--space-8);
+  }
+}

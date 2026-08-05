@@ -193,8 +193,6 @@ export function Dashboard() {
               )}
             </section>
           )}
-
-          <CardINSS doc={doc} plano={plano} />
         </div>
 
         {/* Coluna direita: o que se lê */}
@@ -203,6 +201,10 @@ export function Dashboard() {
           <Coast doc={doc} plano={plano} P={P} />
           <CardEconomico doc={doc} />
         </div>
+      </div>
+
+      <div style={{ marginTop: 'var(--space-4)' }}>
+        <CardINSS doc={doc} plano={plano} />
       </div>
 
       {!ultimo ? (
