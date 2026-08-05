@@ -62,8 +62,8 @@ export function GraficoLinha({
   const grade = [0.25, 0.5, 0.75].map((f) => lo + (hi - lo) * f);
 
   return (
-    <div style={{ marginTop: 'var(--space-3)' }}>
-      <div style={{ position: 'relative', height: altura }}>
+    <div className="pf-graf" style={{ marginTop: 'var(--space-3)' }}>
+      <div className="pf-graf-plot" style={{ position: 'relative', height: altura, minHeight: altura }}>
         <svg
           viewBox={`0 0 ${W} ${H}`}
           preserveAspectRatio="none"

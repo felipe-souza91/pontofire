@@ -152,7 +152,7 @@ export function Dashboard() {
 
       <div className="pf-cols-2" style={{ marginTop: 'var(--space-4)' }}>
         {/* Coluna esquerda: os gráficos (precisam de largura) */}
-        <div style={{ display: 'grid', gap: 'var(--space-4)', alignContent: 'start' }}>
+        <div className="pf-col-graficos">
           {mostraProjecao && (
             <section className="pf-hero-card">
               <span className="pf-eyebrow">Projeção do patrimônio</span>

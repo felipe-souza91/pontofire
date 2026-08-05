@@ -472,3 +472,33 @@
     gap: var(--space-8);
   }
 }
+
+/* Alinhamento das colunas do Início: os gráficos crescem para que as duas
+   colunas comecem e terminem juntas, sem alturas fixas chutadas. */
+.pf-col-graficos {
+  display: grid;
+  gap: var(--space-4);
+  align-content: start;
+}
+@media (min-width: 860px) {
+  .pf-cols-2 {
+    align-items: stretch;
+  }
+  .pf-col-graficos {
+    grid-auto-rows: 1fr;
+    align-content: stretch;
+  }
+  .pf-col-graficos > section {
+    display: flex;
+    flex-direction: column;
+  }
+  .pf-col-graficos .pf-graf {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .pf-col-graficos .pf-graf-plot {
+    flex: 1;
+    height: auto !important;
+  }
+}
