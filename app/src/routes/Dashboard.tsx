@@ -193,20 +193,15 @@ export function Dashboard() {
               )}
             </section>
           )}
+
+          <CardINSS doc={doc} plano={plano} />
         </div>
 
         {/* Coluna direita: o que se lê */}
         <div style={{ display: 'grid', gap: 'var(--space-4)', alignContent: 'start' }}>
           <CardsInsights insights={insights} />
           <Coast doc={doc} plano={plano} P={P} />
-          <CardINSS doc={doc} plano={plano} />
           <CardEconomico doc={doc} />
-          {doc.retornoRealEsperado > 0.07 && (
-            <p className="pf-hint" style={{ margin: 0 }}>
-              ⚠️ {formatPct(doc.retornoRealEsperado)} de retorno real ao ano é otimista — no Brasil o
-              juro real de longo prazo costuma ser menor. Vale simular um cenário mais conservador.
-            </p>
-          )}
         </div>
       </div>
 

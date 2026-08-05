@@ -25,7 +25,7 @@ export function GraficoLinha({
   rotuloMeta,
   marcasX,
   formatValor,
-  altura = 170,
+  altura = 240,
   desdeZero = false,
 }: {
   pontos: PontoGrafico[];
@@ -115,8 +115,17 @@ export function GraficoLinha({
           }}
         />
 
-        {/* eixo Y */}
+        {/* eixo Y — topo, linhas de grade e base */}
         {mostraTopo && <span style={rotuloY(0)}>{formatValor(hi)}</span>}
+        {grade.map((v) => {
+          // não desenha o rótulo se ele colidiria com o da meta
+          if (temMeta && Math.abs(pctY(v) - pctY(meta!)) < 9) return null;
+          return (
+            <span key={`g-${v}`} style={{ ...rotuloY(pctY(v)), opacity: 0.75 }}>
+              {formatValor(v)}
+            </span>
+          );
+        })}
         {temMeta && (
           <span style={{ ...rotuloY(pctY(meta!)), color: 'var(--mint)' }}>
             {rotuloMeta ?? formatValor(meta!)}
