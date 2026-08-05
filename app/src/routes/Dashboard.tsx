@@ -18,6 +18,7 @@ import { CardINSS } from '../components/CardINSS';
 import { CardEconomico } from '../components/CardEconomico';
 import { CardsInsights } from '../components/CardsInsights';
 import { TrofeusResumo } from '../components/TrofeusResumo';
+import { GraficoLinha, type MarcaX, type PontoGrafico } from '../components/GraficoLinha';
 import { formatBRLcompact, formatDuracao, formatMesAno, formatPct } from '../utils/format';
 
 const MESES_ABREV = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
@@ -142,14 +143,33 @@ export function Dashboard() {
         </div>
       </section>
 
+      {/* Números — faixa cheia */}
+      <div className="pf-stats" style={{ marginTop: 'var(--space-4)' }}>
+        {stats.map((st) => (
+          <Stat key={st.rot} rot={st.rot} val={st.val} tom={st.tom} />
+        ))}
+      </div>
+
       <div className="pf-cols-2" style={{ marginTop: 'var(--space-4)' }}>
-        {/* Coluna esquerda: números + evolução */}
+        {/* Coluna esquerda: os gráficos (precisam de largura) */}
         <div style={{ display: 'grid', gap: 'var(--space-4)', alignContent: 'start' }}>
-          <div className="pf-stats">
-            {stats.map((s) => (
-              <Stat key={s.rot} rot={s.rot} val={s.val} tom={s.tom} />
-            ))}
-          </div>
+          {mostraProjecao && (
+            <section className="pf-hero-card">
+              <span className="pf-eyebrow">Projeção do patrimônio</span>
+              <p className="pf-hc-sub" style={{ marginTop: 'var(--space-2)', marginBottom: 0 }}>
+                de hoje até a meta, no seu ritmo
+              </p>
+              <GraficoLinha
+                pontos={pontosProjecao(P, doc.aporteMensal, plano.iMensal, plano.meses!)}
+                cor="#FF7A45"
+                meta={doc.metaFire}
+                rotuloMeta={`meta ${formatBRLcompact(doc.metaFire)}`}
+                marcasX={marcasProjecao(plano.meses!, plano.dataLiberdade!)}
+                formatValor={formatBRLcompact}
+                desdeZero
+              />
+            </section>
+          )}
 
           {lista.length >= 1 && (
             <section className="pf-hero-card">
@@ -159,11 +179,12 @@ export function Dashboard() {
                   <p className="pf-hc-sub" style={{ marginTop: 'var(--space-2)', marginBottom: 0 }}>
                     {lista.length} meses lançados
                   </p>
-                  <GraficoEvolucao lista={lista} />
-                  <div className="pf-bar-row">
-                    <span>{mesCurto(lista[0]!.mes)} · {formatBRLcompact(lista[0]!.patrimonioTotal)}</span>
-                    <span>{mesCurto(lista[lista.length - 1]!.mes)} · {formatBRLcompact(lista[lista.length - 1]!.patrimonioTotal)}</span>
-                  </div>
+                  <GraficoLinha
+                    pontos={lista.map((sn, i) => ({ t: i / (lista.length - 1), v: sn.patrimonioTotal }))}
+                    cor="#3FD69B"
+                    marcasX={marcasEvolucao(lista)}
+                    formatValor={formatBRLcompact}
+                  />
                 </>
               ) : (
                 <p className="pf-hc-sub" style={{ marginTop: 'var(--space-2)', marginBottom: 0 }}>
@@ -174,17 +195,8 @@ export function Dashboard() {
           )}
         </div>
 
-        {/* Coluna direita: projeção + insight */}
+        {/* Coluna direita: o que se lê */}
         <div style={{ display: 'grid', gap: 'var(--space-4)', alignContent: 'start' }}>
-          {mostraProjecao && (
-            <section className="pf-hero-card">
-              <span className="pf-eyebrow">Projeção do patrimônio</span>
-              <p className="pf-hc-sub" style={{ marginTop: 'var(--space-2)', marginBottom: 0 }}>
-                do valor de hoje até a meta, no seu ritmo
-              </p>
-              <GraficoProjecao P={P} A={doc.aporteMensal} i={plano.iMensal} M={doc.metaFire} meses={plano.meses!} />
-            </section>
-          )}
           <CardsInsights insights={insights} />
           <Coast doc={doc} plano={plano} P={P} />
           <CardINSS doc={doc} plano={plano} />
@@ -273,64 +285,34 @@ function Coast({ doc, plano, P }: { doc: UserDoc; plano: PlanoFire; P: number })
   );
 }
 
-function GraficoProjecao({ P, A, i, M, meses }: { P: number; A: number; i: number; M: number; meses: number }) {
-  const w = 100;
-  const h = 42;
-  const n = 48;
-  const pts = Array.from({ length: n + 1 }, (_, k) => {
-    const t = (meses * k) / n;
-    return { x: (t / meses) * w, v: valorFuturo(P, A, i, t) };
-  });
-  const maxV = Math.max(M, pts[pts.length - 1]!.v) * 1.02;
-  const y = (v: number) => h - (v / maxV) * h;
-  const linha = pts.map((p, idx) => `${idx ? 'L' : 'M'} ${p.x.toFixed(2)} ${y(p.v).toFixed(2)}`).join(' ');
-  const area = `${linha} L ${w} ${h} L 0 ${h} Z`;
-  const metaY = y(M);
 
-  return (
-    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ width: '100%', height: '130px', marginTop: 'var(--space-3)', display: 'block' }} aria-hidden>
-      <defs>
-        <linearGradient id="pf-proj" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#FF7A45" stopOpacity="0.28" />
-          <stop offset="1" stopColor="#FF7A45" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      {/* linha da meta */}
-      <line x1="0" y1={metaY} x2={w} y2={metaY} stroke="#3FD69B" strokeWidth="1" strokeDasharray="2 2" vectorEffect="non-scaling-stroke" opacity="0.7" />
-      <path d={area} fill="url(#pf-proj)" />
-      <path d={linha} fill="none" stroke="#FF7A45" strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
-    </svg>
-  );
+
+/** Curva do patrimônio de hoje até a meta. */
+function pontosProjecao(P: number, A: number, i: number, meses: number): PontoGrafico[] {
+  const n = 40;
+  return Array.from({ length: n + 1 }, (_, k) => {
+    const t = k / n;
+    return { t, v: valorFuturo(P, A, i, meses * t) };
+  });
 }
 
-function GraficoEvolucao({ lista }: { lista: Snapshot[] }) {
-  const w = 100;
-  const h = 42;
-  const n = lista.length;
-  const vals = lista.map((s) => s.patrimonioTotal);
-  const min = Math.min(...vals);
-  const max = Math.max(...vals);
-  // escala nos PRÓPRIOS dados (com folga) para o movimento aparecer
-  const span = max - min || max || 1;
-  const lo = min - span * 0.18;
-  const hi = max + span * 0.18;
-  const x = (i: number) => (i / (n - 1)) * w;
-  const y = (v: number) => h - ((v - lo) / (hi - lo)) * h;
-  const pts = lista.map((s, i) => `${i ? 'L' : 'M'} ${x(i).toFixed(2)} ${y(s.patrimonioTotal).toFixed(2)}`).join(' ');
-  const area = `${pts} L ${w} ${h} L 0 ${h} Z`;
+function marcasProjecao(meses: number, dataFim: Date): MarcaX[] {
+  const meio = new Date();
+  meio.setMonth(meio.getMonth() + Math.round(meses / 2));
+  return [
+    { t: 0, rotulo: 'hoje' },
+    { t: 0.5, rotulo: mesCurto(`${meio.getFullYear()}-${String(meio.getMonth() + 1).padStart(2, '0')}`) },
+    { t: 1, rotulo: mesCurto(`${dataFim.getFullYear()}-${String(dataFim.getMonth() + 1).padStart(2, '0')}`) },
+  ];
+}
 
-  return (
-    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ width: '100%', height: '120px', marginTop: 'var(--space-3)', display: 'block' }} aria-hidden>
-      <defs>
-        <linearGradient id="pf-evo" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#3FD69B" stopOpacity="0.26" />
-          <stop offset="1" stopColor="#3FD69B" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path d={area} fill="url(#pf-evo)" />
-      <path d={pts} fill="none" stroke="#3FD69B" strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
-    </svg>
-  );
+/** Até 4 marcas no eixo, distribuídas — funciona com 2 ou 36 meses. */
+function marcasEvolucao(lista: Snapshot[]): MarcaX[] {
+  const n = lista.length;
+  if (n < 2) return [];
+  const quantas = Math.min(4, n);
+  const idx = Array.from({ length: quantas }, (_, k) => Math.round((k * (n - 1)) / (quantas - 1)));
+  return [...new Set(idx)].map((i) => ({ t: i / (n - 1), rotulo: mesCurto(lista[i]!.mes) }));
 }
 
 function Centro({ children }: { children: ReactNode }) {
