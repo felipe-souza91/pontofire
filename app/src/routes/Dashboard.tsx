@@ -13,10 +13,11 @@ import { useConquistas } from '../hooks/useConquistas';
 import type { UserDoc } from '../data/types';
 import type { Snapshot } from '../data/snapshots';
 import { Flame } from '../theme/Flame';
-import { gerarInsights, conquistasAtingidas } from '@pontofire/insights';
+import { gerarInsights, conquistasAtingidas, cardDaSemana } from '@pontofire/insights';
 import { CardINSS } from '../components/CardINSS';
 import { CardEconomico } from '../components/CardEconomico';
 import { CardsInsights } from '../components/CardsInsights';
+import { CardSemana } from '../components/CardSemana';
 import { TrofeusResumo } from '../components/TrofeusResumo';
 import { GraficoLinha, type MarcaX, type PontoGrafico } from '../components/GraficoLinha';
 import { formatBRLcompact, formatDuracao, formatMesAno, formatPct } from '../utils/format';
@@ -46,16 +47,20 @@ export function Dashboard() {
 
   // assistente (§7): catálogo de regras determinístico
   const temCardCoast = !!doc.idadeAlvo && idadeDe(doc.dataNascimento) !== undefined;
+  const fmt = {
+    moeda: (v: number) => formatBRLcompact(v),
+    duracao: (m: number) => formatDuracao(m),
+    pct: (v: number) => formatPct(v, 0),
+  };
   const insights = gerarInsights(
     ctx,
-    {
-      moeda: (v) => formatBRLcompact(v),
-      duracao: (m) => formatDuracao(m),
-      pct: (v) => formatPct(v, 0),
-    },
+    fmt,
     // o Coast já tem card dedicado; não repetir a mesma notícia
     { limite: 4, excluir: temCardCoast ? ['coast-atingido'] : [] },
   );
+
+  // card da semana: determinístico por uid + semana, muda sozinho na segunda
+  const daSemana = cardDaSemana(ctx, fmt, { semente: user?.uid });
 
   const stats: { rot: string; val: string; tom?: 'mint' | 'ember' }[] = [
     { rot: 'Número FIRE', val: formatBRLcompact(doc.metaFire) },
@@ -196,10 +201,11 @@ export function Dashboard() {
         </div>
 
         {/* Coluna direita: o que se lê */}
-        <div style={{ display: 'grid', gap: 'var(--space-4)', alignContent: 'start' }}>
+        <div className="pf-col-lado">
           <CardsInsights insights={insights} />
           <Coast doc={doc} plano={plano} P={P} />
           <CardEconomico doc={doc} />
+          <CardSemana card={daSemana} />
         </div>
       </div>
 

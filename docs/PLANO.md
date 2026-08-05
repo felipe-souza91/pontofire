@@ -85,10 +85,18 @@ firebase.json  firestore.rules  firestore.indexes.json  .firebaserc
 - `indicadores`: read liberado (logado); write negado (só Admin SDK da function).
 
 ## Status (atualizado)
-✅ **M0** fundação · ✅ **M1** motor (49 testes) · ✅ **M2** auth + onboarding humanizado + perfil ·
-✅ **M3** Início · ✅ **M4** lançar/detalhado/bens · ✅ **M6** INSS + econômico (client-side).
-⏳ Faltam: **M5** importador · **M7** insights (+push quando houver Blaze) · **M8** gamificação/viral/
-feedback · **M9** calculadoras · **M10** monetização (Blaze) · **M11** polish/QA + LGPD.
+✅ **M0** fundação · ✅ **M1** motor · ✅ **M2** auth + onboarding humanizado + perfil ·
+✅ **M3** Início · ✅ **M4** lançar/detalhado/bens · ✅ **M6** INSS + econômico (client-side) ·
+✅ **M7** insights in-app (**push só com Blaze**) · ✅ **M8** gamificação/viral/feedback ·
+✅ **M9** calculadoras · ✅ **M11** polish/QA + LGPD. 118 testes verdes.
+⏳ Faltam: **M5** importador · **M10** monetização (Blaze).
+
+**Card da semana** (parte do M7): card único no Início que alterna toda segunda entre três famílias
+— `retrato` (número do usuário ao lado de um dado público do Brasil), `dica` (tática com o número
+dele dentro) e `humano` (o "por quê" que ele escreveu). Escolha determinística por
+`semana + hash(uid)`: sem estado no Firestore e reaproveitável pela function do push semanal.
+Os dados do país ficam em `packages/insights/src/brasil.ts`, **um por um com fonte, ano e link** —
+**revisar anualmente**.
 
 ## Sequência de build (por dependência)
 - **M0 — Fundação:** versionar landing/painel/config; scaffold React+Vite+PWA; tema compartilhado;

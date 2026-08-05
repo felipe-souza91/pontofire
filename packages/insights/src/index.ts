@@ -8,3 +8,5 @@ export * from './tipos';
 export * from './regras';
 export * from './gerar';
 export * from './conquistas';
+export * from './brasil';
+export * from './semana';

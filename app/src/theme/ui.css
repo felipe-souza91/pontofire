@@ -502,3 +502,59 @@
     height: auto !important;
   }
 }
+
+/* Coluna da direita: o card da semana absorve a sobra vertical, então as
+   duas colunas terminam juntas sem espaço morto. */
+.pf-col-lado {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+@media (min-width: 860px) {
+  .pf-col-lado > .pf-card-semana {
+    flex: 1 1 auto;
+  }
+}
+
+/* Card da semana — rotação determinística (retrato do país / dica / porquê) */
+.pf-card-semana {
+  border-radius: 18px;
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+}
+.pf-cs-topo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.pf-cs-selo {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+.pf-cs-texto {
+  margin: var(--space-4) 0 0;
+  line-height: 1.55;
+}
+.pf-cs-rodape {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: auto;
+  padding-top: var(--space-4);
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.pf-cs-rodape a {
+  color: var(--muted);
+}
