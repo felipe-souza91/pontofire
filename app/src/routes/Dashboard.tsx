@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import {
   coberturaPassiva,
@@ -19,6 +19,8 @@ import { CardEconomico } from '../components/CardEconomico';
 import { CardsInsights } from '../components/CardsInsights';
 import { CardSemana } from '../components/CardSemana';
 import { TrofeusResumo } from '../components/TrofeusResumo';
+import { BoasVindas } from '../components/BoasVindas';
+import { marcarTourVisto } from '../data/users';
 import { GraficoLinha, type MarcaX, type PontoGrafico } from '../components/GraficoLinha';
 import { formatBRLcompact, formatDuracao, formatMesAno, formatPct } from '../utils/format';
 
@@ -36,6 +38,8 @@ export function Dashboard() {
   const atingidas = ctx ? conquistasAtingidas(ctx) : [];
   const { salvas } = useConquistas(user?.uid ?? null, atingidas);
   const trofeus = new Set([...atingidas, ...salvas]);
+  // apresentação: só pra quem terminou o onboarding e ainda não viu
+  const [tourFechado, setTourFechado] = useState(false);
 
   if (carregando) return <Centro>Carregando…</Centro>;
   if (!doc || !plano || !ctx) return <Centro>Sem dados ainda.</Centro>;
@@ -78,8 +82,19 @@ export function Dashboard() {
   stats.push({ rot: 'Aporte mensal', val: `${formatBRLcompact(doc.aporteMensal)}/mês` });
   stats.push({ rot: 'Retorno real a.a.', val: formatPct(doc.retornoRealEsperado), tom: 'ember' });
 
+  const mostraTour = doc.tourVisto === false && !tourFechado;
+
   return (
     <main className="pf-dash">
+      {mostraTour && (
+        <BoasVindas
+          nome={saudacao}
+          onFechar={() => {
+            setTourFechado(true);
+            if (user) void marcarTourVisto(user.uid).catch(() => undefined);
+          }}
+        />
+      )}
       <header style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-8)', position: 'relative', zIndex: 1 }}>
         <Flame size={30} />
         <strong className="pf-logo" style={{ flex: 1 }}>Ponto FIRE</strong>
@@ -159,7 +174,7 @@ export function Dashboard() {
         {/* Coluna esquerda: os gráficos (precisam de largura) */}
         <div className="pf-col-graficos">
           {mostraProjecao && (
-            <section className="pf-hero-card">
+            <section className="pf-hero-card pf-card-graf">
               <span className="pf-eyebrow">Projeção do patrimônio</span>
               <p className="pf-hc-sub" style={{ marginTop: 'var(--space-2)', marginBottom: 0 }}>
                 de hoje até a meta, no seu ritmo
@@ -176,26 +191,32 @@ export function Dashboard() {
             </section>
           )}
 
-          {lista.length >= 1 && (
+          {lista.length >= 2 ? (
+            <section className="pf-hero-card pf-card-graf">
+              <span className="pf-eyebrow">Evolução do patrimônio</span>
+              <p className="pf-hc-sub" style={{ marginTop: 'var(--space-2)', marginBottom: 0 }}>
+                {lista.length} meses lançados
+              </p>
+              <GraficoLinha
+                pontos={lista.map((sn, i) => ({ t: i / (lista.length - 1), v: sn.patrimonioTotal }))}
+                cor="#3FD69B"
+                marcasX={marcasEvolucao(lista)}
+                formatValor={formatBRLcompact}
+              />
+            </section>
+          ) : (
             <section className="pf-hero-card">
               <span className="pf-eyebrow">Evolução do patrimônio</span>
-              {lista.length >= 2 ? (
-                <>
-                  <p className="pf-hc-sub" style={{ marginTop: 'var(--space-2)', marginBottom: 0 }}>
-                    {lista.length} meses lançados
-                  </p>
-                  <GraficoLinha
-                    pontos={lista.map((sn, i) => ({ t: i / (lista.length - 1), v: sn.patrimonioTotal }))}
-                    cor="#3FD69B"
-                    marcasX={marcasEvolucao(lista)}
-                    formatValor={formatBRLcompact}
-                  />
-                </>
-              ) : (
-                <p className="pf-hc-sub" style={{ marginTop: 'var(--space-2)', marginBottom: 0 }}>
-                  seu 1º mês está registrado — lance mais um pra ver a curva crescer.
+              <div className="pf-vazio">
+                <p>
+                  {lista.length === 1
+                    ? 'Seu 1º mês está registrado. Com dois pontos eu consigo desenhar a curva — e a partir daí ela é a sua letra, não uma projeção.'
+                    : 'Ainda não há mês lançado. A curva aparece assim que houver dois — é ela que mostra se a sua data está andando.'}
                 </p>
-              )}
+                <Link className="pf-btn pf-btn-ghost" to="/lancar" style={{ width: 'auto', padding: '0.6rem 1.2rem', textDecoration: 'none' }}>
+                  {lista.length === 1 ? 'Lançar mais um mês' : 'Lançar meu primeiro mês'}
+                </Link>
+              </div>
             </section>
           )}
         </div>
@@ -213,20 +234,17 @@ export function Dashboard() {
         <CardINSS doc={doc} plano={plano} />
       </div>
 
-      {!ultimo ? (
-        <div style={{ textAlign: 'center', marginTop: 'var(--space-8)' }}>
-          <Link className="pf-btn pf-btn-primary" to="/lancar" style={{ display: 'inline-flex', width: 'auto', padding: '0.85rem 2rem', textDecoration: 'none' }}>
-            Lançar meu primeiro mês
-          </Link>
-          <p className="pf-hint" style={{ marginTop: 'var(--space-3)' }}>
+      <div style={{ textAlign: 'center', marginTop: 'var(--space-8)' }}>
+        {!ultimo && (
+          <p className="pf-hint" style={{ marginTop: 0, marginBottom: 'var(--space-3)' }}>
             Registre um mês pra ver taxa de poupança e evolução — e sua data começar a andar sozinha.
           </p>
+        )}
+        <div style={{ display: 'flex', gap: 'var(--space-4)', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <Link className="pf-btn-link" to="/lancar">{ultimo ? '+ Lançar novo mês' : '+ Lançar meu primeiro mês'}</Link>
+          <Link className="pf-btn-link" to="/importar">importar extrato ou fatura</Link>
         </div>
-      ) : (
-        <div style={{ textAlign: 'center', marginTop: 'var(--space-8)' }}>
-          <Link className="pf-btn-link" to="/lancar">+ Lançar novo mês</Link>
-        </div>
-      )}
+      </div>
     </main>
   );
 }

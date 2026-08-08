@@ -32,7 +32,8 @@ contínuo (o dono é o usuário-alvo).
 | INSS | **Estimativa simplificada honesta**; constantes 2026 em config atualizável; link Meu INSS. |
 | Econômico | **Cloud Function diária** → doc `indicadores` (BACEN SGS); client lê cacheado. |
 | Feedback | **Mão única** + agradecimento automático; surface no painel. |
-| Onboarding | **2 níveis** (aha <60s → enriquecimento); humanização como gatilhos do motor. |
+| Onboarding | **Fluxo contínuo de 10 perguntas** — primeiro quem é (nome, nascimento, porquê, sonho, idade alvo), depois os números; a data no fim. Grava numa escrita só. *(Antes eram 2 níveis com um botão "Personalizar" no meio; o corte matava o embalo.)* |
+| Pós-onboarding | **Apresentação** de 5 slides por cima do Início real, terminando em "como quer começar?" → lançar na mão / importar / só olhar. `tourVisto` no doc; dá pra rever pelo Perfil. |
 
 ## Precisão do motor (regras de implementação)
 - `i` real mensal `= (1+real_anual)^(1/12) − 1`; real de nominal `= (1+nom)/(1+ipca) − 1` (composto).
@@ -155,6 +156,14 @@ Os dados do país ficam em `packages/insights/src/brasil.ts`, **um por um com fo
     recente** (reautenticar) ou uma Function admin. Confirmar com dupla confirmação (digitar EXCLUIR).
   - *Resetar dados:* apaga `snapshots`/`transactions`/`assets` (mantém a conta) e zera
     `onboardingCompleto`/`onboardingNivel` → cai de volta no onboarding. Mais leve que excluir.
+
+## Próximos (combinados com o dono, ainda não construídos)
+- **Calculadora de amortização** de financiamento/empréstimo (SAC × Price; efeito de amortizar
+  prazo vs. parcela; comparar amortizar × investir a diferença usando o retorno real dele).
+  Vai em `packages/engine` + `/ferramentas` público (SEO) + app, como as outras.
+- **Gate do beta:** só entra quem se cadastrou na landing. O `waitlist/{sha256(email)}` já existe;
+  a checagem por e-mail no login precisa de leitura própria do doc (regra nova) ou de um custom
+  claim via function — **decidir qual quando o Blaze entrar**.
 
 ## Fase 2 / Backlog (fora do MVP)
 Simulador "e se", goal-seek (motor reverso), Monte Carlo/faixa de confiança, "suas alavancas",

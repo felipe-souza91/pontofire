@@ -1,9 +1,8 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { calcularPlanoFire, numeroFire, type PlanoFire } from '@pontofire/engine';
 import { useAuth } from '../auth/useAuth';
-import { concluirSemN2, salvarOnboardingN1, salvarOnboardingN2 } from '../data/users';
-import type { OnboardingN2 } from '../data/types';
+import { salvarOnboarding } from '../data/users';
 import { PORQUES } from '../data/humanizacao';
 import { formatBRL, formatDuracao, formatMesAno } from '../utils/format';
 import { MoedaInput } from '../components/MoedaInput';
@@ -11,27 +10,63 @@ import { Flame } from '../theme/Flame';
 
 const TSS = 0.04;
 const RETORNOS = [4, 5, 6];
-// juro real histórico do Brasil (Selic − IPCA) ≈ 5%
+/** juro real histórico do Brasil (Selic − IPCA) ≈ 5% */
 const RETORNO_RECOMENDADO = 5;
 
-type Fase = 'consentimento' | 'perguntas' | 'aha' | 'n2';
+type Fase = 'consentimento' | 'perguntas' | 'aha';
 
-export function Onboarding() {
+/** As 10 perguntas em dois blocos — o nome do bloco aparece na barra. */
+type Bloco = 'você' | 'números';
+
+interface PassoConfig {
+  bloco: Bloco;
+  titulo: string;
+  sub: string;
+  campo: ReactNode;
+  /** false trava o "Continuar" */
+  valido?: boolean;
+  /** passo que pode ser deixado em branco (mostra "pular esta") */
+  opcional?: boolean;
+}
+
+/**
+ * Onboarding — fluxo contínuo de 10 perguntas.
+ *
+ * Ordem proposital: primeiro QUEM É (nome, nascimento, porquê, sonho, idade
+ * alvo), depois OS NÚMEROS. Quem já contou o porquê chega nas perguntas de
+ * dinheiro com contexto — e a data no fim tem nome e dono, não é só um número.
+ */
+export function Onboarding({ jaCompleto = false }: { jaCompleto?: boolean }) {
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  // Congela o valor da montagem. Sem isso, o `onboardingCompleto: true` que a
+  // última pergunta grava derrubaria a tela da data no mesmo instante.
+  const [entrouCompleto] = useState(jaCompleto);
 
   const [fase, setFase] = useState<Fase>('consentimento');
   const [passo, setPasso] = useState(0);
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
 
-  // N1
+  // --- bloco "você"
+  const [apelido, setApelido] = useState('');
+  const [dataNascimento, setDataNascimento] = useState('');
+  const [porQues, setPorQues] = useState<string[]>([]);
+  const [porQue, setPorQue] = useState('');
+  const [nomeSonho, setNomeSonho] = useState('');
+  const [idadeAlvo, setIdadeAlvo] = useState('');
+
+  // --- bloco "números"
   const [custo, setCusto] = useState(0);
   const [aporte, setAporte] = useState(0);
   const [patrimonio, setPatrimonio] = useState(0);
   const [retornoPct, setRetornoPct] = useState(RETORNO_RECOMENDADO);
   const [meta, setMeta] = useState(0);
   const [metaEditada, setMetaEditada] = useState(false);
+  const [inicioContribuicao, setInicioContribuicao] = useState('');
+  const [salario, setSalario] = useState(0);
+  const [sexoINSS, setSexoINSS] = useState<'F' | 'M' | undefined>(undefined);
 
   const metaSugerida = useMemo(() => Math.round(numeroFire(custo, TSS)), [custo]);
   const metaEfetiva = metaEditada && meta > 0 ? meta : metaSugerida;
@@ -44,86 +79,137 @@ export function Onboarding() {
       custoVidaMensal: custo,
       retornoRealAnual: retornoPct / 100,
       metaFire: metaEfetiva,
+      idadeAtual: idadeDeISO(dataNascimento),
       hoje: new Date(),
     });
-  }, [custo, aporte, patrimonio, retornoPct, metaEfetiva]);
+  }, [custo, aporte, patrimonio, retornoPct, metaEfetiva, dataNascimento]);
 
-  async function concluirN1() {
-    if (!user) return;
-    setErro(null);
-    setSalvando(true);
-    try {
-      await salvarOnboardingN1(user.uid, {
-        custoVidaMensal: custo,
-        aporteMensal: aporte,
-        patrimonioInicial: patrimonio,
-        metaFire: metaEfetiva,
-        retornoRealEsperado: retornoPct / 100,
-        taxaSaqueSegura: TSS,
-      });
-      setFase('aha');
-    } catch {
-      setErro('Não consegui salvar. Tente de novo.');
-    } finally {
-      setSalvando(false);
-    }
-  }
+  const tratamento = apelido.trim().split(' ')[0] || 'você';
 
-  // ---- consentimento ----
-  if (fase === 'consentimento') {
-    return (
-      <Tela>
-        <Cabecalho titulo="Vamos achar sua data" />
-        <p style={{ color: 'var(--muted)' }}>
-          Em menos de um minuto você vê o mês exato em que pode ficar livre. Cinco perguntas
-          rápidas — sem julgamento, só matemática honesta.
-        </p>
-        <p className="pf-hint">
-          Ao continuar, você concorda que o Ponto FIRE guarde os dados que você informar para
-          calcular e acompanhar sua meta (LGPD). Você pode exportar ou apagar tudo quando quiser.
-        </p>
-        <div style={{ marginTop: 'var(--space-6)' }}>
-          <button className="pf-btn pf-btn-primary" onClick={() => setFase('perguntas')}>
-            Começar
-          </button>
-        </div>
-      </Tela>
-    );
-  }
-
-  // ---- aha ----
-  if (fase === 'aha' && plano) {
-    return <Aha plano={plano} onPersonalizar={() => setFase('n2')} onDepois={irProInicio} />;
-  }
-
-  // ---- N2 ----
-  if (fase === 'n2') {
-    return <FormularioN2 salvando={salvando} erro={erro} onConcluir={salvarN2} onPular={irProInicio} />;
-  }
-
-  // ---- perguntas (N1) ----
   const passos: PassoConfig[] = [
     {
-      titulo: 'Quanto você gasta por mês, hoje?',
-      hint: 'Só o que você consome pra viver — sem contar o que investe. É o que define sua meta.',
+      bloco: 'você',
+      titulo: 'Como te chamo?',
+      sub: 'Vou usar isso pra falar com você — nada formal.',
+      campo: (
+        <input
+          className="pf-input"
+          style={{ fontSize: '1.2rem' }}
+          autoFocus
+          value={apelido}
+          onChange={(e) => setApelido(e.target.value)}
+          placeholder="seu nome ou apelido"
+        />
+      ),
+      opcional: true,
+    },
+    {
+      bloco: 'você',
+      titulo: 'Quando você nasceu?',
+      sub: 'É o que transforma "faltam 23 anos" em "aos 59" — e me deixa comparar com o INSS depois.',
+      campo: (
+        <input
+          className="pf-input"
+          type="date"
+          style={{ maxWidth: '14rem' }}
+          value={dataNascimento}
+          onChange={(e) => setDataNascimento(e.target.value)}
+        />
+      ),
+      opcional: true,
+    },
+    {
+      bloco: 'você',
+      titulo: 'O que a liberdade significa pra você?',
+      sub: 'Escolha o que ressoar. É disso que eu vou te lembrar nos meses em que a conta não anda.',
+      campo: (
+        <div>
+          <div className="pf-chips">
+            {PORQUES.map((p) => (
+              <button
+                key={p}
+                type="button"
+                className={`pf-chip ${porQues.includes(p) ? 'on' : ''}`}
+                onClick={() => setPorQues((v) => (v.includes(p) ? v.filter((x) => x !== p) : [...v, p]))}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+          <textarea
+            className="pf-input"
+            style={{ marginTop: 'var(--space-4)' }}
+            rows={2}
+            value={porQue}
+            onChange={(e) => setPorQue(e.target.value)}
+            placeholder="quer contar com suas palavras? (opcional)"
+          />
+        </div>
+      ),
+      opcional: true,
+    },
+    {
+      bloco: 'você',
+      titulo: 'Dá um nome pra esse sonho.',
+      sub: 'Vai aparecer no seu Início. E me diz até quando você quer poder decidir parar.',
+      campo: (
+        <div style={{ display: 'grid', gap: 'var(--space-4)' }}>
+          <label className="pf-field" style={{ marginBottom: 0 }}>
+            <span className="pf-label">O nome</span>
+            <input
+              className="pf-input"
+              style={{ fontSize: '1.15rem' }}
+              autoFocus
+              value={nomeSonho}
+              onChange={(e) => setNomeSonho(e.target.value)}
+              placeholder='ex: "minha ilha", "liberdade aos 50"'
+            />
+          </label>
+          <label className="pf-field" style={{ marginBottom: 0 }}>
+            <span className="pf-label">Poder parar aos…</span>
+            <div style={{ position: 'relative', maxWidth: '12rem' }}>
+              <input
+                className="pf-input pf-num"
+                style={{ fontSize: '1.3rem' }}
+                inputMode="numeric"
+                value={idadeAlvo}
+                onChange={(e) => setIdadeAlvo(e.target.value.replace(/\D/g, '').slice(0, 3))}
+                placeholder="55"
+              />
+              <span style={{ position: 'absolute', right: '0.9rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }}>
+                anos
+              </span>
+            </div>
+          </label>
+        </div>
+      ),
+      opcional: true,
+    },
+    {
+      bloco: 'números',
+      titulo: `Agora os números, ${tratamento}. Quanto você gasta por mês?`,
+      sub: 'Só o que você consome pra viver — SEM contar o que investe. É esse número que define sua meta.',
       campo: <MoedaInput value={custo} onChange={setCusto} autoFocus />,
       valido: custo > 0,
     },
     {
+      bloco: 'números',
       titulo: 'Quanto consegue investir por mês?',
-      hint: 'Seu aporte médio. Pode ajustar depois.',
+      sub: 'Seu aporte médio. Pode ajustar quando quiser — é a alavanca que mais mexe na sua data.',
       campo: <MoedaInput value={aporte} onChange={setAporte} autoFocus />,
       valido: aporte >= 0,
     },
     {
+      bloco: 'números',
       titulo: 'Quanto você já tem investido?',
-      hint: 'Só o que rende e é sacável (investimentos). Casa e carro entram depois.',
+      sub: 'Só o que rende e é sacável. Casa e carro entram depois, na aba Bens.',
       campo: <MoedaInput value={patrimonio} onChange={setPatrimonio} autoFocus />,
       valido: patrimonio >= 0,
     },
     {
+      bloco: 'números',
       titulo: 'Que retorno real ao ano você espera?',
-      hint: 'A Selic média dos últimos ~20 anos foi ~10%/ano — mas isso é nominal. Descontada a inflação (IPCA), o juro real fica perto de 5%. Deixamos 5% como recomendação conservadora; ajuste se quiser.',
+      sub: 'Real = já descontada a inflação. A Selic média dos últimos ~20 anos foi ~10% ao ano, mas isso é nominal; tirando o IPCA sobra perto de 5%.',
       campo: (
         <div>
           <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
@@ -134,8 +220,7 @@ export function Onboarding() {
                 className={`pf-btn ${retornoPct === r ? 'pf-btn-primary' : 'pf-btn-ghost'}`}
                 onClick={() => setRetornoPct(r)}
               >
-                {r}%
-                {r === RETORNO_RECOMENDADO ? ' ★' : ''}
+                {r}%{r === RETORNO_RECOMENDADO ? ' ★' : ''}
               </button>
             ))}
           </div>
@@ -154,8 +239,9 @@ export function Onboarding() {
       valido: retornoPct > 0,
     },
     {
+      bloco: 'números',
       titulo: 'Sua meta de patrimônio',
-      hint: `Sugestão: 25× seu custo anual = ${formatBRL(metaSugerida)}. Pode ajustar.`,
+      sub: `Sugestão: 25× seu custo anual = ${formatBRL(metaSugerida)}. É a regra dos 4% — pode ajustar.`,
       campo: (
         <MoedaInput
           value={metaEditada ? meta : metaSugerida}
@@ -168,291 +254,12 @@ export function Onboarding() {
       ),
       valido: metaEfetiva > 0,
     },
-  ];
-
-  const atual = passos[passo]!;
-  const ultimo = passo === passos.length - 1;
-
-  return (
-    <Tela>
-      <div className="pf-steps">
-        {passos.map((_, i) => (
-          <div key={i} className={`pf-step ${i <= passo ? 'on' : ''}`} />
-        ))}
-      </div>
-
-      <h2 style={{ fontSize: '1.6rem' }}>{atual.titulo}</h2>
-      <div style={{ margin: 'var(--space-4) 0' }}>{atual.campo}</div>
-      <p className="pf-hint">{atual.hint}</p>
-
-      {erro && <p className="pf-error">{erro}</p>}
-
-      <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-6)' }}>
-        {passo > 0 && (
-          <button
-            className="pf-btn pf-btn-ghost"
-            style={{ flex: '0 0 auto', width: 'auto', padding: '0.85rem 1.5rem' }}
-            onClick={() => setPasso(passo - 1)}
-          >
-            Voltar
-          </button>
-        )}
-        <button
-          className="pf-btn pf-btn-primary"
-          disabled={!atual.valido || salvando}
-          onClick={() => (ultimo ? void concluirN1() : setPasso(passo + 1))}
-        >
-          {ultimo ? (salvando ? 'Calculando…' : 'Ver minha data') : 'Continuar'}
-        </button>
-      </div>
-    </Tela>
-  );
-
-  async function salvarN2(n2: OnboardingN2) {
-    if (!user) return;
-    setErro(null);
-    setSalvando(true);
-    try {
-      await salvarOnboardingN2(user.uid, n2);
-      navigate('/', { replace: true });
-    } catch {
-      setErro('Não consegui salvar. Tente de novo.');
-      setSalvando(false);
-    }
-  }
-
-  async function irProInicio() {
-    if (!user) return;
-    try {
-      await concluirSemN2(user.uid);
-    } finally {
-      navigate('/', { replace: true });
-    }
-  }
-}
-
-// ---------------------------------------------------------------------------
-
-interface PassoConfig {
-  titulo: string;
-  hint: string;
-  campo: ReactNode;
-  valido: boolean;
-}
-
-function Tela({ children }: { children: ReactNode }) {
-  return (
-    <main className="pf-container" style={{ minHeight: '100dvh', display: 'grid', alignContent: 'center' }}>
-      <div className="pf-card">{children}</div>
-    </main>
-  );
-}
-
-function Cabecalho({ titulo }: { titulo: string }) {
-  return (
-    <div style={{ textAlign: 'center', marginBottom: 'var(--space-6)' }}>
-      <Flame size={48} flicker />
-      <h1 style={{ marginTop: 'var(--space-4)', marginBottom: 0 }}>{titulo}</h1>
-    </div>
-  );
-}
-
-function Aha({
-  plano,
-  onPersonalizar,
-  onDepois,
-}: {
-  plano: PlanoFire;
-  onPersonalizar: () => void;
-  onDepois: () => void;
-}) {
-  return (
-    <Tela>
-      <div style={{ textAlign: 'center' }}>
-        <Flame size={44} flicker />
-        {plano.status === 'ok' && plano.dataLiberdade && plano.meses !== null ? (
-          <>
-            <p style={{ color: 'var(--muted)', marginTop: 'var(--space-4)', marginBottom: 'var(--space-2)' }}>
-              Sua liberdade chega em
-            </p>
-            <h1 style={{ fontSize: 'clamp(2rem, 8vw, 3.2rem)', color: 'var(--mint)', margin: 0 }}>
-              {formatMesAno(plano.dataLiberdade)}
-            </h1>
-            <p className="mono" style={{ color: 'var(--muted)', marginTop: 'var(--space-2)' }}>
-              daqui a {formatDuracao(plano.meses)}
-            </p>
-          </>
-        ) : plano.status === 'atingido' ? (
-          <>
-            <h1 style={{ fontSize: 'clamp(2rem, 8vw, 3rem)', color: 'var(--mint)', marginTop: 'var(--space-4)' }}>
-              Você já chegou lá.
-            </h1>
-            <p style={{ color: 'var(--muted)' }}>Seu patrimônio já cobre sua meta.</p>
-          </>
-        ) : (
-          <>
-            <h1 style={{ fontSize: 'clamp(1.6rem, 6vw, 2.4rem)', marginTop: 'var(--space-4)' }}>
-              Ainda não dá pra cravar a data.
-            </h1>
-            <p style={{ color: 'var(--muted)' }}>
-              Com esse aporte e retorno, a meta não é alcançada. Aumentar o aporte muda tudo — dá pra
-              simular depois, sem pressão.
-            </p>
-          </>
-        )}
-      </div>
-
-      <div style={{ borderTop: '1px solid var(--line)', margin: 'var(--space-6) 0', paddingTop: 'var(--space-4)' }}>
-        <Linha rotulo="Número FIRE (meta)" valor={formatBRL(plano.numeroFire)} />
-        <Linha rotulo="Progresso" valor={`${(plano.progresso * 100).toFixed(1).replace('.', ',')}%`} />
-        <Linha rotulo="Renda ao atingir" valor={`${formatBRL(plano.saqueMensalSustentavel)} /mês`} />
-      </div>
-
-      <button className="pf-btn pf-btn-primary" onClick={onPersonalizar}>
-        Personalizar meu perfil
-      </button>
-      <div style={{ textAlign: 'center', marginTop: 'var(--space-3)' }}>
-        <button className="pf-btn-link" onClick={onDepois}>
-          Ir pro início
-        </button>
-      </div>
-    </Tela>
-  );
-}
-
-function Linha({ rotulo, valor }: { rotulo: string; valor: string }) {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', padding: 'var(--space-2) 0' }}>
-      <span style={{ color: 'var(--muted)' }}>{rotulo}</span>
-      <span className="mono">{valor}</span>
-    </div>
-  );
-}
-
-function FormularioN2({
-  salvando,
-  erro,
-  onConcluir,
-  onPular,
-}: {
-  salvando: boolean;
-  erro: string | null;
-  onConcluir: (n2: OnboardingN2) => void;
-  onPular: () => void;
-}) {
-  const [passo, setPasso] = useState(0);
-  const [apelido, setApelido] = useState('');
-  const [porQues, setPorQues] = useState<string[]>([]);
-  const [porQue, setPorQue] = useState('');
-  const [nomeSonho, setNomeSonho] = useState('');
-  const [idadeAlvo, setIdadeAlvo] = useState('');
-  const [dataNascimento, setDataNascimento] = useState('');
-  const [inicioContribuicao, setInicioContribuicao] = useState('');
-  const [salario, setSalario] = useState(0);
-  const [sexoINSS, setSexoINSS] = useState<'F' | 'M' | undefined>(undefined);
-
-  function toggle(p: string) {
-    setPorQues((prev) => (prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]));
-  }
-
-  function concluir() {
-    onConcluir({
-      apelido: apelido.trim() || undefined,
-      porQues: porQues.length ? porQues : undefined,
-      porQue: porQue.trim() || undefined,
-      nomeSonho: nomeSonho.trim() || undefined,
-      idadeAlvo: idadeAlvo ? parseInt(idadeAlvo, 10) : undefined,
-      dataNascimento: dataNascimento || undefined,
-      inicioContribuicao: inicioContribuicao || undefined,
-      salario: salario || undefined,
-      sexoINSS,
-    });
-  }
-
-  const passos: { titulo: string; sub: string; campo: ReactNode }[] = [
     {
-      titulo: 'Como te chamo?',
-      sub: 'Vou usar isso pra falar com você — nada formal.',
-      campo: (
-        <input
-          className="pf-input"
-          style={{ fontSize: '1.2rem' }}
-          autoFocus
-          value={apelido}
-          onChange={(e) => setApelido(e.target.value)}
-          placeholder="seu nome ou apelido"
-        />
-      ),
-    },
-    {
-      titulo: 'O que a liberdade significa pra você?',
-      sub: 'Escolha o que ressoar. É disso que eu vou te lembrar nos dias difíceis.',
+      bloco: 'números',
+      titulo: 'Por último: o INSS',
+      sub: 'Só pra eu te mostrar, lá no Início, o que o INSS te daria — e em quantos anos você chega antes. Pode pular.',
       campo: (
         <div>
-          <div className="pf-chips">
-            {PORQUES.map((p) => (
-              <button
-                key={p}
-                type="button"
-                className={`pf-chip ${porQues.includes(p) ? 'on' : ''}`}
-                onClick={() => toggle(p)}
-              >
-                {p}
-              </button>
-            ))}
-          </div>
-          <textarea
-            className="pf-input"
-            style={{ marginTop: 'var(--space-4)' }}
-            rows={2}
-            value={porQue}
-            onChange={(e) => setPorQue(e.target.value)}
-            placeholder="quer contar mais? (opcional)"
-          />
-        </div>
-      ),
-    },
-    {
-      titulo: 'Dá um nome pra esse sonho.',
-      sub: 'Vai aparecer no seu Início — pra lembrar por que você começou.',
-      campo: (
-        <input
-          className="pf-input"
-          style={{ fontSize: '1.2rem' }}
-          autoFocus
-          value={nomeSonho}
-          onChange={(e) => setNomeSonho(e.target.value)}
-          placeholder='ex: "minha ilha", "liberdade aos 50"'
-        />
-      ),
-    },
-    {
-      titulo: 'Quando você quer poder parar?',
-      sub: 'Sua meta de idade — sem pressão, dá pra mudar depois.',
-      campo: (
-        <div style={{ position: 'relative', maxWidth: '12rem' }}>
-          <input
-            className="pf-input pf-num"
-            style={{ fontSize: '1.4rem' }}
-            inputMode="numeric"
-            value={idadeAlvo}
-            onChange={(e) => setIdadeAlvo(e.target.value.replace(/\D/g, '').slice(0, 3))}
-            placeholder="55"
-          />
-          <span style={{ position: 'absolute', right: '0.9rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }}>
-            anos
-          </span>
-        </div>
-      ),
-    },
-    {
-      titulo: 'Por último: seus dados de INSS',
-      sub: 'Só pra eu estimar, lá na frente, quanto o INSS te daria. Pode pular.',
-      campo: (
-        <div>
-          <Campo rotulo="Data de nascimento">
-            <input className="pf-input" type="date" value={dataNascimento} onChange={(e) => setDataNascimento(e.target.value)} />
-          </Campo>
           <Campo rotulo="Início das contribuições ao INSS">
             <input className="pf-input" type="month" value={inicioContribuicao} onChange={(e) => setInicioContribuicao(e.target.value)} />
           </Campo>
@@ -476,27 +283,68 @@ function FormularioN2({
           </Campo>
         </div>
       ),
+      opcional: true,
     },
   ];
 
+  // ---------------------------------------------------------------- telas
+  if (entrouCompleto) return <Navigate to="/" replace />;
+
+  if (fase === 'consentimento') {
+    return (
+      <Tela>
+        <div style={{ textAlign: 'center', marginBottom: 'var(--space-6)' }}>
+          <Flame size={48} flicker />
+          <h1 style={{ marginTop: 'var(--space-4)', marginBottom: 0 }}>Vamos achar sua data</h1>
+        </div>
+        <p style={{ color: 'var(--muted)' }}>
+          São <strong>10 perguntas</strong>, uns dois minutos. Primeiro eu te conheço um pouco,
+          depois a gente vê os números — e no fim aparece o mês exato em que você pode ficar livre.
+          Sem julgamento, só matemática honesta.
+        </p>
+        <p className="pf-hint">
+          Ao continuar, você concorda que o Ponto FIRE guarde os dados que você informar para
+          calcular e acompanhar sua meta (LGPD). Você pode exportar ou apagar tudo quando quiser.
+        </p>
+        <div style={{ marginTop: 'var(--space-6)' }}>
+          <button className="pf-btn pf-btn-primary" onClick={() => setFase('perguntas')}>Começar</button>
+        </div>
+      </Tela>
+    );
+  }
+
+  if (fase === 'aha' && plano) {
+    return <Aha plano={plano} nomeSonho={nomeSonho.trim()} onSeguir={() => navigate('/', { replace: true })} />;
+  }
+
   const atual = passos[passo]!;
   const ultimo = passo === passos.length - 1;
+  const podeSeguir = atual.valido ?? true;
 
   return (
     <Tela>
+      <div className="pf-onb-topo">
+        <span className="pf-eyebrow">
+          {atual.bloco === 'você' ? 'sobre você' : 'seus números'}
+        </span>
+        <span className="mono pf-onb-contador">{passo + 1}/{passos.length}</span>
+      </div>
       <div className="pf-steps">
-        {passos.map((_, i) => (
-          <div key={i} className={`pf-step ${i <= passo ? 'on' : ''}`} />
+        {passos.map((p, i) => (
+          <div
+            key={i}
+            className={`pf-step ${i <= passo ? 'on' : ''} ${p.bloco === 'números' ? 'num' : ''}`}
+          />
         ))}
       </div>
 
-      <h2 style={{ fontSize: '1.5rem' }}>{atual.titulo}</h2>
+      <h2 style={{ fontSize: '1.5rem', marginBottom: 'var(--space-2)' }}>{atual.titulo}</h2>
       <p className="pf-hint" style={{ marginTop: 0 }}>{atual.sub}</p>
       <div style={{ margin: 'var(--space-4) 0' }}>{atual.campo}</div>
 
       {erro && <p className="pf-error">{erro}</p>}
 
-      <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-4)' }}>
+      <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-6)' }}>
         {passo > 0 && (
           <button
             className="pf-btn pf-btn-ghost"
@@ -509,19 +357,138 @@ function FormularioN2({
         )}
         <button
           className="pf-btn pf-btn-primary"
-          disabled={salvando}
-          onClick={() => (ultimo ? concluir() : setPasso(passo + 1))}
+          disabled={!podeSeguir || salvando}
+          onClick={() => (ultimo ? void concluir() : setPasso(passo + 1))}
         >
-          {ultimo ? (salvando ? 'Salvando…' : 'Concluir') : 'Continuar'}
+          {ultimo ? (salvando ? 'Calculando…' : 'Ver minha data') : 'Continuar'}
         </button>
       </div>
 
-      <div style={{ textAlign: 'center', marginTop: 'var(--space-3)' }}>
-        <button className="pf-btn-link" onClick={onPular} disabled={salvando}>
-          Pular por agora
-        </button>
-      </div>
+      {atual.opcional && !ultimo && (
+        <div style={{ textAlign: 'center', marginTop: 'var(--space-3)' }}>
+          <button className="pf-btn-link" onClick={() => setPasso(passo + 1)} disabled={salvando}>
+            pular esta
+          </button>
+        </div>
+      )}
     </Tela>
+  );
+
+  async function concluir() {
+    if (!user) return;
+    setErro(null);
+    setSalvando(true);
+    try {
+      await salvarOnboarding(user.uid, {
+        custoVidaMensal: custo,
+        aporteMensal: aporte,
+        patrimonioInicial: patrimonio,
+        metaFire: metaEfetiva,
+        retornoRealEsperado: retornoPct / 100,
+        taxaSaqueSegura: TSS,
+        apelido: apelido.trim() || undefined,
+        dataNascimento: dataNascimento || undefined,
+        porQues: porQues.length ? porQues : undefined,
+        porQue: porQue.trim() || undefined,
+        nomeSonho: nomeSonho.trim() || undefined,
+        idadeAlvo: idadeAlvo ? parseInt(idadeAlvo, 10) : undefined,
+        inicioContribuicao: inicioContribuicao || undefined,
+        salario: salario || undefined,
+        sexoINSS,
+      });
+      setFase('aha');
+    } catch {
+      setErro('Não consegui salvar. Tente de novo.');
+    } finally {
+      setSalvando(false);
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+
+function idadeDeISO(iso: string): number | undefined {
+  if (!iso) return undefined;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return undefined;
+  const hoje = new Date();
+  let idade = hoje.getFullYear() - d.getFullYear();
+  const m = hoje.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && hoje.getDate() < d.getDate())) idade--;
+  return idade;
+}
+
+function Tela({ children }: { children: ReactNode }) {
+  return (
+    <main className="pf-container" style={{ minHeight: '100dvh', display: 'grid', alignContent: 'center' }}>
+      <div className="pf-card">{children}</div>
+    </main>
+  );
+}
+
+/** A recompensa: a data. Daqui o usuário segue direto pra apresentação. */
+function Aha({ plano, nomeSonho, onSeguir }: { plano: PlanoFire; nomeSonho: string; onSeguir: () => void }) {
+  return (
+    <Tela>
+      <div style={{ textAlign: 'center' }}>
+        <Flame size={44} flicker />
+        {plano.status === 'ok' && plano.dataLiberdade && plano.meses !== null ? (
+          <>
+            <p style={{ color: 'var(--muted)', marginTop: 'var(--space-4)', marginBottom: 'var(--space-2)' }}>
+              Sua liberdade chega em
+            </p>
+            <h1 style={{ fontSize: 'clamp(2rem, 8vw, 3.2rem)', color: 'var(--mint)', margin: 0 }}>
+              {formatMesAno(plano.dataLiberdade)}
+            </h1>
+            <p className="mono" style={{ color: 'var(--muted)', marginTop: 'var(--space-2)' }}>
+              daqui a {formatDuracao(plano.meses)}
+              {plano.idadeNaLiberdade !== null && ` · aos ${Math.round(plano.idadeNaLiberdade)} anos`}
+            </p>
+            {nomeSonho && (
+              <p style={{ color: 'var(--muted)', marginTop: 'var(--space-3)', marginBottom: 0 }}>
+                rumo a <span style={{ color: 'var(--mint)', fontStyle: 'italic' }}>“{nomeSonho}”</span>
+              </p>
+            )}
+          </>
+        ) : plano.status === 'atingido' ? (
+          <>
+            <h1 style={{ fontSize: 'clamp(2rem, 8vw, 3rem)', color: 'var(--mint)', marginTop: 'var(--space-4)' }}>
+              Você já chegou lá.
+            </h1>
+            <p style={{ color: 'var(--muted)' }}>Seu patrimônio já cobre sua meta.</p>
+          </>
+        ) : (
+          <>
+            <h1 style={{ fontSize: 'clamp(1.6rem, 6vw, 2.4rem)', marginTop: 'var(--space-4)' }}>
+              Ainda não dá pra cravar a data.
+            </h1>
+            <p style={{ color: 'var(--muted)' }}>
+              Com esse aporte e retorno, a meta não fecha. Aumentar o aporte muda tudo — dá pra
+              simular no Início, sem pressão.
+            </p>
+          </>
+        )}
+      </div>
+
+      <div style={{ borderTop: '1px solid var(--line)', margin: 'var(--space-6) 0', paddingTop: 'var(--space-4)' }}>
+        <Linha rotulo="Número FIRE (meta)" valor={formatBRL(plano.numeroFire)} />
+        <Linha rotulo="Progresso" valor={`${(plano.progresso * 100).toFixed(1).replace('.', ',')}%`} />
+        <Linha rotulo="Renda ao atingir" valor={`${formatBRL(plano.saqueMensalSustentavel)} /mês`} />
+      </div>
+
+      <button className="pf-btn pf-btn-primary" onClick={onSeguir}>
+        Me mostra o que dá pra fazer aqui →
+      </button>
+    </Tela>
+  );
+}
+
+function Linha({ rotulo, valor }: { rotulo: string; valor: string }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', padding: 'var(--space-2) 0' }}>
+      <span style={{ color: 'var(--muted)' }}>{rotulo}</span>
+      <span className="mono">{valor}</span>
+    </div>
   );
 }
 

@@ -31,6 +31,8 @@ export interface UserDoc {
   plano: 'free' | 'pro';
   onboardingNivel: 0 | 1 | 2;
   onboardingCompleto: boolean;
+  /** já viu a apresentação do sistema (pode rever pelo Perfil) */
+  tourVisto?: boolean;
 
   criadoEm?: Timestamp;
   atualizadoEm?: Timestamp;
@@ -45,6 +47,12 @@ export interface OnboardingN1 {
   retornoRealEsperado: number;
   taxaSaqueSegura: number;
 }
+
+/**
+ * O onboarding é um fluxo único (10 perguntas: primeiro quem você é, depois os
+ * números). Este é o pacote completo — grava numa escrita só.
+ */
+export interface OnboardingCompleto extends OnboardingN1, OnboardingN2 {}
 
 /** Dados coletados no Nível 2 (enriquecimento humanizado). */
 export interface OnboardingN2 {

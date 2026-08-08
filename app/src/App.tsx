@@ -85,10 +85,10 @@ function RotasLogado({ uid }: { uid: string }) {
       {!precisaOnboarding && <BotaoFeedback plano={doc?.plano ?? 'free'} />}
       <Routes>
       <Route path="/entrar" element={<Navigate to="/" replace />} />
-      <Route
-        path="/onboarding"
-        element={precisaOnboarding ? <Onboarding /> : <Navigate to="/" replace />}
-      />
+      {/* O Onboarding decide sozinho se redireciona: ele grava tudo numa escrita
+          só (inclusive onboardingCompleto) e ainda precisa continuar montado pra
+          mostrar a tela da data. Um guard aqui o expulsaria no meio. */}
+      <Route path="/onboarding" element={<Onboarding jaCompleto={!precisaOnboarding} />} />
       <Route
         path="/"
         element={precisaOnboarding ? <Navigate to="/onboarding" replace /> : <Dashboard />}

@@ -8,7 +8,7 @@ import {
   type Unsubscribe,
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import type { OnboardingN1, OnboardingN2, UserDoc } from './types';
+import type { OnboardingCompleto, OnboardingN1, OnboardingN2, UserDoc } from './types';
 
 /** Versão do texto de consentimento LGPD aceito. */
 export const VERSAO_CONSENTIMENTO = '2026-07';
@@ -86,6 +86,49 @@ export async function atualizarPerfil(uid: string, patch: Partial<UserDoc>): Pro
     dados[k] = v === undefined ? deleteField() : v;
   }
   await setDoc(userRef(uid), dados, { merge: true });
+}
+
+/**
+ * Grava o onboarding inteiro numa escrita só (fluxo contínuo de 10 perguntas).
+ *
+ * Os campos humanos são todos opcionais: quem pulou não fica com string vazia
+ * no doc, e sim sem o campo — o que os insights e o card da semana já tratam.
+ */
+export async function salvarOnboarding(uid: string, dados: OnboardingCompleto): Promise<void> {
+  const patch: Record<string, unknown> = {
+    custoVidaMensal: dados.custoVidaMensal,
+    aporteMensal: dados.aporteMensal,
+    patrimonioInicial: dados.patrimonioInicial,
+    metaFire: dados.metaFire,
+    retornoRealEsperado: dados.retornoRealEsperado,
+    taxaSaqueSegura: dados.taxaSaqueSegura,
+    plano: 'free',
+    onboardingNivel: 2,
+    onboardingCompleto: true,
+    tourVisto: false,
+    consentimentoLgpd: { aceitoEm: new Date().toISOString(), versao: VERSAO_CONSENTIMENTO },
+    atualizadoEm: serverTimestamp(),
+  };
+
+  const humanos: (keyof OnboardingN2)[] = [
+    'apelido', 'porQues', 'porQue', 'nomeSonho', 'idadeAlvo',
+    'nome', 'dataNascimento', 'inicioContribuicao', 'salario', 'sexoINSS',
+  ];
+  for (const k of humanos) {
+    const v = dados[k];
+    if (v === undefined || v === '') continue;
+    if (Array.isArray(v) && v.length === 0) continue;
+    patch[k] = v;
+  }
+
+  const atual = await getDoc(userRef(uid));
+  if (!atual.exists()) patch.criadoEm = serverTimestamp();
+  await setDoc(userRef(uid), patch, { merge: true });
+}
+
+/** Marca a apresentação como vista (ou reabre, pelo Perfil). */
+export async function marcarTourVisto(uid: string, visto = true): Promise<void> {
+  await setDoc(userRef(uid), { tourVisto: visto, atualizadoEm: serverTimestamp() }, { merge: true });
 }
 
 /** Conclui o onboarding pulando o N2 (usuário optou por "depois"). */

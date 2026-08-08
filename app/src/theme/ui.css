@@ -475,31 +475,9 @@
 
 /* Alinhamento das colunas do Início: os gráficos crescem para que as duas
    colunas comecem e terminem juntas, sem alturas fixas chutadas. */
-.pf-col-graficos {
-  display: grid;
-  gap: var(--space-4);
-  align-content: start;
-}
 @media (min-width: 860px) {
   .pf-cols-2 {
     align-items: stretch;
-  }
-  .pf-col-graficos {
-    grid-auto-rows: 1fr;
-    align-content: stretch;
-  }
-  .pf-col-graficos > section {
-    display: flex;
-    flex-direction: column;
-  }
-  .pf-col-graficos .pf-graf {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-  }
-  .pf-col-graficos .pf-graf-plot {
-    flex: 1;
-    height: auto !important;
   }
 }
 
@@ -715,4 +693,195 @@
   font-size: 0.72rem;
   color: var(--muted);
   word-break: break-word;
+}
+
+/* ===================================================================== */
+/* Onboarding contínuo — 10 perguntas em dois blocos                     */
+/* ===================================================================== */
+
+.pf-onb-topo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+.pf-onb-contador {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+/* o segundo bloco (números) usa verde, então a barra mostra a virada */
+.pf-step.on.num {
+  background: var(--mint);
+}
+
+/* ===================================================================== */
+/* Apresentação (roda uma vez, depois do onboarding)                     */
+/* ===================================================================== */
+
+.pf-bv-fundo {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  background: rgba(6, 8, 24, 0.82);
+  backdrop-filter: blur(6px);
+  overflow-y: auto;
+}
+.pf-bv-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 34rem;
+  background: linear-gradient(180deg, var(--ink-2), var(--ink));
+  border: 1px solid var(--line-2);
+  border-radius: 22px;
+  padding: clamp(24px, 5vw, 36px);
+  text-align: center;
+  animation: pf-bv-entra 0.35s ease both;
+}
+@keyframes pf-bv-entra {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pf-bv-card { animation: none; }
+}
+.pf-bv-icone {
+  display: grid;
+  place-items: center;
+  margin-bottom: var(--space-4);
+  min-height: 56px;
+}
+.pf-bv-emoji {
+  font-size: 2.6rem;
+  line-height: 1;
+}
+.pf-bv-titulo {
+  font-size: clamp(1.4rem, 4.5vw, 1.9rem);
+  margin: var(--space-3) 0 var(--space-4);
+}
+.pf-bv-corpo {
+  color: var(--muted);
+  line-height: 1.6;
+  margin: 0;
+  text-align: left;
+}
+.pf-bv-corpo b {
+  color: var(--paper);
+  font-weight: 600;
+}
+
+.pf-bv-opcoes {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+}
+.pf-bv-opcao {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  width: 100%;
+  text-align: left;
+  padding: var(--space-4) var(--space-6);
+  border-radius: var(--radius);
+  border: 1px solid var(--line-2);
+  background: var(--ink-2);
+  color: var(--paper);
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.pf-bv-opcao:hover {
+  border-color: var(--ember);
+  background: rgba(255, 122, 69, 0.07);
+}
+.pf-bv-opcao-emoji {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.pf-bv-rodape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-top: var(--space-8);
+  flex-wrap: wrap;
+}
+.pf-bv-pontos {
+  display: flex;
+  gap: 6px;
+}
+.pf-bv-pontos i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--line-2);
+  transition: background 0.2s ease, width 0.2s ease;
+}
+.pf-bv-pontos i.on {
+  width: 20px;
+  border-radius: 100px;
+  background: var(--ember);
+}
+.pf-bv-acoes {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-left: auto;
+}
+
+/* ===================================================================== */
+/* Correções de layout com poucos (ou nenhum) lançamentos                */
+/* ===================================================================== */
+
+/* nº ímpar de estatísticas: a última ocupa a linha toda em vez de deixar
+   um buraco do lado */
+.pf-stats > .pf-stat:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
+/* A coluna dos gráficos vira flex: só os cards QUE TÊM gráfico esticam.
+   Antes, `grid-auto-rows: 1fr` inflava também o card de "evolução" quando ele
+   só tinha uma frase — virava uma caixa vazia gigante. */
+.pf-col-graficos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+@media (min-width: 860px) {
+  .pf-col-graficos > .pf-card-graf {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .pf-col-graficos > .pf-card-graf .pf-graf {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .pf-col-graficos > .pf-card-graf .pf-graf-plot {
+    flex: 1;
+    height: auto !important;
+  }
+}
+
+/* estado vazio do gráfico de evolução — compacto e com saída */
+.pf-vazio {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+  margin-top: var(--space-3);
+  padding: var(--space-4);
+  border: 1px dashed var(--line-2);
+  border-radius: 14px;
+}
+.pf-vazio p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
 }

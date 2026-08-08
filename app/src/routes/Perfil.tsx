@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/useAuth';
 import { useUserDoc } from '../hooks/useUserDoc';
-import { atualizarPerfil } from '../data/users';
+import { atualizarPerfil, marcarTourVisto } from '../data/users';
 import { PORQUES } from '../data/humanizacao';
 import { MoedaInput } from '../components/MoedaInput';
 import { Campo } from '../components/Campo';
@@ -185,6 +185,18 @@ export function Perfil() {
       <button className="pf-btn pf-btn-primary" disabled={salvando} onClick={() => void salvar()}>
         {salvando ? 'Salvando…' : 'Salvar'}
       </button>
+
+      <div style={{ textAlign: 'center', marginTop: 'var(--space-6)' }}>
+        <button
+          className="pf-btn-link"
+          onClick={() => {
+            if (!user) return;
+            void marcarTourVisto(user.uid, false).then(() => navigate('/'));
+          }}
+        >
+          ver a apresentação do sistema de novo
+        </button>
+      </div>
 
       {user && <ZonaDePerigo user={user} />}
     </main>
