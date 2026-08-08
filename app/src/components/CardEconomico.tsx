@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useIndicadores } from '../hooks/useIndicadores';
 import type { UserDoc } from '../data/types';
 
@@ -69,6 +70,7 @@ export function CardEconomico({ doc }: { doc: UserDoc }) {
         {anos !== null && `, juro real médio composto de ${anos} anos (Selic realizada × IPCA)`}.
         Informativo — não é recomendação de investimento.
       </p>
+      <Link className="pf-como-calculo" to="/metodologia#economico">como calculo isso →</Link>
     </section>
   );
 }

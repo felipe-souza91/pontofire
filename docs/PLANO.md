@@ -33,6 +33,7 @@ contínuo (o dono é o usuário-alvo).
 | Econômico | **Cloud Function diária** → doc `indicadores` (BACEN SGS); client lê cacheado (hoje roda no client com cache diário). **Foto × média:** todo número do card diz de que período fala, e a projeção do usuário (média de décadas) é comparada com o **juro real médio de 10 anos**, nunca com a Selic de hoje — senão o card empurraria a subir a expectativa justamente em pico de ciclo. |
 | Feedback | **Mão única** + agradecimento automático; surface no painel. |
 | Onboarding | **Fluxo contínuo de 10 perguntas** — primeiro quem é (nome, nascimento, porquê, sonho, idade alvo), depois os números; a data no fim. Grava numa escrita só. *(Antes eram 2 níveis com um botão "Personalizar" no meio; o corte matava o embalo.)* |
+| Metodologia | Rota **atrás do login** (`/metodologia`) — decisão do dono: o método não vai pro público. Como está logada, ela faz o que uma página estática não faria: substitui **os números do próprio usuário** em cada fórmula. Toda seção termina em **"o que isso não diz"** — as limitações são o que dá credibilidade ao resto. Três portas: link `como calculo isso →` no rodapé dos cards (ancorado na seção certa), link no Perfil, e a URL. **Não** no balão de feedback: ele é mão-única, outro trabalho. |
 | Pós-onboarding | **Apresentação** de 5 slides por cima do Início real, terminando em "como quer começar?" → lançar na mão / importar / só olhar. `tourVisto` no doc; dá pra rever pelo Perfil. |
 
 ## Precisão do motor (regras de implementação)

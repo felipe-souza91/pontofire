@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/useAuth';
 import { useUserDoc } from '../hooks/useUserDoc';
 import { atualizarPerfil, marcarTourVisto } from '../data/users';
@@ -187,6 +187,12 @@ export function Perfil() {
       </button>
 
       <div style={{ textAlign: 'center', marginTop: 'var(--space-6)' }}>
+        <Link className="pf-btn-link" to="/metodologia">
+          metodologia: as fórmulas e as fontes de cada número
+        </Link>
+      </div>
+
+      <div style={{ textAlign: 'center', marginTop: 'var(--space-3)' }}>
         <button
           className="pf-btn-link"
           onClick={() => {

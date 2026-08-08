@@ -9,6 +9,7 @@ import { Lancar } from './routes/Lancar';
 import { Detalhar } from './routes/Detalhar';
 import { Bens } from './routes/Bens';
 import { Importar } from './routes/Importar';
+import { Metodologia } from './routes/Metodologia';
 import { Conquistas } from './routes/Conquistas';
 import { Ferramentas } from './routes/Ferramentas';
 import { BotaoFeedback } from './components/BotaoFeedback';
@@ -108,6 +109,10 @@ function RotasLogado({ uid }: { uid: string }) {
       <Route
         path="/importar"
         element={precisaOnboarding ? <Navigate to="/onboarding" replace /> : <Importar />}
+      />
+      <Route
+        path="/metodologia"
+        element={precisaOnboarding ? <Navigate to="/onboarding" replace /> : <Metodologia />}
       />
       <Route
         path="/bens"

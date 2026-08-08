@@ -155,6 +155,7 @@ export function Dashboard() {
             meta {formatBRLcompact(doc.metaFire)} · {progressoPct.toFixed(0)}%
           </span>
         </div>
+        <Link className="pf-como-calculo" to="/metodologia#data">como calculo isso →</Link>
       </section>
 
       {/* Números — faixa cheia */}

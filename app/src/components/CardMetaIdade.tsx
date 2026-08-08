@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import {
   alavancasParaAlvo,
   jaEhCoastFire,
@@ -180,6 +181,7 @@ export function CardMetaIdade({ doc, plano, P }: { doc: UserDoc; plano: PlanoFir
           E se nada disso couber agora, tudo bem: aos {idadeLib} você ainda decide quando parar — o
           que é bem diferente de descobrir aos 65 que a decisão nunca foi sua.
         </p>
+        <Link className="pf-como-calculo" to="/metodologia#alavancas">como calculo isso →</Link>
       </div>
     </section>
   );

@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { estimarINSS, type PlanoFire } from '@pontofire/engine';
 import type { UserDoc } from '../data/types';
 import { formatBRL, formatBRLcompact, formatMesAno } from '../utils/format';
@@ -105,6 +106,7 @@ export function CardINSS({ doc, plano }: { doc: UserDoc; plano: PlanoFire }) {
         o INSS considera todas as contribuições desde jul/1994 corrigidas. Confira o valor oficial no{' '}
         <a href="https://meu.inss.gov.br" target="_blank" rel="noreferrer">Meu INSS</a>.
       </p>
+      <Link className="pf-como-calculo" to="/metodologia#inss">como calculo isso →</Link>
       </div>
       </div>
     </section>
