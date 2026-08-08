@@ -19,8 +19,11 @@ export function CardEconomico({ doc }: { doc: UserDoc }) {
   if (!ind) return null; // sem dados: simplesmente não aparece
 
   const meuReal = doc.retornoRealEsperado * 100;
-  const hist = ind.juroRealHistorico;
-  const anos = ind.anosHistorico;
+  // Guarda por TIPO, não por `!== null`: um cache antigo traz o campo como
+  // `undefined`, que passaria pela comparação com null e quebraria no toFixed.
+  const numero = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+  const hist = numero(ind.juroRealHistorico) ? ind.juroRealHistorico : null;
+  const anos = numero(ind.anosHistorico) ? ind.anosHistorico : null;
 
   return (
     <section className="pf-hero-card">
@@ -30,9 +33,9 @@ export function CardEconomico({ doc }: { doc: UserDoc }) {
       </div>
 
       <div className="pf-eco-numeros">
-        {ind.selicMeta !== null && <Item rot="Selic" periodo="meta de hoje" val={pct(ind.selicMeta)} />}
-        {ind.ipca12m !== null && <Item rot="IPCA" periodo="últimos 12 meses" val={pct(ind.ipca12m)} />}
-        {ind.juroReal !== null && (
+        {numero(ind.selicMeta) && <Item rot="Selic" periodo="meta de hoje" val={pct(ind.selicMeta)} />}
+        {numero(ind.ipca12m) && <Item rot="IPCA" periodo="últimos 12 meses" val={pct(ind.ipca12m)} />}
+        {numero(ind.juroReal) && (
           <Item rot="Juro real" periodo="hoje, anualizado" val={pct(ind.juroReal)} tom="mint" />
         )}
       </div>
@@ -49,7 +52,7 @@ export function CardEconomico({ doc }: { doc: UserDoc }) {
             <strong className="mono" style={{ color: 'var(--mint)' }}>{pct(hist, 1)} a.a.</strong>
           </div>
           <p className="pf-hint" style={{ marginTop: 'var(--space-3)' }}>
-            {leitura(meuReal, hist, ind.juroReal)}
+            {leitura(meuReal, hist, numero(ind.juroReal) ? ind.juroReal : null)}
           </p>
         </div>
       ) : (

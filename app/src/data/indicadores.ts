@@ -64,7 +64,53 @@ interface PontoSGS {
   valor: string;
 }
 
-const CACHE_KEY = 'pf:indicadores';
+/**
+ * A versão faz parte da chave DE PROPÓSITO.
+ *
+ * O cache guarda um objeto tipado; quando um campo novo entra em `Indicadores`,
+ * o payload salvo ontem não tem esse campo e chega no componente como
+ * `undefined` — que passa por qualquer guarda `!== null` e quebra a tela.
+ * Foi exatamente o que aconteceu ao adicionar `juroRealHistorico`.
+ *
+ * Regra: mudou o formato de `Indicadores`, sobe a versão.
+ */
+const CACHE_VERSAO = 2;
+const CACHE_KEY = `pf:indicadores:v${CACHE_VERSAO}`;
+/** chaves de versões anteriores, pra limpar o lixo do navegador do usuário */
+const CACHE_ANTIGAS = ['pf:indicadores'];
+
+/**
+ * Normaliza o que veio do cache: campo ausente vira `null`, nunca `undefined`.
+ * Segunda linha de defesa, caso um payload torto sobreviva à versão.
+ */
+export function normalizar(cru: unknown): Indicadores | null {
+  if (!cru || typeof cru !== 'object') return null;
+  const o = cru as Record<string, unknown>;
+  if (typeof o.atualizadoEm !== 'string') return null;
+
+  const numeroOuNulo = (v: unknown): number | null =>
+    typeof v === 'number' && Number.isFinite(v) ? v : null;
+
+  return {
+    selicMeta: numeroOuNulo(o.selicMeta),
+    ipca12m: numeroOuNulo(o.ipca12m),
+    inpc12m: numeroOuNulo(o.inpc12m),
+    juroReal: numeroOuNulo(o.juroReal),
+    juroRealHistorico: numeroOuNulo(o.juroRealHistorico),
+    anosHistorico: numeroOuNulo(o.anosHistorico),
+    atualizadoEm: o.atualizadoEm,
+  };
+}
+
+function limparCachesAntigos(): void {
+  for (const k of CACHE_ANTIGAS) {
+    try {
+      localStorage.removeItem(k);
+    } catch {
+      /* localStorage bloqueado: segue */
+    }
+  }
+}
 
 async function buscarSerie(codigo: number, ultimos: number): Promise<PontoSGS[]> {
   const r = await fetch(`${BASE}.${codigo}/dados/ultimos/${ultimos}?formato=json`);
@@ -174,11 +220,13 @@ async function buscarIndicadores(): Promise<Indicadores> {
  */
 export async function getIndicadores(): Promise<Indicadores | null> {
   const hoje = new Date().toISOString().slice(0, 10);
+  limparCachesAntigos();
+
   try {
     const cru = localStorage.getItem(CACHE_KEY);
     if (cru) {
-      const salvo = JSON.parse(cru) as Indicadores;
-      if (salvo.atualizadoEm?.slice(0, 10) === hoje) return salvo;
+      const salvo = normalizar(JSON.parse(cru));
+      if (salvo && salvo.atualizadoEm.slice(0, 10) === hoje) return salvo;
     }
   } catch {
     /* cache inválido: ignora e busca de novo */
@@ -198,7 +246,7 @@ export async function getIndicadores(): Promise<Indicadores | null> {
     // rede/CORS fora: devolve o último cache conhecido, se houver
     try {
       const cru = localStorage.getItem(CACHE_KEY);
-      return cru ? (JSON.parse(cru) as Indicadores) : null;
+      return cru ? normalizar(JSON.parse(cru)) : null;
     } catch {
       return null;
     }

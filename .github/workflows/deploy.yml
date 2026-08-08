@@ -31,6 +31,11 @@ jobs:
       - name: Instalar dependências
         run: npm ci
 
+      - name: Rodar os testes
+        # Antes gate nenhum: dava pra publicar app quebrado com a suite verde
+        # parada no repositório. Teste que não barra deploy não protege ninguém.
+        run: npm test
+
       - name: Compilar o app (gera public/app)
         # Vite lê app/.env.local (versionado) com a config do Firebase.
         run: npm run build
