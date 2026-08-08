@@ -8,6 +8,7 @@ import { Perfil } from './routes/Perfil';
 import { Lancar } from './routes/Lancar';
 import { Detalhar } from './routes/Detalhar';
 import { Bens } from './routes/Bens';
+import { Importar } from './routes/Importar';
 import { Conquistas } from './routes/Conquistas';
 import { Ferramentas } from './routes/Ferramentas';
 import { BotaoFeedback } from './components/BotaoFeedback';
@@ -103,6 +104,10 @@ function RotasLogado({ uid }: { uid: string }) {
       <Route
         path="/detalhar/:mes"
         element={precisaOnboarding ? <Navigate to="/onboarding" replace /> : <Detalhar />}
+      />
+      <Route
+        path="/importar"
+        element={precisaOnboarding ? <Navigate to="/onboarding" replace /> : <Importar />}
       />
       <Route
         path="/bens"

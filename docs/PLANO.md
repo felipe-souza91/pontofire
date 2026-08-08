@@ -88,8 +88,8 @@ firebase.json  firestore.rules  firestore.indexes.json  .firebaserc
 ✅ **M0** fundação · ✅ **M1** motor · ✅ **M2** auth + onboarding humanizado + perfil ·
 ✅ **M3** Início · ✅ **M4** lançar/detalhado/bens · ✅ **M6** INSS + econômico (client-side) ·
 ✅ **M7** insights in-app (**push só com Blaze**) · ✅ **M8** gamificação/viral/feedback ·
-✅ **M9** calculadoras · ✅ **M11** polish/QA + LGPD. 118 testes verdes.
-⏳ Faltam: **M5** importador · **M10** monetização (Blaze).
+✅ **M9** calculadoras · ✅ **M11** polish/QA + LGPD · ✅ **M5** importador OFX/CSV.
+166 testes verdes. ⏳ Falta só: **M10** monetização (depende do Blaze).
 
 **Card da semana** (parte do M7): card único no Início que alterna toda segunda entre três famílias
 — `retrato` (número do usuário ao lado de um dado público do Brasil), `dica` (tática com o número
@@ -115,8 +115,26 @@ Os dados do país ficam em `packages/insights/src/brasil.ts`, **um por um com fo
   personalizados (`categoria` livre + `tipo` fechado). **Registro de bens** (`assets`): casa/carro/sítio/
   imóvel de renda com valor + dívida; toggle `incluirNoFire` com aviso honesto ao marcar bem de uso;
   renda de aluguel/arrendamento vira `R` no motor.
-- **M5 — Importador:** OFX + 3-5 CSV; UI de **revisão em lote**; memória memo→categoria; dedupe
-  fatura×extrato.
+- **M5 — Importador:** ✅ `packages/importer` (puro, 48 testes com fixtures anonimizadas).
+  - **Sem adaptador por banco.** Em vez de uma lista que envelhece a cada mudança de layout, o
+    parser descobre separador, codificação (UTF-8 → Windows-1252), cabeçalho (pulando lixo de
+    rodapé/topo), papel de cada coluna e formato de data por heurística. O que ele entendeu vai
+    pro diagnóstico na tela, e o usuário confere antes de salvar.
+  - **Direção (entrada × saída)** — a decisão mais delicada, em `decidirPolitica`: coluna
+    crédito/débito ou OFX ⇒ sinal é lei; sinais mistos num extrato ⇒ negativo é saída; sinais
+    mistos numa fatura ⇒ o sinal da MAIORIA é compra (estorno é sempre minoria); tudo negativo ⇒
+    saída; **tudo positivo sem contexto ⇒ o parser assume que NÃO sabe** e a revisão pergunta.
+  - **Dedupe em 3 frentes:** FITID (OFX) e impressão digital `data|valor|estabelecimento` contra o
+    que já está salvo — reimportar o mesmo arquivo é no-op; duplicata dentro do arquivo só avisa
+    (compra repetida existe); **fatura×extrato** por detecção de "pagamento de fatura", que vem
+    desmarcado pra não contar em dobro. Aplicação/resgate idem, mas classificados como `aporte`.
+  - **Memória memo→categoria** em `importRules/{uid}/itens/{chave}`: o que o usuário aprovou vira
+    regra e ganha do dicionário na próxima importação. Categorizar um item aplica aos iguais do
+    mesmo arquivo que ainda estão sem categoria.
+  - Campos novos e opcionais em `transactions`: `data` (YYYY-MM-DD), `impressao`, `fitid`.
+  - **Não cria snapshot.** Import não inventa patrimônio: se o mês ainda não foi lançado no modo
+    rápido, os itens ficam salvos e a tela avisa. O total continua sendo a verdade (§ híbrido).
+  - O arquivo é lido **no navegador**; nada sobe pro servidor além do que for aprovado.
 - **M6 — Econômico + INSS:** cron function → `indicadores`; módulo INSS (estimativa + config de
   constantes); alertas mecânicos.
 - **M7 — Insights + push:** catálogo compartilhado (cards in-app) + function semanal + eventos;

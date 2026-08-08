@@ -69,6 +69,11 @@ service cloud.firestore {
       allow read, write: if isOwner(uid);
     }
 
+    // memória do importador: memo → categoria aprendida (M5).
+    match /importRules/{uid}/itens/{chave} {
+      allow read, write: if isOwner(uid);
+    }
+
     // tipos de entrada personalizados.
     match /entryTypes/{uid}/itens/{itemId} {
       allow read, write: if isOwner(uid);

@@ -18,9 +18,11 @@ export const CATEGORIAS: Record<TipoTransacao, string[]> = {
     'Impostos',
     'Viagem',
     'Pets',
+    'Compras',
+    'Seguros',
     'Outros',
   ],
-  ativa: ['Salário', 'Freelance / PJ', 'Comissões', 'Bônus', '13º / férias', 'Outros'],
+  ativa: ['Salário', 'Freelance / PJ', 'Comissões', 'Bônus', '13º / férias', 'Reembolsos', 'Outros'],
   passiva: ['Aluguéis', 'Dividendos', 'Juros / Renda fixa', 'FIIs', 'Royalties', 'Outros'],
   aporte: ['Renda fixa', 'Tesouro Direto', 'Ações', 'FIIs', 'ETFs', 'Cripto', 'Previdência', 'Fundos', 'Outros'],
 };

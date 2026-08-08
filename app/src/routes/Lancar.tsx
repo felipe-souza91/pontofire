@@ -80,7 +80,12 @@ export function Lancar() {
         <span style={{ width: '3rem' }} />
       </header>
 
-      <p className="pf-eyebrow" style={{ marginBottom: 'var(--space-4)' }}>Modo rápido · 3 números</p>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
+        <p className="pf-eyebrow" style={{ margin: 0 }}>Modo rápido · 3 números</p>
+        <Link className="pf-btn-link" style={{ padding: 0 }} to="/importar">
+          importar extrato ou fatura →
+        </Link>
+      </div>
 
       <Campo rotulo="Mês de referência" dica="Qual mês você está lançando.">
         <input className="pf-input" type="month" value={mes} onChange={(e) => setMes(e.target.value)} />
