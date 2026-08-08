@@ -209,7 +209,7 @@ export function Onboarding({ jaCompleto = false }: { jaCompleto?: boolean }) {
     {
       bloco: 'números',
       titulo: 'Que retorno real ao ano você espera?',
-      sub: 'Real = já descontada a inflação. A Selic média dos últimos ~20 anos foi ~10% ao ano, mas isso é nominal; tirando o IPCA sobra perto de 5%.',
+      sub: 'Real = já descontada a inflação. A Selic de hoje impressiona, mas ela sobe e desce; o que importa aqui é a MÉDIA das próximas décadas. Descontado o IPCA, o juro real brasileiro fica perto de 5% ao ano no longo prazo.',
       campo: (
         <div>
           <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
@@ -233,7 +233,10 @@ export function Onboarding({ jaCompleto = false }: { jaCompleto?: boolean }) {
             value={retornoPct}
             onChange={(e) => setRetornoPct(Number(e.target.value))}
           />
-          <p className="pf-hint" style={{ marginTop: 'var(--space-2)' }}>★ recomendado — juro real histórico do Brasil.</p>
+          <p className="pf-hint" style={{ marginTop: 'var(--space-2)' }}>
+            ★ recomendado — juro real histórico do Brasil. No Início você vê esse número ao lado da
+            média real dos últimos 10 anos, pra conferir se a sua premissa se sustenta.
+          </p>
         </div>
       ),
       valido: retornoPct > 0,

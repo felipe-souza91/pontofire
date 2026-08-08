@@ -1013,3 +1013,65 @@
     gap: 2px;
   }
 }
+
+/* ===================================================================== */
+/* Cenário econômico — cada número diz de que período está falando        */
+/* ===================================================================== */
+
+.pf-eco-topo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.pf-eco-selo {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+.pf-eco-numeros {
+  display: flex;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+  margin-top: var(--space-4);
+}
+.pf-eco-rot {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.pf-eco-periodo {
+  font-size: 0.68rem;
+  color: var(--muted);
+  opacity: 0.75;
+  margin-top: 2px;
+}
+
+.pf-eco-comparacao {
+  margin-top: var(--space-6);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+.pf-eco-linha {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 3px 0;
+  font-size: 0.88rem;
+}
+.pf-eco-linha span {
+  color: var(--muted);
+}
+.pf-eco-fonte {
+  margin-top: var(--space-3);
+  opacity: 0.7;
+  line-height: 1.45;
+}

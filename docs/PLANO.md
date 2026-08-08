@@ -30,7 +30,7 @@ contínuo (o dono é o usuário-alvo).
 | Calculadoras | **Públicas na landing (SEO) + no app.** |
 | Monetização | **Freemium**, gateway **Stripe + extensão Firebase**; beta 100% grátis (gate desligado). |
 | INSS | **Estimativa simplificada honesta**; constantes 2026 em config atualizável; link Meu INSS. |
-| Econômico | **Cloud Function diária** → doc `indicadores` (BACEN SGS); client lê cacheado. |
+| Econômico | **Cloud Function diária** → doc `indicadores` (BACEN SGS); client lê cacheado (hoje roda no client com cache diário). **Foto × média:** todo número do card diz de que período fala, e a projeção do usuário (média de décadas) é comparada com o **juro real médio de 10 anos**, nunca com a Selic de hoje — senão o card empurraria a subir a expectativa justamente em pico de ciclo. |
 | Feedback | **Mão única** + agradecimento automático; surface no painel. |
 | Onboarding | **Fluxo contínuo de 10 perguntas** — primeiro quem é (nome, nascimento, porquê, sonho, idade alvo), depois os números; a data no fim. Grava numa escrita só. *(Antes eram 2 níveis com um botão "Personalizar" no meio; o corte matava o embalo.)* |
 | Pós-onboarding | **Apresentação** de 5 slides por cima do Início real, terminando em "como quer começar?" → lançar na mão / importar / só olhar. `tourVisto` no doc; dá pra rever pelo Perfil. |
@@ -189,7 +189,10 @@ categorização de comerciante desconhecido (com guardrails), "você há 1 ano",
 bem (downsize):** vender casa/bem e liberar equity → parte do valor vira investível na base do FIRE.
 
 ## Pendências de input do dono (não travam o design; necessárias na implementação)
-- Preço do Pro (a testar). · `messagingSenderId` + VAPID key. · Confirmar código INPC no SGS.
+- Preço do Pro (a testar). · `messagingSenderId` + VAPID key. · Confirmar código INPC no SGS (188).
+- **Confirmar a série 4390** (Selic acumulada no mês, % a.m.), usada no juro real de 10 anos. Há
+  uma checagem de plausibilidade (`0 ≤ v ≤ 3` a.m.) que descarta a série se o código estiver errado
+  — o card cai no texto sem histórico em vez de mostrar número absurdo.
 
 ## Depende do plano Blaze (pendente — projeto ainda no Spark)
 Cloud Functions exigem Blaze. **Não esquecer desta evolução.** O que fica esperando:
