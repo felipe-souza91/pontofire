@@ -866,6 +866,9 @@
   .pf-col-graficos > .pf-card-graf .pf-graf-plot {
     flex: 1;
     height: auto !important;
+    /* trava: sem isso, uma coluna direita muito alta esticaria o gráfico até
+       ficar uma mancha vertical */
+    max-height: 340px;
   }
 }
 
@@ -884,4 +887,129 @@
   color: var(--muted);
   font-size: 0.9rem;
   line-height: 1.5;
+}
+
+/* ===================================================================== */
+/* Motor reverso — "o que fecharia a diferença até a idade que eu quero" */
+/* ===================================================================== */
+
+.pf-alavancas {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.pf-alavanca {
+  display: flex;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--ink-2);
+}
+.pf-alavanca.destaque {
+  border-color: rgba(63, 214, 155, 0.35);
+  background: linear-gradient(120deg, rgba(63, 214, 155, 0.08), transparent);
+}
+.pf-alavanca.fechada {
+  opacity: 0.62;
+}
+.pf-alavanca-icone {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ember-2);
+  width: 1.4rem;
+  flex: 0 0 auto;
+  text-align: center;
+  line-height: 1.5;
+}
+.pf-alavanca.destaque .pf-alavanca-icone {
+  color: var(--mint);
+}
+.pf-alavanca-corpo {
+  flex: 1;
+  min-width: 0;
+}
+.pf-alavanca-linha {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.pf-alavanca-titulo {
+  font-weight: 600;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.pf-alavanca-selo {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--mint);
+  border: 1px solid rgba(63, 214, 155, 0.4);
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-weight: 400;
+}
+.pf-alavanca-valor {
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+.pf-alavanca-valor em {
+  font-style: normal;
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin-left: 4px;
+}
+.pf-alavanca-valor em.aviso {
+  color: var(--ember-2);
+}
+.pf-alavanca-nota {
+  margin: 6px 0 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.pf-alavanca-nota.aviso {
+  color: var(--ember-2);
+}
+
+.pf-alavanca-saida {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+.pf-alavanca-saida p {
+  margin: 0 0 var(--space-2);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.pf-alavanca-saida p:last-child {
+  margin-bottom: 0;
+}
+
+@media (min-width: 860px) {
+  .pf-alavancas {
+    grid-template-columns: repeat(3, 1fr);
+    align-items: stretch;
+  }
+  .pf-alavanca {
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+  .pf-alavanca-icone {
+    text-align: left;
+    width: auto;
+  }
+  .pf-alavanca-linha {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
 }

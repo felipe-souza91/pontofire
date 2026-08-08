@@ -1,16 +1,9 @@
 import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  coberturaPassiva,
-  jaEhCoastFire,
-  patrimonioCoast,
-  valorFuturo,
-  type PlanoFire,
-} from '@pontofire/engine';
+import { coberturaPassiva, valorFuturo } from '@pontofire/engine';
 import { useAuth } from '../auth/useAuth';
 import { usePainel, idadeDe } from '../hooks/usePainel';
 import { useConquistas } from '../hooks/useConquistas';
-import type { UserDoc } from '../data/types';
 import type { Snapshot } from '../data/snapshots';
 import { Flame } from '../theme/Flame';
 import { gerarInsights, conquistasAtingidas, cardDaSemana } from '@pontofire/insights';
@@ -18,6 +11,7 @@ import { CardINSS } from '../components/CardINSS';
 import { CardEconomico } from '../components/CardEconomico';
 import { CardsInsights } from '../components/CardsInsights';
 import { CardSemana } from '../components/CardSemana';
+import { CardMetaIdade } from '../components/CardMetaIdade';
 import { TrofeusResumo } from '../components/TrofeusResumo';
 import { BoasVindas } from '../components/BoasVindas';
 import { marcarTourVisto } from '../data/users';
@@ -224,13 +218,13 @@ export function Dashboard() {
         {/* Coluna direita: o que se lê */}
         <div className="pf-col-lado">
           <CardsInsights insights={insights} />
-          <Coast doc={doc} plano={plano} P={P} />
           <CardEconomico doc={doc} />
           <CardSemana card={daSemana} />
         </div>
       </div>
 
-      <div style={{ marginTop: 'var(--space-4)' }}>
+      <div style={{ marginTop: 'var(--space-4)', display: 'grid', gap: 'var(--space-4)' }}>
+        <CardMetaIdade doc={doc} plano={plano} P={P} />
         <CardINSS doc={doc} plano={plano} />
       </div>
 
@@ -259,54 +253,6 @@ function Stat({ rot, val, tom }: { rot: string; val: string; tom?: 'mint' | 'emb
     </div>
   );
 }
-
-function Coast({ doc, plano, P }: { doc: UserDoc; plano: PlanoFire; P: number }) {
-  const idadeAtual = idadeDe(doc.dataNascimento);
-  if (
-    !doc.idadeAlvo ||
-    idadeAtual === undefined ||
-    doc.idadeAlvo <= idadeAtual ||
-    plano.status !== 'ok' ||
-    plano.idadeNaLiberdade === null
-  ) {
-    return null;
-  }
-
-  const mesesAlvo = (doc.idadeAlvo - idadeAtual) * 12;
-  const coast = patrimonioCoast(doc.metaFire, plano.iMensal, mesesAlvo);
-  const jaCoast = jaEhCoastFire(P, doc.metaFire, plano.iMensal, mesesAlvo);
-  const idadeLib = Math.round(plano.idadeNaLiberdade);
-  const antes = doc.idadeAlvo - idadeLib;
-
-  return (
-    <div className="pf-stat" style={{ borderColor: 'rgba(63,214,155,0.3)' }}>
-      <div className="rot">Sua meta de idade · {doc.idadeAlvo} anos</div>
-      <p style={{ margin: 'var(--space-2) 0 0', fontSize: '0.95rem', lineHeight: 1.5 }}>
-        {antes > 0 ? (
-          <>
-            No seu ritmo você chega <span style={{ color: 'var(--mint)' }}>aos {idadeLib}</span> —{' '}
-            {formatDuracao(antes * 12)} antes da sua meta.{' '}
-          </>
-        ) : (
-          <>No seu ritmo você chega aos {idadeLib}. </>
-        )}
-        {jaCoast ? (
-          <span className="pf-insight" style={{ display: 'inline', border: 0, padding: 0, background: 'none', color: 'var(--mint)' }}>
-            Você já é CoastFIRE: podia parar de aportar hoje e ainda bateria a meta aos {doc.idadeAlvo},
-            só com os juros.
-          </span>
-        ) : (
-          <>
-            Pra bater a meta aos {doc.idadeAlvo} sem novos aportes, precisaria de{' '}
-            <span style={{ color: 'var(--ember-2)' }}>{formatBRLcompact(coast)}</span> investidos hoje.
-          </>
-        )}
-      </p>
-    </div>
-  );
-}
-
-
 
 /** Curva do patrimônio de hoje até a meta. */
 function pontosProjecao(P: number, A: number, i: number, meses: number): PontoGrafico[] {

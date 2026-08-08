@@ -157,6 +157,23 @@ Os dados do país ficam em `packages/insights/src/brasil.ts`, **um por um com fo
   - *Resetar dados:* apaga `snapshots`/`transactions`/`assets` (mantém a conta) e zera
     `onboardingCompleto`/`onboardingNivel` → cai de volta no onboarding. Mais leve que excluir.
 
+**Motor reverso / alavancas** (`packages/engine/src/alavancas.ts`, 25 testes) — estava no backlog de
+fase 2 e foi puxado pra frente. Quando a data cai DEPOIS da `idadeAlvo`, o card "Sua meta de idade"
+para de só constatar o atraso e responde **o que fecharia a diferença**, uma alavanca de cada vez
+(as outras congeladas em hoje):
+- **aporte**: forma fechada, invertendo o valor futuro — `A = i·(M − P(1+i)ⁿ)/((1+i)ⁿ − 1)`;
+- **gasto**: bisseção, com **efeito duplo** — o corte vira aporte (a renda não mudou) *e* derruba a
+  meta proporcionalmente. Por isso cortar sempre exige menos R$ do que aportar;
+- **retorno**: bisseção no juro real anual (o VF é monótono em `i`), teto de busca 30%;
+- **patrimônio hoje**: forma fechada, mantendo o aporte atual.
+
+Status `drastica` (entre possível e impossível) para quando a resposta existe mas virou outra vida:
+corte > 30% do padrão, retorno > 12% real a.a. (dobro do histórico BR), ou aporte > custo de vida.
+Como a meta encolhe junto com o custo, **quase sempre existe** um corte que fecha — inclusive
+absurdo; quem julga a viabilidade é `alavancasParaAlvo`, não `custoNecessario`.
+**Invariante testado:** aplicar a resposta de qualquer alavanca em `mesesAteFire` devolve
+exatamente o prazo pedido.
+
 ## Próximos (combinados com o dono, ainda não construídos)
 - **Calculadora de amortização** de financiamento/empréstimo (SAC × Price; efeito de amortizar
   prazo vs. parcela; comparar amortizar × investir a diferença usando o retorno real dele).

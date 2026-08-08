@@ -10,3 +10,4 @@ export * from './scenarios';
 export * from './plano';
 export * from './inss';
 export * from './calculadoras';
+export * from './alavancas';
