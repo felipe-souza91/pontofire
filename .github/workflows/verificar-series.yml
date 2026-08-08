@@ -1,0 +1,33 @@
+name: Verificar séries do BACEN
+
+# Confere se os códigos de série do SGS usados pelo app ainda são o que o app
+# pensa que são. Roda aqui (e não na máquina de quem desenvolve) porque o
+# runner do GitHub alcança api.bcb.gov.br sem proxy no caminho.
+#
+# O relatório sai no RESUMO do job — dá pra ler direto no navegador, na aba
+# Actions, sem abrir log.
+on:
+  workflow_dispatch:
+  schedule:
+    # toda segunda às 12:00 UTC (9h de Brasília)
+    - cron: '0 12 * * 1'
+  push:
+    paths:
+      - 'app/src/data/indicadores.ts'
+      - 'scripts/verificar-series.mjs'
+      - '.github/workflows/verificar-series.yml'
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Preparar Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Consultar o SGS e cruzar as séries
+        run: node scripts/verificar-series.mjs

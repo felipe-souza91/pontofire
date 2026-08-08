@@ -100,7 +100,11 @@ function anualizar(mensais: number[]): number {
  * é o que importa aqui. As duas séries são truncadas ao mesmo tamanho porque
  * o IPCA costuma ser publicado com atraso.
  */
-function juroRealDoPeriodo(selicMensal: PontoSGS[], ipcaMensal: PontoSGS[]): { taxa: number; anos: number } | null {
+function juroRealDoPeriodo(
+  selicMensal: PontoSGS[],
+  ipcaMensal: PontoSGS[],
+  selicMetaHoje: number | null,
+): { taxa: number; anos: number } | null {
   const s = numeros(selicMensal);
   const p = numeros(ipcaMensal);
   const n = Math.min(s.length, p.length);
@@ -109,6 +113,15 @@ function juroRealDoPeriodo(selicMensal: PontoSGS[], ipcaMensal: PontoSGS[]): { t
   const sJanela = s.slice(-n);
   const pJanela = p.slice(-n);
   if (!plausivel(sJanela, FAIXA_SELIC_MENSAL) || !plausivel(pJanela, FAIXA_IPCA_MENSAL)) return null;
+
+  // Cruzamento: a Selic REALIZADA nos últimos 12 meses tem que cair perto da
+  // meta de hoje. Se a série 4390 não for o que pensamos, essas duas não se
+  // encontram — e é melhor não mostrar histórico nenhum.
+  // (O CI faz a mesma checagem toda semana: .github/workflows/verificar-series.yml)
+  if (selicMetaHoje !== null) {
+    const realizada12m = anualizar(sJanela.slice(-12));
+    if (Math.abs(realizada12m - selicMetaHoje) > 8) return null;
+  }
 
   const selicAA = anualizar(sJanela);
   const ipcaAA = anualizar(pJanela);
@@ -135,7 +148,7 @@ async function buscarIndicadores(): Promise<Indicadores> {
 
   const historico =
     selicHist.status === 'fulfilled' && ipcaHist.status === 'fulfilled'
-      ? juroRealDoPeriodo(selicHist.value, ipcaHist.value)
+      ? juroRealDoPeriodo(selicHist.value, ipcaHist.value, selicMeta)
       : null;
 
   // juro real composto (§6 regra 1): (1+nom)/(1+infl) − 1

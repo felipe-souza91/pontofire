@@ -189,10 +189,24 @@ categorização de comerciante desconhecido (com guardrails), "você há 1 ano",
 bem (downsize):** vender casa/bem e liberar equity → parte do valor vira investível na base do FIRE.
 
 ## Pendências de input do dono (não travam o design; necessárias na implementação)
-- Preço do Pro (a testar). · `messagingSenderId` + VAPID key. · Confirmar código INPC no SGS (188).
-- **Confirmar a série 4390** (Selic acumulada no mês, % a.m.), usada no juro real de 10 anos. Há
-  uma checagem de plausibilidade (`0 ≤ v ≤ 3` a.m.) que descarta a série se o código estiver errado
-  — o card cai no texto sem histórico em vez de mostrar número absurdo.
+- Preço do Pro (a testar). · `messagingSenderId` + VAPID key.
+
+### Séries do BACEN — resolvido por CI, não por memória
+Os códigos do SGS (432, 433, 188, 189, 4390) não podem ser confirmados do ambiente de
+desenvolvimento (o proxy nega `api.bcb.gov.br` com 403). E um código errado é o pior tipo de bug
+aqui: não quebra nada, só devolve **os números de outra coisa** dentro de um card com cara de
+verdade. Então a verificação virou infraestrutura:
+
+- **`.github/workflows/verificar-series.yml`** — roda no runner do GitHub (que alcança o BACEN),
+  toda segunda, a cada push que toca `indicadores.ts`, e por botão em Actions. O relatório sai no
+  **resumo do job**, legível no navegador.
+- **`scripts/verificar-series.mjs`** — não pergunta "esta série é o INPC?" (o SGS não responde
+  isso). Verifica por **comportamento e cruzamento**: a Selic 4390 composta em 12 meses tem que
+  cair perto da meta 432; o INPC 188 em 12 meses tem que andar colado ao IPCA 433. Séries erradas
+  não sobrevivem a esses dois testes. Rede fora ≠ falha: se nada responde, o job passa avisando.
+- **No app**, o mesmo cruzamento roda em tempo real (`juroRealDoPeriodo`): se a Selic realizada
+  destoar da meta em mais de 8 p.p., o histórico é descartado e o card cai no texto sem
+  comparação. Protege o usuário entre uma rodada do CI e outra.
 
 ## Depende do plano Blaze (pendente — projeto ainda no Spark)
 Cloud Functions exigem Blaze. **Não esquecer desta evolução.** O que fica esperando:
