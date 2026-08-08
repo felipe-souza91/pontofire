@@ -10,14 +10,18 @@ import {
 import { MoedaInput } from '../components/MoedaInput';
 import { Campo } from '../components/Campo';
 import { GraficoCompra } from '../components/GraficoCompra';
+import { CalcAmortizacao } from '../components/CalcAmortizacao';
+import { CalcNovaDivida } from '../components/CalcNovaDivida';
 import { formatBRL, formatPct } from '../utils/format';
 
-type Aba = 'juros' | 'combustivel' | 'parcelado';
+type Aba = 'juros' | 'combustivel' | 'parcelado' | 'divida' | 'amortizacao';
 
 const ABAS: { id: Aba; rotulo: string; icone: string }[] = [
   { id: 'juros', rotulo: 'Juros compostos', icone: '📈' },
   { id: 'combustivel', rotulo: 'Etanol ou gasolina', icone: '⛽' },
   { id: 'parcelado', rotulo: 'À vista ou parcelado', icone: '💳' },
+  { id: 'divida', rotulo: 'Cabe no meu orçamento?', icone: '⚖️' },
+  { id: 'amortizacao', rotulo: 'Amortizar financiamento', icone: '🏦' },
 ];
 
 export function Ferramentas() {
@@ -50,6 +54,8 @@ export function Ferramentas() {
       {aba === 'juros' && <CalcJuros />}
       {aba === 'combustivel' && <CalcCombustivel />}
       {aba === 'parcelado' && <CalcParcelado />}
+      {aba === 'divida' && <CalcNovaDivida />}
+      {aba === 'amortizacao' && <CalcAmortizacao />}
     </main>
   );
 }

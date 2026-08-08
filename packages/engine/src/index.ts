@@ -11,3 +11,4 @@ export * from './plano';
 export * from './inss';
 export * from './calculadoras';
 export * from './alavancas';
+export * from './financiamento';

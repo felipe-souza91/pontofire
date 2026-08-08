@@ -60,6 +60,7 @@ export function Metodologia() {
     ['cobertura', 'Cobertura passiva e taxa de poupança'],
     ['inss', 'A estimativa do INSS'],
     ['economico', 'Os indicadores do Banco Central'],
+    ['divida', 'Dívida: cabe? e amortizar ou investir?'],
     ['importador', 'Como leio extratos e faturas'],
     ['verificacao', 'Como isso é verificado'],
     ['dados', 'Onde ficam os seus dados'],
@@ -339,6 +340,41 @@ export function Metodologia() {
           Um código de série errado não quebra nada: devolve os números de outra coisa. Por isso o
           app cruza as séries entre si (a Selic realizada em 12 meses tem que bater com a meta) e
           descarta o histórico se não bater. Um robô no repositório refaz essa checagem toda semana.
+        </Limite>
+      </Secao>
+
+      {/* ------------------------------------------------------------------ */}
+      <Secao id="divida" titulo="Dívida: cabe? e amortizar ou investir?" pergunta="Como uma parcela vira atraso na minha data?">
+        <p>
+          A premissa é uma só, e está à mostra: a parcela sai primeiro do{' '}
+          <strong>aporte</strong>, que é o que sobra do seu mês. Enquanto a dívida durar o aporte
+          cai; quitada, volta ao normal. Esse degrau é o que adia a data.
+        </p>
+        <Formula>aporte durante a dívida = A − parcela</Formula>
+        <p className="pf-metodo-nota">
+          Como o aporte muda no meio do caminho, a fórmula fechada não serve — a data é simulada mês
+          a mês, com o aporte no fim de cada mês, igual ao resto do motor. O atraso é a diferença
+          entre essa simulação e a mesma simulação sem a dívida.
+        </p>
+        <Prova
+          linhas={[
+            ['A — seu aporte mensal', formatBRL(A)],
+            ['Sua renda (custo + aporte)', formatBRL(C + A)],
+          ]}
+          resultado={['Limite dos bancos, pra referência', '30% da renda comprometida']}
+        />
+        <p>
+          Na <strong>amortização</strong>, a tabela é a padrão do mercado — Price com parcela fixa
+          (<Mono>PMT = PV·i ÷ (1 − (1+i)⁻ⁿ)</Mono>) ou SAC com amortização constante. O que muda é a
+          pergunta final: <strong>amortizar ou investir a diferença?</strong>
+        </p>
+        <Limite>
+          Aqui mora a armadilha que mais engana: a taxa do contrato é <strong>nominal</strong> e o
+          retorno que você declarou é <strong>real</strong>. Comparar "financiamento a 12%" com "eu
+          rendo 6%" sempre conclui "amortize" — quando 12% nominal com IPCA a 4,5% é ~7% real. Por
+          isso a comparação roda em termos nominais dos dois lados, e o resultado volta deflacionado
+          pra dinheiro de hoje. E mesmo empatando no número, os dois caminhos não são iguais em
+          risco: a dívida é certa, o retorno não.
         </Limite>
       </Secao>
 

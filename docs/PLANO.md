@@ -175,10 +175,20 @@ absurdo; quem julga a viabilidade é `alavancasParaAlvo`, não `custoNecessario`
 **Invariante testado:** aplicar a resposta de qualquer alavanca em `mesesAteFire` devolve
 exatamente o prazo pedido.
 
+**Dívida × liberdade** (`packages/engine/src/financiamento.ts`, 33 testes) — duas ferramentas irmãs:
+- **"Cabe no meu orçamento?"**: a parcela sai primeiro do APORTE (é o que sobra). Enquanto a dívida
+  durar o aporte cai; quitada, volta. Esse degrau exige simulação mês a mês (fórmula fechada não
+  aceita aporte variável) e produz o número que a ferramenta existe pra mostrar: **quanto a dívida
+  adia a data**. Veredicto `cabe` / `aperta` / `nao-cabe`, comprometimento da renda e, se o usuário
+  informar o preço à vista, a taxa embutida (reusa `taxaEmbutida`).
+- **Amortização**: Price (`PMT = PV·i/(1−(1+i)⁻ⁿ)`) e SAC, com amortização extra em modo *prazo*
+  (quita antes) ou *parcela* (alivia o mês).
+- **Amortizar × investir** — a comparação que decide. **Armadilha registrada:** a taxa do contrato é
+  NOMINAL e o retorno do usuário é REAL; comparar direto sempre conclui "amortize" (12% nominal com
+  IPCA 4,5% é ~7% real). A simulação roda em termos nominais dos dois lados e deflaciona o resultado
+  pra dinheiro de hoje. Os dois caminhos terminam no mesmo mês, o que os torna comparáveis.
+
 ## Próximos (combinados com o dono, ainda não construídos)
-- **Calculadora de amortização** de financiamento/empréstimo (SAC × Price; efeito de amortizar
-  prazo vs. parcela; comparar amortizar × investir a diferença usando o retorno real dele).
-  Vai em `packages/engine` + `/ferramentas` público (SEO) + app, como as outras.
 - **Gate do beta:** só entra quem se cadastrou na landing. O `waitlist/{sha256(email)}` já existe;
   a checagem por e-mail no login precisa de leitura própria do doc (regra nova) ou de um custom
   claim via function — **decidir qual quando o Blaze entrar**.
