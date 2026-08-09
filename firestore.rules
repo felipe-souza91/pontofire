@@ -1,0 +1,115 @@
+rules_version = '2';
+
+// Ponto FIRE — regras de segurança do Firestore.
+//
+// Reconciliado com o código REAL da landing e do painel (public/index.html e
+// public/painel.html):
+//  - landing grava em waitlist { email, ref, referredBy, created(serverTimestamp) }
+//    com ID = sha256(email); NÃO escreve em referrals.
+//  - painel só LÊ waitlist (logado com Google; UID admin abaixo).
+// Publicado pelo CI (.github/workflows/deploy.yml, --only firestore:rules).
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---- helpers ----
+    function signedIn() {
+      return request.auth != null;
+    }
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+    function isAdmin() {
+      // UID do painel de admin da waitlist.
+      return signedIn() && request.auth.uid == 'nzGPtwHhnzeHRBm6UT4EWFYsB5N2';
+    }
+    function isValidEmail(email) {
+      return email is string
+        && email.size() >= 3
+        && email.size() <= 320
+        && email.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$');
+    }
+
+    // =====================================================================
+    // WAITLIST (produção) — ID do doc = sha256(email); create-once + dedupe.
+    // =====================================================================
+    match /waitlist/{emailHash} {
+      // create: só campos esperados, e-mail válido e created = horário do server.
+      allow create: if isValidEmail(request.resource.data.email)
+                    && request.resource.data.created == request.time
+                    && request.resource.data.keys().hasOnly(['email', 'ref', 'referredBy', 'created']);
+      // segunda escrita no mesmo hash vira update → negada (mantém o dedupe).
+      allow update, delete: if false;
+      // leitura só pelo painel de admin.
+      allow read: if isAdmin();
+    }
+
+    // referrals/{codigo}: contagem de indicações. Leitura no painel (admin).
+    // Escrita reservada ao server/admin — se a landing ao vivo incrementa isto
+    // pelo cliente, revisar com o código real da landing antes do deploy.
+    match /referrals/{codigo} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // =====================================================================
+    // APP — cada usuário só acessa sob o próprio uid.
+    // =====================================================================
+    match /users/{uid} {
+      allow read, write: if isOwner(uid);
+    }
+
+    // snapshot mensal — coração do modelo (§5).
+    match /snapshots/{uid}/meses/{mes} {
+      allow read, write: if isOwner(uid);
+    }
+
+    // lançamentos detalhados (opcional).
+    match /transactions/{uid}/itens/{itemId} {
+      allow read, write: if isOwner(uid);
+    }
+
+    // memória do importador: memo → categoria aprendida (M5).
+    match /importRules/{uid}/itens/{chave} {
+      allow read, write: if isOwner(uid);
+    }
+
+    // bens/patrimônio (investível x uso) — ver PLANO.md.
+    match /assets/{uid}/itens/{itemId} {
+      allow read, write: if isOwner(uid);
+    }
+
+    // metas / conquistas.
+    match /goals/{uid}/itens/{itemId} {
+      allow read, write: if isOwner(uid);
+    }
+    match /achievements/{uid}/itens/{itemId} {
+      allow read, write: if isOwner(uid);
+    }
+
+    // convites (doc único por uid).
+    match /invites/{uid} {
+      allow read, write: if isOwner(uid);
+    }
+
+    // feedback: usuário logado cria; leitura/edição só admin (via painel/console).
+    match /feedback/{feedbackId} {
+      allow create: if signedIn()
+                    && request.resource.data.created == request.time;
+      allow read: if isAdmin();
+      allow update, delete: if false;
+    }
+
+    // indicadores econômicos (BACEN) — escritos só pela Cloud Function (Admin SDK,
+    // ignora regras); leitura liberada a usuários logados.
+    match /indicadores/{docId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    // default deny — nada além do declarado acima.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

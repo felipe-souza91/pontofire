@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora de Juros Compostos — Ponto FIRE</title>
+<meta name="description" content="Calcule juros compostos com aportes mensais e veja a diferença para juros simples. Grátis, sem cadastro.">
+<link rel="canonical" href="https://pontofire.com.br/ferramentas/juros-compostos.html">
+<meta property="og:title" content="Calculadora de Juros Compostos — Ponto FIRE">
+<meta property="og:description" content="Calcule juros compostos com aportes mensais e veja a diferença para juros simples. Grátis, sem cadastro.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://pontofire.com.br/ferramentas/juros-compostos.html">
+<meta property="og:image" content="https://pontofire.com.br/preview.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Instrument+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/ferramentas/ferramentas.css">
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <a class="logo" href="/"><svg width="22" height="27" viewBox="0 0 100 126" aria-hidden><defs><linearGradient id="fl" x1="50" y1="6" x2="50" y2="120" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFB27A"/><stop offset=".55" stop-color="#FF7A45"/><stop offset="1" stop-color="#E85A2A"/></linearGradient></defs><path d="M50 6 C 47 34, 73 42, 73 76 C 73 101, 61 120, 50 120 C 39 120, 27 103, 27 78 C 27 59, 44 53, 45 30 C 45.5 21, 48 12, 50 6 Z" fill="url(#fl)"/><path d="M53 52 C 51 67, 62 71, 62 87 C 62 101, 55 111, 49 111 C 43 111, 38 102, 38 91 C 38 81, 47 77, 47 65 C 47 60, 51 55, 53 52 Z" fill="#FFD9B8"/></svg> Ponto FIRE</a>
+    <a class="logo" style="font-size:13px;font-family:var(--mono);color:var(--muted)" href="/ferramentas/">ferramentas</a>
+  </nav>
+
+  <p class="eyebrow">ferramenta gratuita</p>
+  <h1>Calculadora de juros compostos</h1>
+  <p class="lead">Veja quanto seu dinheiro vira com o tempo — e o quanto os juros compostos superam os simples.</p>
+
+  <div class="card">
+    <div class="grid2">
+      <label><span>Valor inicial (R$)</span><input id="inicial" inputmode="decimal" value="1.000"></label>
+      <label><span>Aporte mensal (R$)</span><input id="aporte" inputmode="decimal" value="500"></label>
+    </div>
+    <div class="grid2">
+      <label><span>Taxa de juros</span><input id="taxa" inputmode="decimal" value="10"></label>
+      <label><span>Período</span><input id="prazo" inputmode="decimal" value="10"></label>
+    </div>
+    <div class="grid2">
+      <label><span>A taxa é</span><select id="tipoTaxa"><option value="a">ao ano</option><option value="m">ao mês</option></select></label>
+      <label><span>O período é em</span><select id="tipoPrazo"><option value="a">anos</option><option value="m">meses</option></select></label>
+    </div>
+
+    <div class="res">
+      <div style="text-align:center">
+        <div style="color:var(--muted);font-size:14px">Você teria</div>
+        <div class="destaque" id="montante">—</div>
+      </div>
+      <div style="margin-top:18px">
+        <div class="res-linha"><span>Total investido</span><span id="investido">—</span></div>
+        <div class="res-linha"><span>Total em juros</span><span id="juros" style="color:var(--mint)">—</span></div>
+        <div class="res-linha"><span>Se fosse juros simples</span><span id="simples">—</span></div>
+        <div class="res-linha"><span>Diferença (o poder dos compostos)</span><span id="dif" style="color:var(--ember-2)">—</span></div>
+      </div>
+      <p class="nota" id="nota"></p>
+    </div>
+  </div>
+
+  <div class="cta">
+    <h3>E a sua data de liberdade?</h3>
+    <p>O Ponto FIRE calcula, mês a mês, quando seus rendimentos passam a pagar sua vida.</p>
+    <a class="btn" href="/">Quero descobrir</a>
+  </div>
+
+  <footer>
+    <a href="/ferramentas/">Todas as ferramentas</a> · <a href="/">Ponto FIRE</a><br>
+    Conteúdo informativo — não é recomendação de investimento.
+  </footer>
+</div>
+<script type="module">
+import { calcularJuros, anualParaMensal, brl, num } from '/ferramentas/calc.js';
+const $ = (id) => document.getElementById(id);
+function calc() {
+  const taxa = num($('taxa')) / 100;
+  const i = $('tipoTaxa').value === 'a' ? anualParaMensal(taxa) : taxa;
+  const prazo = num($('prazo'));
+  const n = Math.round($('tipoPrazo').value === 'a' ? prazo * 12 : prazo);
+  const r = calcularJuros({ inicial: num($('inicial')), aporteMensal: num($('aporte')), taxaMensal: i, meses: n });
+  $('montante').textContent = brl(r.montante);
+  $('investido').textContent = brl(r.totalInvestido);
+  $('juros').textContent = brl(r.totalJuros);
+  $('simples').textContent = brl(r.montanteSimples);
+  $('dif').textContent = brl(r.diferenca);
+  const parte = r.montante > 0 ? Math.round((r.totalJuros / r.montante) * 100) : 0;
+  $('nota').textContent = n > 0
+    ? `Em ${n} meses, ${parte}% do total viria de juros — dinheiro que você não precisou trabalhar para ganhar.`
+    : 'Informe um período maior que zero.';
+}
+['inicial','aporte','taxa','prazo','tipoTaxa','tipoPrazo'].forEach(id => {
+  $(id).addEventListener('input', calc); $(id).addEventListener('change', calc);
+});
+calc();
+</script>
+</body>
+</html>

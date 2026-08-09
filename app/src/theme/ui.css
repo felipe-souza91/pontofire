@@ -1,0 +1,1405 @@
+/* Primitivas de UI do Ponto FIRE — enxutas, on-brand (§12). */
+
+.pf-container {
+  width: 100%;
+  max-width: 30rem;
+  margin: 0 auto;
+  padding: var(--space-6);
+}
+
+.pf-card {
+  background: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: var(--space-8);
+}
+
+/* botões */
+.pf-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: 0.85rem 1.25rem;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.15s ease, opacity 0.15s ease;
+}
+.pf-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.pf-btn-primary {
+  background: var(--flame-grad);
+  color: #241203;
+}
+.pf-btn-primary:not(:disabled):hover {
+  filter: brightness(1.06);
+}
+.pf-btn-ghost {
+  background: transparent;
+  border-color: var(--line-2);
+  color: var(--paper);
+}
+.pf-btn-ghost:not(:disabled):hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+.pf-btn-link {
+  background: none;
+  border: none;
+  color: var(--muted);
+  width: auto;
+  padding: var(--space-2);
+  cursor: pointer;
+  font: inherit;
+  text-decoration: underline;
+}
+
+/* campos */
+.pf-field {
+  display: block;
+  margin-bottom: var(--space-4);
+}
+.pf-label {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin-bottom: var(--space-2);
+}
+.pf-input {
+  width: 100%;
+  padding: 0.8rem 0.9rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--line-2);
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+}
+.pf-input.pf-num {
+  font-family: var(--font-mono);
+}
+.pf-input:focus {
+  outline: 2px solid var(--ember);
+  outline-offset: 1px;
+}
+.pf-hint {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-top: var(--space-2);
+}
+/* linha do patrimônio no comparativo INSS × FIRE */
+.pf-patrim {
+  font-size: 0.9rem;
+  margin-top: 6px;
+  line-height: 1.35;
+}
+.pf-patrim strong {
+  font-weight: 700;
+}
+
+.pf-info {
+  cursor: help;
+  color: var(--muted);
+  font-size: 0.85em;
+  opacity: 0.8;
+}
+.pf-info:hover {
+  color: var(--ember-2);
+  opacity: 1;
+}
+.pf-error {
+  color: var(--ember-2);
+  font-size: 0.9rem;
+  margin-top: var(--space-2);
+}
+
+/* passos do onboarding */
+.pf-steps {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-6);
+}
+.pf-step {
+  height: 4px;
+  flex: 1;
+  border-radius: 2px;
+  background: var(--line-2);
+}
+.pf-step.on {
+  background: var(--ember);
+}
+
+.pf-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: var(--space-4) 0;
+}
+.pf-divider::before,
+.pf-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+/* ---------------------------------------------------------------------------
+   Componentes espelhados da landing (§12) — para o app falar a mesma língua.
+--------------------------------------------------------------------------- */
+
+/* wordmark "Ponto FIRE" — Fraunces (igual ao .logo da landing) */
+.pf-logo {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 20px;
+  letter-spacing: -0.01em;
+}
+
+/* label em mono âmbar (eyebrow/kicker/hc-label da landing) */
+.pf-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ember-2);
+}
+
+/* pill "beta fechado" — igual à landing */
+.pf-pill {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ember-2);
+  border: 1px solid var(--line-2);
+  border-radius: 100px;
+  padding: 6px 14px;
+  letter-spacing: 0.02em;
+}
+
+/* brilho âmbar de fundo */
+.pf-glow {
+  position: absolute;
+  width: 520px;
+  height: 520px;
+  max-width: 90vw;
+  background: radial-gradient(circle, rgba(255, 122, 69, 0.16), transparent 62%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* card "SEU PONTO FIRE" — data/contagem/progresso */
+.pf-hero-card {
+  background: linear-gradient(180deg, var(--ink-2), var(--ink));
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: clamp(20px, 4vw, 28px);
+  position: relative;
+  z-index: 1;
+}
+.pf-hc-date {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: clamp(30px, 5vw, 44px);
+  color: var(--mint);
+  letter-spacing: -0.01em;
+  margin: 6px 0 2px;
+}
+.pf-hc-sub {
+  color: var(--muted);
+  font-size: 14px;
+  margin-bottom: 18px;
+}
+
+/* barra de progresso (termômetro) */
+.pf-bar {
+  height: 10px;
+  background: var(--ink-3);
+  border-radius: 100px;
+  overflow: hidden;
+}
+.pf-bar > i {
+  display: block;
+  height: 100%;
+  background: var(--ember);
+  border-radius: 100px;
+  transition: width 0.6s ease;
+}
+.pf-bar-row {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 8px;
+}
+
+/* layout do dashboard — mobile-first, mas usa a largura no desktop */
+.pf-dash {
+  width: 100%;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-6) var(--space-12);
+  position: relative;
+}
+.pf-cols-2 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+  align-items: start;
+}
+@media (min-width: 860px) {
+  .pf-cols-2 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* grid de cards de estatística — 2×2 */
+.pf-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
+}
+.pf-stat {
+  background: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: var(--space-4) var(--space-6);
+  min-width: 0;
+}
+.pf-stat .rot {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  line-height: 1.3;
+}
+.pf-stat .val {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 1.25rem;
+  margin-top: 8px;
+  white-space: nowrap;
+}
+.pf-stat .val.mint {
+  color: var(--mint);
+}
+.pf-stat .val.ember {
+  color: var(--ember-2);
+}
+
+/* card de insight do assistente */
+.pf-insight {
+  background: linear-gradient(120deg, rgba(255, 122, 69, 0.12), rgba(255, 122, 69, 0.02));
+  border: 1px solid rgba(255, 122, 69, 0.3);
+  border-radius: 18px;
+  padding: var(--space-6);
+}
+.pf-insight .hl {
+  color: var(--ember-2);
+  font-weight: 500;
+}
+
+/* seletor de ferramentas — cartões lado a lado com ícone */
+.pf-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+@media (max-width: 520px) {
+  .pf-tabs {
+    grid-template-columns: 1fr;
+  }
+}
+.pf-tab {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  padding: 0.85rem 0.9rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--ink-2);
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.pf-tab .ic {
+  font-size: 1.15rem;
+  line-height: 1;
+  flex: none;
+}
+.pf-tab:hover {
+  border-color: var(--line-2);
+  color: var(--paper);
+}
+.pf-tab.on {
+  color: var(--paper);
+  border-color: var(--ember);
+  background: linear-gradient(120deg, rgba(255, 122, 69, 0.16), rgba(255, 122, 69, 0.04));
+}
+
+/* conquistas no Início — medalhas à direita da linha, longe do nome */
+.pf-trofeus {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  text-decoration: none;
+}
+.pf-trofeus .rot {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-right: 2px;
+}
+.pf-trofeus .medalha {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--ink-2);
+  border: 1px solid var(--line-2);
+  font-size: 0.82rem;
+  line-height: 1;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.pf-trofeus:hover .medalha {
+  border-color: var(--ember);
+  transform: translateY(-1px);
+}
+.pf-trofeus .resto {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+/* botão flutuante de feedback */
+.pf-fab {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1px solid var(--line-2);
+  background: var(--ink-2);
+  color: var(--paper);
+  font-size: 1.2rem;
+  cursor: pointer;
+  z-index: 40;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.pf-fab:hover {
+  border-color: var(--ember);
+  transform: translateY(-2px);
+}
+
+/* modal */
+.pf-modal-fundo {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 8, 22, 0.72);
+  backdrop-filter: blur(3px);
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  z-index: 50;
+}
+.pf-modal {
+  width: 100%;
+  max-width: 27rem;
+  background: var(--ink-2);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-lg);
+  padding: var(--space-8);
+  max-height: 90dvh;
+  overflow: auto;
+}
+
+/* chips de seleção (onboarding humanizado — o "porquê") */
+.pf-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.pf-chip {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--paper);
+  background: var(--ink);
+  border: 1px solid var(--line-2);
+  border-radius: 100px;
+  padding: 0.55rem 0.95rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.pf-chip:hover {
+  border-color: var(--ember);
+}
+.pf-chip.on {
+  background: rgba(255, 122, 69, 0.14);
+  border-color: var(--ember);
+  color: var(--ember-2);
+}
+
+/* comparativo INSS em faixa cheia: números | narrativa lado a lado */
+.pf-inss-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-6);
+  margin-top: var(--space-4);
+  align-items: start;
+}
+@media (min-width: 860px) {
+  .pf-inss-grid {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: var(--space-8);
+  }
+}
+
+/* Alinhamento das colunas do Início: os gráficos crescem para que as duas
+   colunas comecem e terminem juntas, sem alturas fixas chutadas. */
+@media (min-width: 860px) {
+  .pf-cols-2 {
+    align-items: stretch;
+  }
+}
+
+/* Coluna da direita: o card da semana absorve a sobra vertical, então as
+   duas colunas terminam juntas sem espaço morto. */
+.pf-col-lado {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+@media (min-width: 860px) {
+  .pf-col-lado > .pf-card-semana {
+    flex: 1 1 auto;
+  }
+}
+
+/* Card da semana — rotação determinística (retrato do país / dica / porquê) */
+.pf-card-semana {
+  border-radius: 18px;
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+}
+.pf-cs-topo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.pf-cs-selo {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+.pf-cs-texto {
+  margin: var(--space-4) 0 0;
+  line-height: 1.55;
+}
+.pf-cs-rodape {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: auto;
+  padding-top: var(--space-4);
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.pf-cs-rodape a {
+  color: var(--muted);
+}
+
+/* ===================================================================== */
+/* Importador (M5) — revisão em lote                                     */
+/* ===================================================================== */
+
+.pf-card-alerta {
+  border: 1px solid rgba(255, 122, 69, 0.4);
+  background: linear-gradient(140deg, rgba(255, 122, 69, 0.12), rgba(255, 122, 69, 0.02));
+  border-radius: 18px;
+  padding: var(--space-6);
+  margin-bottom: var(--space-4);
+}
+
+.pf-avisos {
+  margin: 0 0 var(--space-4);
+  padding-left: var(--space-6);
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+.pf-avisos li {
+  margin-bottom: 4px;
+}
+
+.pf-import-resumo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  gap: var(--space-4);
+  margin-top: var(--space-3);
+}
+
+.pf-import-barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-3);
+}
+
+.pf-import-toast {
+  margin: 0 0 var(--space-3);
+  color: var(--mint);
+}
+
+.pf-import-lista {
+  display: grid;
+  gap: var(--space-2);
+}
+
+/* --- linha --- */
+.pf-linha-import {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--ink-2);
+  padding: var(--space-3);
+}
+.pf-linha-import.fora {
+  opacity: 0.45;
+}
+.pf-linha-import:focus-within {
+  border-color: var(--ember);
+}
+
+.pf-li-topo {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'check nome mais'
+    'check tipo tipo'
+    'check cat valor';
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+@media (min-width: 780px) {
+  .pf-li-topo {
+    grid-template-columns: auto minmax(0, 1fr) 8.5rem minmax(7rem, 10rem) auto auto;
+    grid-template-areas: 'check nome tipo cat valor mais';
+  }
+}
+.pf-check { grid-area: check; width: 1.05rem; height: 1.05rem; accent-color: var(--ember); cursor: pointer; }
+.pf-li-nome { grid-area: nome; min-width: 0; }
+.pf-select-mini { grid-area: tipo; }
+.pf-li-categoria { grid-area: cat; min-width: 0; }
+.pf-li-valor { grid-area: valor; text-align: right; white-space: nowrap; }
+.pf-li-mais { grid-area: mais; padding: 0 var(--space-2); color: var(--muted); }
+
+.pf-li-desc {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.92rem;
+}
+.pf-li-meta {
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-top: 1px;
+}
+.pf-li-alertas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+.pf-tag-alerta {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ember-2);
+  border: 1px solid rgba(255, 122, 69, 0.35);
+  border-radius: 999px;
+  padding: 1px 7px;
+  cursor: help;
+}
+.pf-li-valor.pendente {
+  color: var(--ember-2);
+}
+
+.pf-select-mini {
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-family: inherit;
+  font-size: 0.8rem;
+  width: 100%;
+}
+.pf-select-mini option {
+  background: var(--ink);
+  color: var(--paper);
+}
+/* o input de categoria dentro da linha é menor que o do formulário */
+.pf-li-categoria .pf-input {
+  padding: 6px 8px;
+  font-size: 0.82rem;
+}
+
+.pf-li-detalhe {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: 1fr;
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
+}
+@media (min-width: 620px) {
+  .pf-li-detalhe {
+    grid-template-columns: 10rem 10rem minmax(0, 1fr);
+  }
+}
+.pf-li-original {
+  margin: 2px 0 0;
+  font-size: 0.72rem;
+  color: var(--muted);
+  word-break: break-word;
+}
+
+/* ===================================================================== */
+/* Onboarding contínuo — 10 perguntas em dois blocos                     */
+/* ===================================================================== */
+
+.pf-onb-topo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+.pf-onb-contador {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+/* o segundo bloco (números) usa verde, então a barra mostra a virada */
+.pf-step.on.num {
+  background: var(--mint);
+}
+
+/* ===================================================================== */
+/* Apresentação (roda uma vez, depois do onboarding)                     */
+/* ===================================================================== */
+
+.pf-bv-fundo {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  background: rgba(6, 8, 24, 0.82);
+  backdrop-filter: blur(6px);
+  overflow-y: auto;
+}
+.pf-bv-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 34rem;
+  background: linear-gradient(180deg, var(--ink-2), var(--ink));
+  border: 1px solid var(--line-2);
+  border-radius: 22px;
+  padding: clamp(24px, 5vw, 36px);
+  text-align: center;
+  animation: pf-bv-entra 0.35s ease both;
+}
+@keyframes pf-bv-entra {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pf-bv-card { animation: none; }
+}
+.pf-bv-icone {
+  display: grid;
+  place-items: center;
+  margin-bottom: var(--space-4);
+  min-height: 56px;
+}
+.pf-bv-emoji {
+  font-size: 2.6rem;
+  line-height: 1;
+}
+.pf-bv-titulo {
+  font-size: clamp(1.4rem, 4.5vw, 1.9rem);
+  margin: var(--space-3) 0 var(--space-4);
+}
+.pf-bv-corpo {
+  color: var(--muted);
+  line-height: 1.6;
+  margin: 0;
+  text-align: left;
+}
+.pf-bv-corpo b {
+  color: var(--paper);
+  font-weight: 600;
+}
+
+.pf-bv-opcoes {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+}
+.pf-bv-opcao {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  width: 100%;
+  text-align: left;
+  padding: var(--space-4) var(--space-6);
+  border-radius: var(--radius);
+  border: 1px solid var(--line-2);
+  background: var(--ink-2);
+  color: var(--paper);
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.pf-bv-opcao:hover {
+  border-color: var(--ember);
+  background: rgba(255, 122, 69, 0.07);
+}
+.pf-bv-opcao-emoji {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.pf-bv-rodape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-top: var(--space-8);
+  flex-wrap: wrap;
+}
+.pf-bv-pontos {
+  display: flex;
+  gap: 6px;
+}
+.pf-bv-pontos i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--line-2);
+  transition: background 0.2s ease, width 0.2s ease;
+}
+.pf-bv-pontos i.on {
+  width: 20px;
+  border-radius: 100px;
+  background: var(--ember);
+}
+.pf-bv-acoes {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-left: auto;
+}
+
+/* ===================================================================== */
+/* Correções de layout com poucos (ou nenhum) lançamentos                */
+/* ===================================================================== */
+
+/* nº ímpar de estatísticas: a última ocupa a linha toda em vez de deixar
+   um buraco do lado */
+.pf-stats > .pf-stat:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
+/* A coluna dos gráficos vira flex: só os cards QUE TÊM gráfico esticam.
+   Antes, `grid-auto-rows: 1fr` inflava também o card de "evolução" quando ele
+   só tinha uma frase — virava uma caixa vazia gigante. */
+.pf-col-graficos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+@media (min-width: 860px) {
+  .pf-col-graficos > .pf-card-graf {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .pf-col-graficos > .pf-card-graf .pf-graf {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .pf-col-graficos > .pf-card-graf .pf-graf-plot {
+    flex: 1;
+    height: auto !important;
+    /* trava: sem isso, uma coluna direita muito alta esticaria o gráfico até
+       ficar uma mancha vertical */
+    max-height: 340px;
+  }
+}
+
+/* estado vazio do gráfico de evolução — compacto e com saída */
+.pf-vazio {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+  margin-top: var(--space-3);
+  padding: var(--space-4);
+  border: 1px dashed var(--line-2);
+  border-radius: 14px;
+}
+.pf-vazio p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* ===================================================================== */
+/* Motor reverso — "o que fecharia a diferença até a idade que eu quero" */
+/* ===================================================================== */
+
+.pf-alavancas {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.pf-alavanca {
+  display: flex;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--ink-2);
+}
+.pf-alavanca.destaque {
+  border-color: rgba(63, 214, 155, 0.35);
+  background: linear-gradient(120deg, rgba(63, 214, 155, 0.08), transparent);
+}
+.pf-alavanca.fechada {
+  opacity: 0.62;
+}
+.pf-alavanca-icone {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ember-2);
+  width: 1.4rem;
+  flex: 0 0 auto;
+  text-align: center;
+  line-height: 1.5;
+}
+.pf-alavanca.destaque .pf-alavanca-icone {
+  color: var(--mint);
+}
+.pf-alavanca-corpo {
+  flex: 1;
+  min-width: 0;
+}
+.pf-alavanca-linha {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.pf-alavanca-titulo {
+  font-weight: 600;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.pf-alavanca-selo {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--mint);
+  border: 1px solid rgba(63, 214, 155, 0.4);
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-weight: 400;
+}
+.pf-alavanca-valor {
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+.pf-alavanca-valor em {
+  font-style: normal;
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin-left: 4px;
+}
+.pf-alavanca-valor em.aviso {
+  color: var(--ember-2);
+}
+.pf-alavanca-nota {
+  margin: 6px 0 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.pf-alavanca-nota.aviso {
+  color: var(--ember-2);
+}
+
+.pf-alavanca-saida {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+.pf-alavanca-saida p {
+  margin: 0 0 var(--space-2);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.pf-alavanca-saida p:last-child {
+  margin-bottom: 0;
+}
+
+@media (min-width: 860px) {
+  .pf-alavancas {
+    grid-template-columns: repeat(3, 1fr);
+    align-items: stretch;
+  }
+  .pf-alavanca {
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+  .pf-alavanca-icone {
+    text-align: left;
+    width: auto;
+  }
+  .pf-alavanca-linha {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+}
+
+/* ===================================================================== */
+/* Cenário econômico — cada número diz de que período está falando        */
+/* ===================================================================== */
+
+.pf-eco-topo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.pf-eco-selo {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+.pf-eco-numeros {
+  display: flex;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+  margin-top: var(--space-4);
+}
+.pf-eco-rot {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.pf-eco-periodo {
+  font-size: 0.68rem;
+  color: var(--muted);
+  opacity: 0.75;
+  margin-top: 2px;
+}
+
+.pf-eco-comparacao {
+  margin-top: var(--space-6);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+.pf-eco-linha {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 3px 0;
+  font-size: 0.88rem;
+}
+.pf-eco-linha span {
+  color: var(--muted);
+}
+.pf-eco-fonte {
+  margin-top: var(--space-3);
+  opacity: 0.7;
+  line-height: 1.45;
+}
+
+/* ===================================================================== */
+/* Metodologia — a conta aberta                                          */
+/* ===================================================================== */
+
+.pf-metodo {
+  max-width: 44rem;
+  padding-bottom: var(--space-12);
+}
+
+.pf-metodo-indice {
+  display: grid;
+  gap: 2px;
+  margin: var(--space-6) 0 var(--space-8);
+  padding: var(--space-4) var(--space-6);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--ink-2);
+}
+.pf-metodo-indice a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.88rem;
+  padding: 3px 0;
+}
+.pf-metodo-indice a:hover {
+  color: var(--ember-2);
+}
+
+.pf-metodo-secao {
+  padding-top: var(--space-8);
+  margin-top: var(--space-8);
+  border-top: 1px solid var(--line);
+  scroll-margin-top: var(--space-6);
+}
+.pf-metodo-secao h2 {
+  font-size: 1.3rem;
+  margin: 0;
+}
+.pf-metodo-pergunta {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--ember-2);
+  margin: 6px 0 var(--space-4);
+}
+.pf-metodo-secao p {
+  line-height: 1.65;
+  color: var(--muted);
+}
+.pf-metodo-secao p strong {
+  color: var(--paper);
+  font-weight: 600;
+}
+.pf-metodo-nota {
+  font-size: 0.9rem;
+}
+.pf-metodo-lista {
+  color: var(--muted);
+  line-height: 1.7;
+  padding-left: var(--space-6);
+  font-size: 0.92rem;
+}
+.pf-metodo-lista strong {
+  color: var(--paper);
+}
+.pf-metodo-code {
+  background: var(--ink-3);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 0.85em;
+  color: var(--paper);
+}
+
+.pf-formula {
+  background: var(--ink-3);
+  border-left: 2px solid var(--ember);
+  border-radius: 0 8px 8px 0;
+  padding: var(--space-3) var(--space-4);
+  margin: var(--space-4) 0;
+  font-size: 0.92rem;
+  color: var(--paper);
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.pf-prova {
+  border: 1px solid rgba(63, 214, 155, 0.28);
+  background: linear-gradient(140deg, rgba(63, 214, 155, 0.07), transparent);
+  border-radius: 14px;
+  padding: var(--space-4) var(--space-6);
+  margin: var(--space-4) 0;
+}
+.pf-prova-titulo {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--mint);
+  margin-bottom: var(--space-3);
+}
+.pf-prova-linha {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: 4px 0;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+.pf-prova-linha strong {
+  color: var(--paper);
+  white-space: nowrap;
+}
+.pf-prova-linha.resultado {
+  margin-top: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid rgba(63, 214, 155, 0.22);
+}
+.pf-prova-linha.resultado strong {
+  color: var(--mint);
+}
+
+.pf-limite {
+  border: 1px dashed var(--line-2);
+  border-radius: 12px;
+  padding: var(--space-4);
+  margin: var(--space-4) 0 0;
+}
+.pf-limite-rot {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ember-2);
+}
+.pf-limite p {
+  margin: 6px 0 0;
+  font-size: 0.86rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+/* link discreto "como calculo isso" no rodapé dos cards */
+.pf-como-calculo {
+  display: inline-block;
+  margin-top: var(--space-3);
+  font-size: 0.72rem;
+  color: var(--muted);
+  opacity: 0.7;
+  text-decoration: none;
+  border-bottom: 1px dotted var(--line-2);
+}
+.pf-como-calculo:hover {
+  opacity: 1;
+  color: var(--ember-2);
+}
+
+/* ===================================================================== */
+/* Dívida × liberdade — nova dívida e amortização                        */
+/* ===================================================================== */
+
+.pf-divida-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.pf-amort-ganho {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid rgba(63, 214, 155, 0.25);
+}
+
+/* com 5 ferramentas a grade de 3 colunas fica torta */
+@media (min-width: 640px) {
+  .pf-tabs {
+    grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+  }
+}
+
+/* ===================================================================== */
+/* Cabeçalho do Início — inline no desktop, sanduíche no celular          */
+/* ===================================================================== */
+
+.pf-topo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-8);
+  position: relative;
+  z-index: 20;
+}
+.pf-topo-marca {
+  flex: 1;
+  min-width: 0;
+}
+.pf-topo-links {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* --- botão sanduíche (3 barras que viram X) --- */
+.pf-menu-btn {
+  display: none;
+  position: relative;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--line-2);
+  border-radius: 12px;
+  background: var(--ink-2);
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+.pf-menu-btn span,
+.pf-menu-btn span::before,
+.pf-menu-btn span::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  width: 18px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--paper);
+  transform: translateX(-50%);
+  transition: transform 0.2s ease, opacity 0.15s ease;
+}
+.pf-menu-btn span {
+  top: 50%;
+  margin-top: -1px;
+}
+.pf-menu-btn span::before {
+  top: -6px;
+  left: 0;
+  transform: none;
+}
+.pf-menu-btn span::after {
+  top: 6px;
+  left: 0;
+  transform: none;
+}
+.pf-menu-btn.on span {
+  background: transparent;
+}
+.pf-menu-btn.on span::before {
+  transform: translateY(6px) rotate(45deg);
+}
+.pf-menu-btn.on span::after {
+  transform: translateY(-6px) rotate(-45deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .pf-menu-btn span,
+  .pf-menu-btn span::before,
+  .pf-menu-btn span::after {
+    transition: none;
+  }
+}
+
+/* --- painel do menu --- */
+.pf-menu-painel {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  min-width: 13rem;
+  display: grid;
+  gap: 2px;
+  padding: var(--space-3);
+  background: var(--ink-2);
+  border: 1px solid var(--line-2);
+  border-radius: 16px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+  animation: pf-menu-abre 0.16s ease both;
+}
+@keyframes pf-menu-abre {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pf-menu-painel { animation: none; }
+}
+.pf-menu-painel a,
+.pf-menu-painel button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0.7rem 0.8rem;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--paper);
+  font: inherit;
+  font-size: 0.95rem;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  width: 100%;
+}
+.pf-menu-painel a:hover,
+.pf-menu-painel button:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.pf-menu-painel button {
+  margin-top: 2px;
+  border-top: 1px solid var(--line);
+  border-radius: 0 0 10px 10px;
+  color: var(--muted);
+}
+.pf-menu-selo {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ember-2);
+  text-align: center;
+  padding-top: var(--space-2);
+}
+
+/* a virada: abaixo disso os 6 links não cabem mais */
+@media (max-width: 820px) {
+  .pf-topo-links,
+  .pf-topo-selo {
+    display: none;
+  }
+  .pf-menu-btn {
+    display: block;
+  }
+}

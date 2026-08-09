@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>À vista ou parcelado? Calculadora — Ponto FIRE</title>
+<meta name="description" content="Compare PIX à vista, cartão à vista e cada quantidade de parcelas — com juros embutidos, rendimento do seu dinheiro e cashback.">
+<link rel="canonical" href="https://pontofire.com.br/ferramentas/a-vista-ou-parcelado.html">
+<meta property="og:title" content="À vista ou parcelado? Calculadora — Ponto FIRE">
+<meta property="og:description" content="Compare PIX à vista, cartão à vista e cada quantidade de parcelas — com juros embutidos, rendimento do seu dinheiro e cashback.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://pontofire.com.br/ferramentas/a-vista-ou-parcelado.html">
+<meta property="og:image" content="https://pontofire.com.br/preview.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Instrument+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/ferramentas/ferramentas.css">
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <a class="logo" href="/"><svg width="22" height="27" viewBox="0 0 100 126" aria-hidden><defs><linearGradient id="fl" x1="50" y1="6" x2="50" y2="120" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFB27A"/><stop offset=".55" stop-color="#FF7A45"/><stop offset="1" stop-color="#E85A2A"/></linearGradient></defs><path d="M50 6 C 47 34, 73 42, 73 76 C 73 101, 61 120, 50 120 C 39 120, 27 103, 27 78 C 27 59, 44 53, 45 30 C 45.5 21, 48 12, 50 6 Z" fill="url(#fl)"/><path d="M53 52 C 51 67, 62 71, 62 87 C 62 101, 55 111, 49 111 C 43 111, 38 102, 38 91 C 38 81, 47 77, 47 65 C 47 60, 51 55, 53 52 Z" fill="#FFD9B8"/></svg> Ponto FIRE</a>
+    <a class="logo" style="font-size:13px;font-family:var(--mono);color:var(--muted)" href="/ferramentas/">ferramentas</a>
+  </nav>
+
+  <p class="eyebrow">ferramenta gratuita</p>
+  <h1>À vista ou parcelado?</h1>
+  <p class="lead">Comparamos todas as formas de pagamento em valor de hoje: PIX, cartão à vista e cada número de parcelas.</p>
+
+  <div class="card">
+    <div class="grid2">
+      <label><span>Preço no PIX / dinheiro</span><input id="pix" inputmode="decimal" value="1.000"></label>
+      <label><span>Preço total no cartão</span><input id="cartao" inputmode="decimal" value="1.000"></label>
+    </div>
+    <div class="grid2">
+      <label><span>Número máximo de parcelas</span><input id="n" inputmode="decimal" value="12"></label>
+      <label><span>Seu dinheiro rende (% ao mês)</span><input id="rend" inputmode="decimal" value="0,8"></label>
+    </div>
+    <label><span>Cashback do cartão (% — opcional)</span><input id="cb" inputmode="decimal" placeholder="ex: 2"></label>
+
+    <div class="res">
+      <div style="text-align:center">
+        <div style="color:var(--muted);font-size:14px">Melhor forma de pagar</div>
+        <div class="destaque" id="melhor">—</div>
+        <div style="color:var(--muted);font-size:14px" id="econ"></div>
+      </div>
+      <div style="margin-top:18px">
+        <p class="eyebrow" style="font-size:11px;margin-bottom:6px">Custo em valor de hoje</p>
+        <div id="ranking"></div>
+      </div>
+      <div class="veredito" id="veredito" style="display:none"></div>
+      <p class="nota">Consideramos que a 1ª cobrança do cartão cai daqui a ~1 mês: até lá o dinheiro rende na sua conta. É por isso que o cartão à vista já leva vantagem sobre o PIX quando não há desconto.</p>
+    </div>
+  </div>
+
+  <div class="cta">
+    <h3>E a sua data de liberdade?</h3>
+    <p>O Ponto FIRE calcula, mês a mês, quando seus rendimentos passam a pagar sua vida.</p>
+    <a class="btn" href="/">Quero descobrir</a>
+  </div>
+
+  <footer>
+    <a href="/ferramentas/">Todas as ferramentas</a> · <a href="/">Ponto FIRE</a><br>
+    Conteúdo informativo — não é recomendação de investimento.
+  </footer>
+</div>
+<script type="module">
+import { compararCompra, brl, pct, num } from '/ferramentas/calc.js';
+const $ = (id) => document.getElementById(id);
+function calc() {
+  const r = compararCompra({
+    precoAVista: num($('pix')),
+    precoCartao: num($('cartao')),
+    maxParcelas: Math.round(num($('n'))),
+    rendimentoMensal: num($('rend')) / 100,
+    cashback: num($('cb')) / 100,
+  });
+  $('melhor').textContent = r.melhor.rotulo;
+  $('econ').textContent = r.economiaMaxima > 0.005
+    ? `economia de ${brl(r.economiaMaxima)} sobre a pior opção`
+    : 'todas as formas custam praticamente o mesmo';
+  const maxN = Math.round(num($('n')));
+  const mostra = r.opcoes.filter((o, idx) => o.id === 'pix' || idx < 3 || o.parcelas === 1 || o.parcelas === maxN);
+  $('ranking').innerHTML = mostra.map(o => `<div class="res-linha" style="color:${o.id === r.melhor.id ? 'var(--mint)' : 'var(--paper)'}">
+      <span>${o.rotulo}${o.parcelas > 1 ? ` <span style="color:var(--muted);font-size:12.5px">· ${brl(o.valorParcela)}/mês</span>` : ''}</span>
+      <span>${brl(o.custoHoje)}${o.diferencaVsMelhor > 0.005 ? ` <span style="color:var(--muted);font-size:12px">(+${brl(o.diferencaVsMelhor)})</span>` : ''}</span>
+    </div>`).join('');
+  const v = $('veredito');
+  if (r.taxaEmbutida !== null) {
+    v.style.display = 'block';
+    v.textContent = `O cartão custa mais caro que o PIX — são ${pct(r.taxaEmbutida)} a.m. de juros embutidos no parcelamento.`;
+  } else { v.style.display = 'none'; }
+}
+['pix','cartao','n','rend','cb'].forEach(id => $(id).addEventListener('input', calc));
+calc();
+</script>
+</body>
+</html>

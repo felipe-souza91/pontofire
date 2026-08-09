@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel — Ponto FIRE</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=Instrument+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0C0F2E; --ink-2:#141838; --ink-3:#1C2150;
+    --line:rgba(255,255,255,.09); --line-2:rgba(255,255,255,.15);
+    --ember:#FF7A45; --ember-2:#FF9E6B; --mint:#3FD69B; --red:#FF6B6B;
+    --paper:#F5F4FB; --muted:#A2A7CC;
+    --disp:"Fraunces",serif; --body:"Instrument Sans",system-ui,sans-serif; --mono:"Space Mono",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:radial-gradient(680px 620px at 88% -30px,rgba(255,122,69,.22) 0%,transparent 60%),radial-gradient(1200px 700px at 50% -10%,var(--ink-3) 0%,transparent 60%),var(--ink);background-repeat:no-repeat;color:var(--paper);font-family:var(--body);line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh}
+  .wrap{max-width:1100px;margin:0 auto;padding:24px}
+
+  nav{display:flex;align-items:center;justify-content:space-between;padding:18px 0;border-bottom:1px solid var(--line);margin-bottom:28px}
+  .logo{display:flex;align-items:center;gap:10px;font-family:var(--disp);font-weight:500;font-size:19px}
+  .flame{width:22px;height:22px;background:var(--ember);border-radius:50% 50% 50% 50%/60% 60% 40% 40%;filter:drop-shadow(0 0 8px rgba(255,122,69,.5))}
+  .who{font-family:var(--mono);font-size:12px;color:var(--muted);display:flex;align-items:center;gap:12px}
+  .lnk{color:var(--ember-2);cursor:pointer;text-decoration:underline;background:none;border:none;font-family:var(--mono);font-size:12px}
+
+  .gate{max-width:420px;margin:80px auto;text-align:center;background:var(--ink-2);border:1px solid var(--line);border-radius:18px;padding:40px 32px}
+  .gate h1{font-family:var(--disp);font-weight:500;font-size:26px;margin-bottom:8px}
+  .gate p{color:var(--muted);font-size:14px;margin-bottom:24px}
+  .btn{background:var(--ember);color:#241004;border:none;border-radius:10px;padding:13px 24px;font-family:var(--body);font-weight:600;font-size:15px;cursor:pointer}
+  .btn:hover{background:var(--ember-2)}
+  .err{color:var(--red);font-size:13px;margin-top:16px;display:none}
+  .err.show{display:block}
+
+  .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px}
+  .card{background:var(--ink-2);border:1px solid var(--line);border-radius:14px;padding:20px}
+  .card .lb{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+  .card .vl{font-family:var(--mono);font-weight:700;font-size:30px;margin-top:6px}
+  .card .sub{font-size:12px;color:var(--muted);margin-top:2px}
+  .card.hi .vl{color:var(--mint)}
+  .card.em .vl{color:var(--ember-2)}
+
+  .panel{background:var(--ink-2);border:1px solid var(--line);border-radius:16px;padding:22px;margin-bottom:14px}
+  .panel h2{font-family:var(--disp);font-weight:500;font-size:19px;margin-bottom:4px}
+  .panel .hint{font-size:12.5px;color:var(--muted);margin-bottom:18px}
+  .grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:14px}
+
+  svg{width:100%;height:150px;display:block}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th{text-align:left;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--line)}
+  td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.05)}
+  tbody tr:hover{background:rgba(255,255,255,.03)}
+  .mono{font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+  .tag{font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:20px;background:rgba(255,122,69,.12);color:var(--ember-2)}
+  .tag.org{background:rgba(162,167,204,.1);color:var(--muted)}
+  .scroll{max-height:420px;overflow:auto}
+
+  .tools{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+  .tools input{flex:1;min-width:200px;background:var(--ink-3);border:1px solid var(--line-2);border-radius:9px;padding:10px 14px;color:var(--paper);font-family:var(--body);font-size:14px}
+  .tools input:focus{outline:none;border-color:var(--ember)}
+  .gh{background:var(--ink-3);border:1px solid var(--line-2);color:var(--paper);border-radius:9px;padding:10px 16px;font-family:var(--body);font-size:13.5px;cursor:pointer}
+  .gh:hover{border-color:var(--ember)}
+
+  .empty{color:var(--muted);font-size:14px;text-align:center;padding:36px;font-style:italic}
+  .live{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:var(--mint)}
+  .live::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--mint);animation:p 2s infinite}
+  @keyframes p{0%,100%{opacity:1}50%{opacity:.25}}
+
+  @media(max-width:860px){.cards{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div id="gate" class="gate">
+  <svg width="40" height="50" viewBox="0 0 100 126" aria-hidden style="margin-bottom:12px">
+    <defs><linearGradient id="flg" x1="50" y1="6" x2="50" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFB27A"/><stop offset=".55" stop-color="#FF7A45"/><stop offset="1" stop-color="#E85A2A"/>
+    </linearGradient></defs>
+    <path d="M50 6 C 47 34, 73 42, 73 76 C 73 101, 61 120, 50 120 C 39 120, 27 103, 27 78 C 27 59, 44 53, 45 30 C 45.5 21, 48 12, 50 6 Z" fill="url(#flg)"/>
+    <path d="M53 52 C 51 67, 62 71, 62 87 C 62 101, 55 111, 49 111 C 43 111, 38 102, 38 91 C 38 81, 47 77, 47 65 C 47 60, 51 55, 53 52 Z" fill="#FFD9B8"/>
+  </svg>
+  <h1>Painel Ponto FIRE</h1>
+  <p>Acesso restrito.</p>
+  <button class="btn" id="login">Entrar com Google</button>
+  <div class="err" id="gerr"></div>
+</div>
+
+<div class="wrap" id="app" style="display:none">
+  <nav>
+    <div class="logo">
+      <svg width="20" height="25" viewBox="0 0 100 126" aria-hidden>
+        <defs><linearGradient id="fln" x1="50" y1="6" x2="50" y2="120" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stop-color="#FFB27A"/><stop offset=".55" stop-color="#FF7A45"/><stop offset="1" stop-color="#E85A2A"/>
+        </linearGradient></defs>
+        <path d="M50 6 C 47 34, 73 42, 73 76 C 73 101, 61 120, 50 120 C 39 120, 27 103, 27 78 C 27 59, 44 53, 45 30 C 45.5 21, 48 12, 50 6 Z" fill="url(#fln)"/>
+        <path d="M53 52 C 51 67, 62 71, 62 87 C 62 101, 55 111, 49 111 C 43 111, 38 102, 38 91 C 38 81, 47 77, 47 65 C 47 60, 51 55, 53 52 Z" fill="#FFD9B8"/>
+      </svg>
+      Ponto FIRE · waitlist
+    </div>
+    <div class="who"><span class="live">ao vivo</span><span id="uemail"></span><button class="lnk" id="logout">sair</button></div>
+  </nav>
+
+  <div class="cards">
+    <div class="card hi"><div class="lb">Total na fila</div><div class="vl" id="k-total">—</div><div class="sub" id="k-today">—</div></div>
+    <div class="card"><div class="lb">Últimos 7 dias</div><div class="vl" id="k-7d">—</div><div class="sub">novos cadastros</div></div>
+    <div class="card em"><div class="lb">Vieram por indicação</div><div class="vl" id="k-ref">—</div><div class="sub" id="k-refpct">—</div></div>
+    <div class="card"><div class="lb">Coeficiente viral</div><div class="vl" id="k-k">—</div><div class="sub">indicados ÷ inscritos</div></div>
+  </div>
+
+  <div class="grid2">
+    <div class="panel">
+      <h2>Cadastros por dia</h2>
+      <p class="hint">Últimos 30 dias — procure o pico depois de cada divulgação.</p>
+      <svg id="chart" viewBox="0 0 600 150" preserveAspectRatio="none"></svg>
+    </div>
+
+    <div class="panel">
+      <h2>Quem mais indica</h2>
+      <p class="hint">Seus embaixadores. Vale conversar com eles.</p>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>Código</th><th>E-mail do dono</th><th style="text-align:right">Trouxe</th></tr></thead>
+          <tbody id="tb-ref"></tbody>
+        </table>
+        <div class="empty" id="e-ref">Nenhuma indicação ainda.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Feedback dos usuários</h2>
+    <p class="hint">Mão única — o app agradece, você lê aqui. Mais recentes primeiro.</p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Tipo</th><th>Mensagem</th><th>Onde</th><th>Quando</th></tr></thead>
+        <tbody id="tb-fb"></tbody>
+      </table>
+      <div class="empty" id="e-fb">Nenhum feedback ainda.</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Inscritos</h2>
+    <p class="hint">Ordem: mais recentes primeiro.</p>
+    <div class="tools">
+      <input id="q" placeholder="Filtrar por e-mail…">
+      <button class="gh" id="csv">Exportar CSV</button>
+      <button class="gh" id="copy">Copiar e-mails</button>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>E-mail</th><th>Entrou</th><th>Origem</th><th>Código</th></tr></thead>
+        <tbody id="tb-all"></tbody>
+      </table>
+      <div class="empty" id="e-all">Ninguém na fila ainda.</div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app-check.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyARBMypLcgCVT3KWxmRM4AtCiv3ZKnrOxw",
+  authDomain: "firefinances-4b65f.firebaseapp.com",
+  projectId: "firefinances-4b65f",
+  appId: "1:471610794098:web:19db399af7b6aa1181a2eb"
+};
+
+const app = initializeApp(firebaseConfig);
+initializeAppCheck(app, {
+  provider: new ReCaptchaEnterpriseProvider("6Ldjt1EtAAAAAGzSqgMwyIRUCo-yU7vZuK3iW8Yc"),
+  isTokenAutoRefreshEnabled: true
+});
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+const $ = id => document.getElementById(id);
+let ROWS = [];
+
+$('login').onclick = async () => {
+  try { await signInWithPopup(auth, new GoogleAuthProvider()); }
+  catch(e){ $('gerr').textContent = 'Falhou: ' + e.code; $('gerr').classList.add('show'); }
+};
+$('logout').onclick = () => signOut(auth);
+
+onAuthStateChanged(auth, user => {
+  if(!user){ $('gate').style.display='block'; $('app').style.display='none'; return; }
+  $('gate').style.display='none';
+  $('app').style.display='block';
+  $('uemail').textContent = user.email;
+  listen();
+});
+
+function listen(){
+  onSnapshot(query(collection(db,'waitlist'), orderBy('created','desc')), snap => {
+    ROWS = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    render();
+  }, err => {
+    $('gate').style.display='block'; $('app').style.display='none';
+    $('gerr').textContent = 'Sem permissão de leitura (' + err.code + '). Seu UID: ' + (auth.currentUser?.uid || '?') + ' — envie esse UID para liberar nas regras.';
+    $('gerr').classList.add('show');
+  });
+
+  // feedback (mão única): falha aqui não derruba a waitlist
+  onSnapshot(query(collection(db,'feedback'), orderBy('created','desc')), snap => {
+    const rows = snap.docs.map(d => d.data());
+    $('e-fb').style.display = rows.length ? 'none' : 'block';
+    $('tb-fb').innerHTML = rows.map(r => `<tr>
+      <td><span class="tag">${r.tipo || '—'}</span></td>
+      <td>${(r.texto||'').replace(/[<>]/g, '')}</td>
+      <td class="mono">${r.rota || '—'}</td>
+      <td class="mono">${dfmt(r.created)}</td></tr>`).join('');
+  }, err => {
+    $('e-fb').textContent = 'Não consegui ler o feedback (' + err.code + ').';
+    $('e-fb').style.display = 'block';
+  });
+}
+
+const dstr = ts => ts?.toDate ? ts.toDate().toISOString().slice(0,10) : '—';
+const dfmt = ts => ts?.toDate ? ts.toDate().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
+
+function render(){
+  const total = ROWS.length;
+  const hoje = new Date().toISOString().slice(0,10);
+  const nHoje = ROWS.filter(r => dstr(r.created) === hoje).length;
+  const lim = new Date(Date.now() - 7*864e5).toISOString().slice(0,10);
+  const n7 = ROWS.filter(r => dstr(r.created) >= lim).length;
+  const indicados = ROWS.filter(r => r.referredBy).length;
+
+  $('k-total').textContent = total;
+  $('k-today').textContent = nHoje ? `+${nHoje} hoje` : 'nenhum hoje';
+  $('k-7d').textContent = n7;
+  $('k-ref').textContent = indicados;
+  $('k-refpct').textContent = total ? Math.round(indicados/total*100) + '% do total' : '—';
+  $('k-k').textContent = total ? (indicados/total).toFixed(2) : '—';
+
+  // série diária (30d)
+  const days = [...Array(30)].map((_,i)=> new Date(Date.now()-(29-i)*864e5).toISOString().slice(0,10));
+  const counts = days.map(d => ROWS.filter(r => dstr(r.created)===d).length);
+  const max = Math.max(1, ...counts);
+  const W=600,H=150,bw=W/30;
+  $('chart').innerHTML = counts.map((c,i)=>{
+    const h = c ? Math.max(3, (c/max)*(H-20)) : 0;
+    return `<rect x="${i*bw+2}" y="${H-h}" width="${bw-4}" height="${h}" fill="${c?'#FF7A45':'rgba(255,255,255,.06)'}" rx="2"><title>${days[i]}: ${c}</title></rect>`;
+  }).join('') + `<line x1="0" y1="${H}" x2="${W}" y2="${H}" stroke="rgba(255,255,255,.1)"/>`;
+
+  // ranking de indicações (contado no cliente, a partir de referredBy)
+  const byCode = {};
+  ROWS.forEach(r => { if(r.referredBy) byCode[r.referredBy] = (byCode[r.referredBy]||0)+1; });
+  const owner = {}; ROWS.forEach(r => { if(r.ref) owner[r.ref] = r.email; });
+  const rank = Object.entries(byCode).sort((a,b)=>b[1]-a[1]);
+  $('e-ref').style.display = rank.length ? 'none' : 'block';
+  $('tb-ref').innerHTML = rank.map(([c,n]) =>
+    `<tr><td class="mono">${c}</td><td>${owner[c] || '<span class="mono">desconhecido</span>'}</td><td style="text-align:right"><b>${n}</b></td></tr>`).join('');
+
+  drawList();
+}
+
+function drawList(){
+  const q = $('q').value.trim().toLowerCase();
+  const rows = ROWS.filter(r => !q || (r.email||'').includes(q));
+  $('e-all').style.display = rows.length ? 'none' : 'block';
+  $('tb-all').innerHTML = rows.map(r => `<tr>
+    <td>${r.email||''}</td>
+    <td class="mono">${dfmt(r.created)}</td>
+    <td>${r.referredBy ? `<span class="tag">via ${r.referredBy}</span>` : '<span class="tag org">orgânico</span>'}</td>
+    <td class="mono">${r.ref||'—'}</td></tr>`).join('');
+}
+$('q').oninput = drawList;
+
+$('csv').onclick = () => {
+  const csv = 'email,criado_em,indicado_por,codigo\n' + ROWS.map(r =>
+    [r.email, dstr(r.created), r.referredBy||'', r.ref||''].join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
+  a.download = `waitlist-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+};
+
+$('copy').onclick = async () => {
+  await navigator.clipboard.writeText(ROWS.map(r=>r.email).join(', '));
+  $('copy').textContent = 'Copiado!';
+  setTimeout(()=> $('copy').textContent = 'Copiar e-mails', 1500);
+};
+</script>
+</body>
+</html>

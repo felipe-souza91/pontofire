@@ -1,0 +1,12 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "itens",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "data", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

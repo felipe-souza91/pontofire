@@ -1,0 +1,20 @@
+{
+  "name": "pontofire",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Ponto FIRE — calcula a data exata da independência financeira.",
+  "workspaces": [
+    "app",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w app",
+    "build": "npm run build -w app",
+    "preview": "npm run preview -w app",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

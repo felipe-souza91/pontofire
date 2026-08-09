@@ -1,0 +1,60 @@
+name: Deploy Hosting (Firebase)
+
+# Compila o app React e publica no Firebase Hosting.
+# Roda a cada push nas branches abaixo e também pelo botão "Run workflow"
+# (aba Actions do GitHub) — tudo pela nuvem, sem build local.
+on:
+  push:
+    branches:
+      - main
+      - claude/project-briefing-i8u1bu
+  workflow_dispatch:
+
+# se vários pushes chegam juntos, cancela deploys antigos e publica só o último
+concurrency:
+  group: deploy-hosting
+  cancel-in-progress: true
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Preparar Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Rodar os testes
+        # Antes gate nenhum: dava pra publicar app quebrado com a suite verde
+        # parada no repositório. Teste que não barra deploy não protege ninguém.
+        run: npm test
+
+      - name: Compilar o app (gera public/app)
+        # Vite lê app/.env.local (versionado) com a config do Firebase.
+        run: npm run build
+
+      - name: Publicar no Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          channelId: live
+          projectId: firefinances-4b65f
+
+      - name: Publicar regras do Firestore
+        # Reconciliadas com a landing/painel (ver PLANO.md). Só rules — não mexe
+        # em indexes/functions. Idempotente: republicar regras iguais é no-op.
+        run: |
+          printf '%s' "$FIREBASE_SA" > "$RUNNER_TEMP/sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
+          npx --yes firebase-tools deploy --only firestore:rules \
+            --project firefinances-4b65f --non-interactive
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}

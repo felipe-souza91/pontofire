@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+# o app fica atrás de login — não há conteúdo indexável
+Disallow: /app/
+Disallow: /painel.html
+
+Sitemap: https://pontofire.com.br/sitemap.xml

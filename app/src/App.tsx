@@ -1,0 +1,133 @@
+import { Navigate, Route, Routes } from 'react-router-dom';
+import { useAuth } from './auth/useAuth';
+import { useUserDoc } from './hooks/useUserDoc';
+import { Entrar } from './routes/Entrar';
+import { Onboarding } from './routes/Onboarding';
+import { Dashboard } from './routes/Dashboard';
+import { Perfil } from './routes/Perfil';
+import { Lancar } from './routes/Lancar';
+import { Detalhar } from './routes/Detalhar';
+import { Bens } from './routes/Bens';
+import { Importar } from './routes/Importar';
+import { Metodologia } from './routes/Metodologia';
+import { Conquistas } from './routes/Conquistas';
+import { Ferramentas } from './routes/Ferramentas';
+import { BotaoFeedback } from './components/BotaoFeedback';
+import { useTituloDaPagina } from './hooks/useTituloDaPagina';
+import { Flame } from './theme/Flame';
+
+/** Tela de carregamento — chama "queimando". */
+function Splash() {
+  return (
+    <main
+      style={{ minHeight: '100dvh', display: 'grid', placeItems: 'center' }}
+      role="status"
+      aria-live="polite"
+      aria-label="Carregando"
+    >
+      <Flame size={72} className="flame-loading" title="Carregando" />
+    </main>
+  );
+}
+
+export function App() {
+  const { user, carregando } = useAuth();
+  useTituloDaPagina();
+
+  if (carregando) return <Splash />;
+
+  if (!user) {
+    return (
+      <Routes>
+        <Route path="/entrar" element={<Entrar />} />
+        <Route path="*" element={<Navigate to="/entrar" replace />} />
+      </Routes>
+    );
+  }
+
+  return <RotasLogado uid={user.uid} />;
+}
+
+function RotasLogado({ uid }: { uid: string }) {
+  const { doc, carregando, erro } = useUserDoc(uid);
+  const { sair } = useAuth();
+
+  if (carregando) return <Splash />;
+
+  // não trava mais no loading: se a leitura falhou, mostra o motivo e uma saída
+  if (erro) {
+    return (
+      <main className="pf-container" style={{ minHeight: '100dvh', display: 'grid', placeItems: 'center' }}>
+        <div className="pf-card" style={{ textAlign: 'center' }}>
+          <Flame size={40} />
+          <h2 style={{ marginTop: 'var(--space-4)' }}>Não consegui carregar seus dados</h2>
+          <p style={{ color: 'var(--muted)' }}>
+            A leitura do seu perfil foi bloqueada. Isso costuma ser App Check ou regras do Firestore.
+          </p>
+          <p className="mono pf-error">({erro})</p>
+          <button className="pf-btn pf-btn-ghost" onClick={() => window.location.reload()}>
+            Tentar de novo
+          </button>
+          <div style={{ marginTop: 'var(--space-3)' }}>
+            <button className="pf-btn-link" onClick={() => void sair()}>
+              Sair
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  const precisaOnboarding = !doc?.onboardingCompleto;
+
+  return (
+    <>
+      {/* feedback mão única — disponível em todo o app logado */}
+      {!precisaOnboarding && <BotaoFeedback plano={doc?.plano ?? 'free'} />}
+      <Routes>
+      <Route path="/entrar" element={<Navigate to="/" replace />} />
+      {/* O Onboarding decide sozinho se redireciona: ele grava tudo numa escrita
+          só (inclusive onboardingCompleto) e ainda precisa continuar montado pra
+          mostrar a tela da data. Um guard aqui o expulsaria no meio. */}
+      <Route path="/onboarding" element={<Onboarding jaCompleto={!precisaOnboarding} />} />
+      <Route
+        path="/"
+        element={precisaOnboarding ? <Navigate to="/onboarding" replace /> : <Dashboard />}
+      />
+      <Route
+        path="/perfil"
+        element={precisaOnboarding ? <Navigate to="/onboarding" replace /> : <Perfil />}
+      />
+      <Route
+        path="/lancar"
+        element={precisaOnboarding ? <Navigate to="/onboarding" replace /> : <Lancar />}
+      />
+      <Route
+        path="/detalhar/:mes"
+        element={precisaOnboarding ? <Navigate to="/onboarding" replace /> : <Detalhar />}
+      />
+      <Route
+        path="/importar"
+        element={precisaOnboarding ? <Navigate to="/onboarding" replace /> : <Importar />}
+      />
+      <Route
+        path="/metodologia"
+        element={precisaOnboarding ? <Navigate to="/onboarding" replace /> : <Metodologia />}
+      />
+      <Route
+        path="/bens"
+        element={precisaOnboarding ? <Navigate to="/onboarding" replace /> : <Bens />}
+      />
+      <Route
+        path="/ferramentas"
+        element={precisaOnboarding ? <Navigate to="/onboarding" replace /> : <Ferramentas />}
+      />
+      <Route
+        path="/conquistas"
+        element={precisaOnboarding ? <Navigate to="/onboarding" replace /> : <Conquistas />}
+      />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
+  );
+}
