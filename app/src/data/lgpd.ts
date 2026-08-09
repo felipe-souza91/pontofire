@@ -34,7 +34,6 @@ const SUBCOLECOES: { colecao: string; sub: string }[] = [
   { colecao: 'assets', sub: 'itens' },
   { colecao: 'achievements', sub: 'itens' },
   { colecao: 'goals', sub: 'itens' },
-  { colecao: 'entryTypes', sub: 'itens' },
 ];
 
 /** Docs únicos por uid. */

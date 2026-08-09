@@ -17,7 +17,7 @@ export const SERIES = {
   selicMeta: 432, // % a.a. — meta definida pelo Copom (foto de hoje)
   selicMensal: 4390, // % a.m. — Selic efetivamente acumulada no mês
   ipca: 433, // variação mensal %
-  inpc: 188, // variação mensal % (código a confirmar no catálogo SGS)
+  inpc: 188, // variação mensal % — cruzado com o IPCA pelo CI toda segunda
   igpm: 189, // variação mensal %
 } as const;
 
@@ -112,10 +112,38 @@ function limparCachesAntigos(): void {
   }
 }
 
+async function pedir(url: string): Promise<PontoSGS[]> {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`SGS: HTTP ${r.status}`);
+  const json = (await r.json()) as PontoSGS[];
+  if (!Array.isArray(json) || json.length === 0) throw new Error('SGS: resposta vazia');
+  return json;
+}
+
+const ddmmaaaa = (d: Date): string =>
+  `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+
+/**
+ * O SGS recusa `/dados/ultimos/N` com N grande em algumas séries — devolve
+ * HTTP 400 em vez de uma lista menor. Foi o que derrubou o histórico de 10
+ * anos silenciosamente: 432, 188 e 189 (pedidos curtos) respondiam, e 4390 e
+ * 433 pedindo 120 pontos quebravam, então o card caía no texto sem comparação
+ * sem que ninguém soubesse por quê.
+ *
+ * Fallback: janela por data, que o SGS aceita sem limite.
+ */
 async function buscarSerie(codigo: number, ultimos: number): Promise<PontoSGS[]> {
-  const r = await fetch(`${BASE}.${codigo}/dados/ultimos/${ultimos}?formato=json`);
-  if (!r.ok) throw new Error(`SGS ${codigo}: HTTP ${r.status}`);
-  return (await r.json()) as PontoSGS[];
+  try {
+    return await pedir(`${BASE}.${codigo}/dados/ultimos/${ultimos}?formato=json`);
+  } catch (e) {
+    if (ultimos <= 12) throw e;
+    const fim = new Date();
+    const ini = new Date(fim.getFullYear(), fim.getMonth() - ultimos - 1, 1);
+    const pts = await pedir(
+      `${BASE}.${codigo}/dados?formato=json&dataInicial=${ddmmaaaa(ini)}&dataFinal=${ddmmaaaa(fim)}`,
+    );
+    return pts.slice(-ultimos);
+  }
 }
 
 /** Compõe variações mensais (%) em acumulado do período. */

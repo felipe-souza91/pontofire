@@ -5,7 +5,6 @@ import { useAuth } from '../auth/useAuth';
 import { usePainel, idadeDe } from '../hooks/usePainel';
 import { useConquistas } from '../hooks/useConquistas';
 import type { Snapshot } from '../data/snapshots';
-import { Flame } from '../theme/Flame';
 import { gerarInsights, conquistasAtingidas, cardDaSemana } from '@pontofire/insights';
 import { CardINSS } from '../components/CardINSS';
 import { CardEconomico } from '../components/CardEconomico';
@@ -14,6 +13,7 @@ import { CardSemana } from '../components/CardSemana';
 import { CardMetaIdade } from '../components/CardMetaIdade';
 import { TrofeusResumo } from '../components/TrofeusResumo';
 import { BoasVindas } from '../components/BoasVindas';
+import { MenuTopo } from '../components/MenuTopo';
 import { marcarTourVisto } from '../data/users';
 import { GraficoLinha, type MarcaX, type PontoGrafico } from '../components/GraficoLinha';
 import { formatBRLcompact, formatDuracao, formatMesAno, formatPct } from '../utils/format';
@@ -89,17 +89,7 @@ export function Dashboard() {
           }}
         />
       )}
-      <header style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-8)', position: 'relative', zIndex: 1 }}>
-        <Flame size={30} />
-        <strong className="pf-logo" style={{ flex: 1 }}>Ponto FIRE</strong>
-        <span className="pf-pill">beta fechado</span>
-        <Link className="pf-btn-link" to="/lancar">Lançar</Link>
-        <Link className="pf-btn-link" to="/bens">Bens</Link>
-        <Link className="pf-btn-link" to="/conquistas">Conquistas</Link>
-        <Link className="pf-btn-link" to="/ferramentas">Ferramentas</Link>
-        <Link className="pf-btn-link" to="/perfil">Perfil</Link>
-        <button className="pf-btn-link" onClick={() => void sair()}>Sair</button>
-      </header>
+      <MenuTopo onSair={() => void sair()} />
 
       <div
         style={{

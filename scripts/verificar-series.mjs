@@ -42,13 +42,37 @@ const SERIES = {
 
 // ---------------------------------------------------------------------------
 
-async function buscar(codigo, pontos) {
-  const url = `${BASE}.${codigo}/dados/ultimos/${pontos}?formato=json`;
+async function pedir(url) {
   const r = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   const json = await r.json();
   if (!Array.isArray(json) || json.length === 0) throw new Error('resposta vazia');
   return json.map((p) => ({ data: p.data, valor: Number(String(p.valor).replace(',', '.')) }));
+}
+
+const ddmmaaaa = (d) =>
+  `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+
+/**
+ * O SGS recusa `/dados/ultimos/N` com N grande em algumas séries — devolve
+ * HTTP 400, não uma lista menor. Descoberto na prática: 432 (1 ponto), 188 e
+ * 189 (12) passaram, enquanto 4390 e 433 pedindo 120 quebraram.
+ *
+ * Então: tenta o caminho curto e, se ele falhar num pedido longo, cai pra
+ * janela por data, que o SGS aceita sem limite de tamanho.
+ */
+async function buscar(codigo, pontos) {
+  try {
+    return await pedir(`${BASE}.${codigo}/dados/ultimos/${pontos}?formato=json`);
+  } catch (e) {
+    if (pontos <= 12) throw e;
+    const fim = new Date();
+    const ini = new Date(fim.getFullYear(), fim.getMonth() - pontos - 1, 1);
+    const pts = await pedir(
+      `${BASE}.${codigo}/dados?formato=json&dataInicial=${ddmmaaaa(ini)}&dataFinal=${ddmmaaaa(fim)}`,
+    );
+    return pts.slice(-pontos);
+  }
 }
 
 const valores = (pts) => pts.map((p) => p.valor);
@@ -203,19 +227,30 @@ export function analisar(dados, falhasDeRede = []) {
   if (falhasDeRede.length) {
     linhas.push('### Não responderam', '', ...falhasDeRede.map((f) => `- ${f}`), '');
   }
+  // Um cruzamento que NÃO RODOU não é um cruzamento que passou. Sem isto, o
+  // relatório dizia "tudo certo" tendo verificado só a faixa de duas séries.
+  const CRUZAMENTOS = ['Selic 4390 × 432 — cruzamento', 'INPC 188 × IPCA 433 — cruzamento'];
+  const naoRodaram = CRUZAMENTOS.filter((c) => !resultados.some((r) => r.nome === c));
   const nadaRespondeu = Object.values(dados).every((d) => !d);
+
+  if (naoRodaram.length) {
+    linhas.push('### Não foi possível verificar', '', ...naoRodaram.map((c) => `- ${c}`), '');
+  }
+
   linhas.push(
     nadaRespondeu
       ? '**Não deu pra verificar.** Nenhuma série respondeu — provavelmente o SGS está fora do ar. Isso não diz nada sobre os códigos; o job volta a rodar na próxima segunda.'
       : criticasFalhas.length
         ? `**${criticasFalhas.length} verificação(ões) crítica(s) falharam.** Um código de série provavelmente mudou ou está errado em \`app/src/data/indicadores.ts\`.`
-        : '**Tudo certo.** Os códigos batem com o que o app espera.',
+        : naoRodaram.length
+          ? `**Verificação incompleta.** ${naoRodaram.length} cruzamento(s) não rodaram porque a série que eles comparam não veio. O que respondeu está coerente, mas isso NÃO confirma os códigos.`
+          : '**Tudo certo.** Os códigos batem com o que o app espera.',
   );
 
   return {
     relatorio: linhas.join('\n'),
     resultados: [...resultados],
-    falhou: criticasFalhas.length > 0,
+    falhou: criticasFalhas.length > 0 || (!nadaRespondeu && naoRodaram.length > 0),
     juroReal10a,
   };
 }

@@ -1255,3 +1255,151 @@
     grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
   }
 }
+
+/* ===================================================================== */
+/* Cabeçalho do Início — inline no desktop, sanduíche no celular          */
+/* ===================================================================== */
+
+.pf-topo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-8);
+  position: relative;
+  z-index: 20;
+}
+.pf-topo-marca {
+  flex: 1;
+  min-width: 0;
+}
+.pf-topo-links {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* --- botão sanduíche (3 barras que viram X) --- */
+.pf-menu-btn {
+  display: none;
+  position: relative;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--line-2);
+  border-radius: 12px;
+  background: var(--ink-2);
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+.pf-menu-btn span,
+.pf-menu-btn span::before,
+.pf-menu-btn span::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  width: 18px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--paper);
+  transform: translateX(-50%);
+  transition: transform 0.2s ease, opacity 0.15s ease;
+}
+.pf-menu-btn span {
+  top: 50%;
+  margin-top: -1px;
+}
+.pf-menu-btn span::before {
+  top: -6px;
+  left: 0;
+  transform: none;
+}
+.pf-menu-btn span::after {
+  top: 6px;
+  left: 0;
+  transform: none;
+}
+.pf-menu-btn.on span {
+  background: transparent;
+}
+.pf-menu-btn.on span::before {
+  transform: translateY(6px) rotate(45deg);
+}
+.pf-menu-btn.on span::after {
+  transform: translateY(-6px) rotate(-45deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .pf-menu-btn span,
+  .pf-menu-btn span::before,
+  .pf-menu-btn span::after {
+    transition: none;
+  }
+}
+
+/* --- painel do menu --- */
+.pf-menu-painel {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  min-width: 13rem;
+  display: grid;
+  gap: 2px;
+  padding: var(--space-3);
+  background: var(--ink-2);
+  border: 1px solid var(--line-2);
+  border-radius: 16px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+  animation: pf-menu-abre 0.16s ease both;
+}
+@keyframes pf-menu-abre {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pf-menu-painel { animation: none; }
+}
+.pf-menu-painel a,
+.pf-menu-painel button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0.7rem 0.8rem;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--paper);
+  font: inherit;
+  font-size: 0.95rem;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  width: 100%;
+}
+.pf-menu-painel a:hover,
+.pf-menu-painel button:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.pf-menu-painel button {
+  margin-top: 2px;
+  border-top: 1px solid var(--line);
+  border-radius: 0 0 10px 10px;
+  color: var(--muted);
+}
+.pf-menu-selo {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ember-2);
+  text-align: center;
+  padding-top: var(--space-2);
+}
+
+/* a virada: abaixo disso os 6 links não cabem mais */
+@media (max-width: 820px) {
+  .pf-topo-links,
+  .pf-topo-selo {
+    display: none;
+  }
+  .pf-menu-btn {
+    display: block;
+  }
+}

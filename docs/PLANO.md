@@ -26,7 +26,7 @@ contínuo (o dono é o usuário-alvo).
 | Auth | **Google + e-mail/senha** (Apple dispensado). App Check reCAPTCHA Enterprise reusado. |
 | Inteligência | **Motor de REGRAS** determinístico (não LLM). LLM no máx. reescreve fato aprovado (fase 2). |
 | Importador | **OFX + 3-5 adaptadores CSV**; revisão em lote; memória memo→categoria; dedupe fatura×extrato. |
-| Entradas | `categoria` livre + `tipo` **fechado** (ativa/passiva/aporte/saída) — cobertura passiva depende. |
+| Entradas | `categoria` livre + `tipo` **fechado** (ativa/passiva/aporte/saída) — cobertura passiva depende. *(`entryTypes` foi removido: com `categoria` já em texto livre, "tipos de entrada personalizados" virou redundante. Nunca teve implementação — era andaime nas regras e na limpeza LGPD.)* |
 | Calculadoras | **Públicas na landing (SEO) + no app.** |
 | Monetização | **Freemium**, gateway **Stripe + extensão Firebase**; beta 100% grátis (gate desligado). |
 | INSS | **Estimativa simplificada honesta**; constantes 2026 em config atualizável; link Meu INSS. |
@@ -70,7 +70,6 @@ firebase.json  firestore.rules  firestore.indexes.json  .firebaserc
 - `users/{uid}`: campos §5 + humanização (`apelido`, `porQue`, flags de consentimento) + `plano`.
 - `snapshots/{uid}/meses/{YYYY-MM}`: fonte da verdade mensal (§5).
 - `transactions/{uid}/itens/{id}`: modo detalhado; `tipo` fechado, `categoria` livre, `origem`.
-- `entryTypes/{uid}/itens/{id}`: tipos de entrada personalizados (rótulo + `tipo` subjacente).
 - `assets/{uid}/itens/{id}`: bens do usuário — `nome`, `tipo` (`financeiro`/`imovel-uso`/`imovel-renda`/
   `veiculo`/`outro`), `valor`, `geraRenda`+`rendaMensal`, `dividaAssociada`, `incluirNoFire`. Motor lê só
   o que qualifica como investível; renda dos que alugam entra em `R`.
@@ -82,7 +81,7 @@ firebase.json  firestore.rules  firestore.indexes.json  .firebaserc
 ## Regras de segurança (a escrever)
 - **Fix waitlist:** `allow read: if request.auth.uid == 'nzGPtwHhnzeHRBm6UT4EWFYsB5N2';`
 - **App:** cada usuário só lê/escreve sob o próprio `uid` (`users`, `snapshots`, `transactions`,
-  `entryTypes`, `assets`, `goals`, `achievements`, `invites`).
+  `assets`, `goals`, `achievements`, `invites`).
 - `feedback`: create por usuário logado; read/update/delete negados (só admin via console/painel).
 - `indicadores`: read liberado (logado); write negado (só Admin SDK da function).
 
