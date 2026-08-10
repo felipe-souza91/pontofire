@@ -40,6 +40,11 @@ const ALERTA: Record<AlertaItem, { rotulo: string; explicacao: string }> = {
     explicacao:
       'dinheiro seu indo pra outra conta sua: não é receita nem despesa. Importe o extrato da outra instituição pra não perder os gastos de lá',
   },
+  conciliada: {
+    rotulo: 'fecha em zero',
+    explicacao:
+      'achei o outro lado desta transferência num extrato que você já importou: saiu de uma conta sua e entrou em outra. Zero a zero',
+  },
 };
 
 /**

@@ -74,6 +74,13 @@ service cloud.firestore {
       allow read, write: if isOwner(uid);
     }
 
+    // transferências do usuário pra ele mesmo — memória de conciliação entre
+    // instituições (M5). Não são receita nem despesa; existem só pra que o
+    // segundo extrato reconheça o outro lado do que o primeiro já registrou.
+    match /transfers/{uid}/itens/{impressao} {
+      allow read, write: if isOwner(uid);
+    }
+
     // bens/patrimônio (investível x uso) — ver PLANO.md.
     match /assets/{uid}/itens/{itemId} {
       allow read, write: if isOwner(uid);

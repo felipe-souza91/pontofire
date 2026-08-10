@@ -1,6 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { analisar, type EntradaAnalise } from './analisar';
-import type { ContextoImport, ItemImportado, JaSalvo, MemoriaCategoria } from './tipos';
+import type {
+  ContextoImport,
+  ItemImportado,
+  JaSalvo,
+  MemoriaCategoria,
+  ResultadoAnalise,
+  TransferenciaSalva,
+} from './tipos';
 import {
   CSV_BAGUNCADO,
   CSV_BRADESCO,
@@ -367,7 +374,7 @@ describe('transferência do usuário pra ele mesmo', () => {
 
   it('sugere importar o extrato da outra instituição', () => {
     const r = rodar(CSV_MERCADO_PAGO, { nomeUsuario: 'Maria da Silva Santos' });
-    expect(r.avisos.some((a) => a.includes('importe o extrato de lá'))).toBe(true);
+    expect(r.avisos.some((a) => /extrato da outra institui/i.test(a))).toBe(true);
   });
 
   it('não confunde um terceiro com o próprio usuário', () => {
@@ -383,5 +390,103 @@ describe('transferência do usuário pra ele mesmo', () => {
   it('nome de uma palavra só não dispara (evita falso positivo)', () => {
     const r = rodar(CSV_MERCADO_PAGO, { nomeUsuario: 'Maria' });
     expect(r.diagnostico.transferenciasProprias).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+
+describe('conciliação entre instituições — o 0 a 0', () => {
+  const EU = { nomeUsuario: 'Maria da Silva Santos' };
+
+  /** Simula o que o app grava depois de importar um extrato. */
+  const guardar = (r: ResultadoAnalise, instituicao: string): TransferenciaSalva[] =>
+    r.itens
+      .filter((i) => i.alertas.includes('transferencia-propria'))
+      .map((i) => ({
+        impressao: i.impressao,
+        data: i.data,
+        valor: i.valor,
+        sentido: i.tipo === 'saida' ? ('saida' as const) : ('entrada' as const),
+        instituicao,
+      }));
+
+  // Bradesco 06/07: saída de R$ 6.770,00 pra ela mesma.
+  // Mercado Pago 04/07: entrada de R$ 6.770,00 dela mesma. É o mesmo dinheiro.
+  const bradesco = rodar(CSV_BRADESCO, EU, {}, 'latin1');
+  const salvas = guardar(bradesco, 'Bradesco');
+
+  it('o primeiro extrato não tem com o que conciliar', () => {
+    expect(bradesco.diagnostico.transferenciasConciliadas).toBe(0);
+  });
+
+  it('o segundo extrato acha o outro lado e fecha em zero', () => {
+    const mp = rodar(CSV_MERCADO_PAGO, EU, { transferenciasSalvas: salvas });
+    const par = mp.itens.find((i) => i.alertas.includes('conciliada'));
+
+    expect(mp.diagnostico.transferenciasConciliadas).toBe(1);
+    expect(par?.valor).toBe(6770);
+    expect(par?.conciliadaCom).toEqual({ data: '2026-07-06', instituicao: 'Bradesco' });
+    // conciliada continua fora dos totais: o 0 a 0 é justamente não contar
+    expect(par?.incluir).toBe(false);
+  });
+
+  it('diz de onde veio o outro lado', () => {
+    const mp = rodar(CSV_MERCADO_PAGO, EU, { transferenciasSalvas: salvas });
+    const par = mp.itens.find((i) => i.alertas.includes('conciliada'))!;
+    expect(par.motivo).toMatch(/Bradesco/);
+    expect(mp.avisos.some((a) => /fecharam com o outro lado/.test(a))).toBe(true);
+  });
+
+  it('as que não acharam par continuam cobrando o outro extrato', () => {
+    const mp = rodar(CSV_MERCADO_PAGO, EU, { transferenciasSalvas: salvas });
+    // sobram a entrada de 394,74 e a saída de 500,00
+    expect(mp.diagnostico.transferenciasProprias - mp.diagnostico.transferenciasConciliadas).toBe(2);
+    expect(mp.avisos.some((a) => /ainda est(ã|a)o sem par/.test(a))).toBe(true);
+  });
+
+  it('não casa dois lançamentos no MESMO sentido', () => {
+    // saída contra saída não é transferência entre contas, é gasto duplicado
+    const mp = rodar(CSV_MERCADO_PAGO, EU, {
+      transferenciasSalvas: [
+        { impressao: 'x', data: '2026-07-04', valor: 6770, sentido: 'entrada', instituicao: 'Itaú' },
+      ],
+    });
+    expect(mp.diagnostico.transferenciasConciliadas).toBe(0);
+  });
+
+  it('não casa valor diferente, nem por um centavo', () => {
+    const mp = rodar(CSV_MERCADO_PAGO, EU, {
+      transferenciasSalvas: [
+        { impressao: 'x', data: '2026-07-04', valor: 6770.01, sentido: 'saida' },
+      ],
+    });
+    expect(mp.diagnostico.transferenciasConciliadas).toBe(0);
+  });
+
+  it('não casa fora da janela de 3 dias', () => {
+    const mp = rodar(CSV_MERCADO_PAGO, EU, {
+      transferenciasSalvas: [
+        { impressao: 'x', data: '2026-07-09', valor: 6770, sentido: 'saida' },
+      ],
+    });
+    expect(mp.diagnostico.transferenciasConciliadas).toBe(0);
+  });
+
+  it('uma salva fecha com um item só — não vira par de todo mundo', () => {
+    // duas entradas iguais no arquivo contra UMA saída salva: só uma concilia
+    const mp = rodar(CSV_MERCADO_PAGO, EU, {
+      transferenciasSalvas: [
+        { impressao: 'a', data: '2026-07-04', valor: 6770, sentido: 'saida' },
+        { impressao: 'b', data: '2026-07-04', valor: 6770, sentido: 'saida' },
+      ],
+    });
+    // só existe uma entrada de 6770 no MP, então no máximo uma conciliação
+    expect(mp.diagnostico.transferenciasConciliadas).toBe(1);
+  });
+
+  it('sem memória de transferências, nada concilia (e nada quebra)', () => {
+    const mp = rodar(CSV_MERCADO_PAGO, EU);
+    expect(mp.diagnostico.transferenciasConciliadas).toBe(0);
+    expect(mp.itens.every((i) => i.conciliadaCom === undefined)).toBe(true);
   });
 });

@@ -20,6 +20,7 @@ import type {
   MemoriaCategoria,
   ResultadoAnalise,
   TipoDocumento,
+  TransferenciaSalva,
 } from './tipos';
 
 /** Teto de segurança: acima disso a tela de revisão vira inutilizável. */
@@ -33,6 +34,8 @@ export interface EntradaAnalise {
   memoria?: readonly MemoriaCategoria[];
   /** o que já está salvo, pra não importar duas vezes */
   jaSalvos?: readonly JaSalvo[];
+  /** transferências próprias de importações anteriores, pra conciliar */
+  transferenciasSalvas?: readonly TransferenciaSalva[];
 }
 
 /** Registro cru, comum a OFX e CSV. */
@@ -214,6 +217,34 @@ export function ehTransferenciaPropria(texto: string, nomeUsuario?: string): boo
   return presentes.length >= 2 && presentes.includes(meus[0]!);
 }
 
+/** Dias de folga entre os dois lados: o débito e o crédito raramente caem no mesmo dia. */
+const JANELA_CONCILIACAO_DIAS = 3;
+
+const diasEntre = (a: string, b: string) =>
+  Math.abs(Date.parse(`${a}T00:00:00Z`) - Date.parse(`${b}T00:00:00Z`)) / 86_400_000;
+
+/**
+ * Procura o outro lado de uma transferência própria.
+ *
+ * Casa por valor idêntico ao centavo, sentido OPOSTO e data próxima. O valor
+ * exato é o que segura o critério: dois PIX de R$ 6.770,00 em sentidos
+ * contrários na mesma semana são a mesma transferência, não coincidência.
+ */
+function acharPar(
+  item: { data: string; valor: number; tipo: string },
+  salvas: readonly TransferenciaSalva[],
+  usadas: Set<string>,
+): TransferenciaSalva | undefined {
+  const sentidoDoItem = item.tipo === 'saida' ? 'saida' : 'entrada';
+  return salvas.find(
+    (t) =>
+      !usadas.has(t.impressao) &&
+      t.sentido !== sentidoDoItem &&
+      Math.abs(t.valor - item.valor) < 0.005 &&
+      diasEntre(t.data, item.data) <= JANELA_CONCILIACAO_DIAS,
+  );
+}
+
 // ---------------------------------------------------------------------------
 // montagem final
 
@@ -277,6 +308,20 @@ function montar(
 
   marcarDuplicatas(itens, e.jaSalvos ?? []);
 
+  // --- conciliação entre instituições
+  const usadas = new Set<string>();
+  for (const it of itens) {
+    if (!it.alertas.includes('transferencia-propria')) continue;
+    const par = acharPar(it, e.transferenciasSalvas ?? [], usadas);
+    if (!par) continue;
+    usadas.add(par.impressao);
+    it.conciliadaCom = { data: par.data, instituicao: par.instituicao };
+    it.alertas.push('conciliada');
+    it.motivo = par.instituicao
+      ? `o outro lado está no extrato do ${par.instituicao} (${brDia(par.data)}) — fecha em zero`
+      : `o outro lado já foi importado (${brDia(par.data)}) — fecha em zero`;
+  }
+
   // --- avisos que dependem do resultado final
   if (semData > 0) {
     avisos.push(`${semData} linha(s) sem data válida ou com valor zero ficaram de fora.`);
@@ -285,13 +330,26 @@ function montar(
     avisos.push('Não deu pra saber o que é entrada e o que é saída neste arquivo. Marquei tudo como despesa — corrija abaixo antes de salvar.');
   }
   const proprias = itens.filter((i) => i.alertas.includes('transferencia-propria'));
+  const conciliadas = proprias.filter((i) => i.alertas.includes('conciliada'));
   if (proprias.length) {
-    const total = proprias.reduce((s2, i) => s2 + i.valor, 0);
-    avisos.push(
-      `${proprias.length} transferência(s) suas pra você mesmo, somando ${total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}. ` +
-        'Não são receita nem despesa, então vieram desmarcadas. Se esse dinheiro foi pra outra conta sua, ' +
-        'importe o extrato de lá também — senão os gastos feitos por lá ficam de fora do seu mês.',
-    );
+    const semPar = proprias.length - conciliadas.length;
+    const totalSemPar = proprias
+      .filter((i) => !i.alertas.includes('conciliada'))
+      .reduce((s2, i) => s2 + i.valor, 0);
+
+    if (conciliadas.length) {
+      avisos.push(
+        `${conciliadas.length} de ${proprias.length} transferência(s) suas fecharam com o outro lado que você já importou — ` +
+          'entrada de um extrato contra saída do outro, zero a zero.',
+      );
+    }
+    if (semPar) {
+      avisos.push(
+        `${semPar} transferência(s) suas pra você mesmo ainda estão sem par, somando ${reais(totalSemPar)}. ` +
+          'Não são receita nem despesa, então vieram desmarcadas — mas o dinheiro foi pra algum lugar. ' +
+          'Importe o extrato da outra instituição pra fechar a conta e não perder os gastos de lá.',
+      );
+    }
   }
   const transf = itens.filter((i) => i.alertas.includes('transferencia')).length;
   if (transf) {
@@ -329,10 +387,15 @@ function montar(
     documentoDetectado: documento,
     direcaoIncerta: politica.modo === 'incerta',
     transferenciasProprias: proprias.length,
+    transferenciasConciliadas: conciliadas.length,
   };
 
   return { itens, diagnostico, avisos };
 }
+
+const brDia = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
+
+const reais = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 function rotuloFormato(f: FormatoData, certo: boolean): string {
   const nome = f === 'ymd' ? 'AAAA-MM-DD' : f === 'mdy' ? 'MM/DD/AAAA' : 'DD/MM/AAAA';

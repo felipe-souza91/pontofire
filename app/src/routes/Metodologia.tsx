@@ -407,6 +407,16 @@ export function Metodologia() {
           senão a receita fica registrada aqui e os gastos, em lugar nenhum.
         </p>
         <p className="pf-metodo-nota">
+          Essas transferências ficam <strong>guardadas em separado</strong> — fora de receita e de
+          despesa — só para que o próximo extrato reconheça o outro lado. Quando um lançamento tem{' '}
+          <strong>o mesmo valor ao centavo</strong>, <strong>sentido oposto</strong> e data dentro de{' '}
+          <strong>3 dias</strong> de um que já foi guardado, os dois são declarados o mesmo dinheiro:
+          saiu de uma conta sua, entrou na outra, <strong>fecha em zero</strong>. Cada guardado casa
+          com um único lançamento — não vira par de todo mundo com o mesmo valor. O critério é
+          conservador de propósito: na dúvida o app diz "sem par" e cobra o outro extrato, em vez de
+          afirmar um encontro que não houve.
+        </p>
+        <p className="pf-metodo-nota">
           Contra duplicata, cada lançamento ganha uma impressão digital{' '}
           <Mono>data | valor | estabelecimento</Mono> (mais o FITID, quando o OFX traz). Reimportar o
           mesmo arquivo não duplica nada. E "pagamento de fatura" no extrato vem desmarcado, porque

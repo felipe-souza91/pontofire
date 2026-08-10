@@ -13,7 +13,9 @@ import { useSnapshots } from '../hooks/useSnapshots';
 import { useUserDoc } from '../hooks/useUserDoc';
 import { buscarImpressoes, salvarTransacoesEmLote, ROTULO_TIPO, type TipoTransacao } from '../data/transactions';
 import { carregarMemoria, ensinarRegras } from '../data/importRules';
+import { buscarTransferencias, salvarTransferencias } from '../data/transfers';
 import { CATEGORIAS, normalizarCategoria } from '../data/categorias';
+import { INSTITUICOES, canonizarInstituicao } from '../data/instituicoes';
 import { Campo } from '../components/Campo';
 import { LinhaImport } from '../components/LinhaImport';
 import { formatBRL, formatMesAno } from '../utils/format';
@@ -50,6 +52,7 @@ export function Importar() {
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [salvos, setSalvos] = useState(0);
+  const [guardadas, setGuardadas] = useState(0);
   const [aviso, setAviso] = useState<string | null>(null);
 
   // -------------------------------------------------------------- etapa 1
@@ -62,13 +65,30 @@ export function Importar() {
       const memoria = await carregarMemoria(user.uid).catch(() => [] as MemoriaCategoria[]);
 
       // 1ª passada: descobre quais meses o arquivo toca
-      const comNome: ContextoImport = { ...ctx, nomeUsuario };
+      const comNome: ContextoImport = {
+        ...ctx,
+        instituicao: canonizarInstituicao(ctx.instituicao ?? '') || undefined,
+        nomeUsuario,
+      };
       const previa = analisar({ nome: file.name, bytes, contexto: comNome, memoria });
       const meses = [...new Set(previa.itens.map((i) => i.data.slice(0, 7)))];
 
-      // 2ª passada: agora com o que já está salvo nesses meses, pro dedupe
-      const jaSalvos = meses.length ? await buscarImpressoes(user.uid, meses).catch(() => []) : [];
-      const r = analisar({ nome: file.name, bytes, contexto: comNome, memoria, jaSalvos });
+      // 2ª passada: agora com o que já está salvo nesses meses, pro dedupe, e
+      // com as transferências próprias de importações anteriores, pra conciliar
+      const [jaSalvos, transferenciasSalvas] = meses.length
+        ? await Promise.all([
+            buscarImpressoes(user.uid, meses).catch(() => []),
+            buscarTransferencias(user.uid, meses).catch(() => []),
+          ])
+        : [[], []];
+      const r = analisar({
+        nome: file.name,
+        bytes,
+        contexto: comNome,
+        memoria,
+        jaSalvos,
+        transferenciasSalvas,
+      });
 
       if (!r.itens.length) {
         setErro(
@@ -138,6 +158,17 @@ export function Importar() {
 
   const aprovados = useMemo(() => itens.filter((i) => i.incluir), [itens]);
 
+  /**
+   * Transferências suas pra você mesmo que continuam fora dos lançamentos.
+   * Não viram receita nem despesa, mas são gravadas em separado: é a memória
+   * que permite o próximo extrato dizer "isso aqui fecha em zero". Se o usuário
+   * marcou uma delas pra entrar de verdade, ela deixa de ser transferência.
+   */
+  const proprias = useMemo(
+    () => itens.filter((i) => i.alertas.includes('transferencia-propria') && !i.incluir),
+    [itens],
+  );
+
   const resumo = useMemo(() => {
     const s = { ativa: 0, passiva: 0, aporte: 0, saida: 0 };
     for (const i of aprovados) s[i.tipo] += i.valor;
@@ -149,10 +180,25 @@ export function Importar() {
 
   // -------------------------------------------------------------- salvar
   async function salvar() {
-    if (!user || !aprovados.length) return;
+    if (!user || (!aprovados.length && !proprias.length)) return;
     setErro(null);
     setOcupado(true);
     try {
+      // primeiro a memória de conciliação: mesmo que o usuário não aprove
+      // nenhum lançamento, saber que houve transferência entre contas dele já
+      // vale — é o que fecha a conta quando o outro extrato chegar.
+      const instituicao = analise?.diagnostico.instituicao;
+      await salvarTransferencias(
+        user.uid,
+        proprias.map((i) => ({
+          impressao: i.impressao,
+          data: i.data,
+          valor: i.valor,
+          sentido: (i.tipo === 'saida' ? 'saida' : 'entrada') as 'entrada' | 'saida',
+          ...(instituicao ? { instituicao } : {}),
+        })),
+      ).catch(() => undefined);
+
       await salvarTransacoesEmLote(
         user.uid,
         aprovados.map((i) => ({
@@ -175,6 +221,7 @@ export function Importar() {
       await ensinarRegras(user.uid, regras).catch(() => undefined);
 
       setSalvos(aprovados.length);
+      setGuardadas(proprias.length);
       setEtapa('pronto');
     } catch {
       setErro('Salvei parte e travei no meio. Tente de novo — o que já entrou não vai duplicar.');
@@ -239,9 +286,22 @@ export function Importar() {
                 {analise.diagnostico.transferenciasProprias} transferência(s) em que o nome do
                 destinatário ou do remetente é o seu. Não são receita nem despesa, então vieram
                 desmarcadas — mas elas indicam que <strong>você move dinheiro entre contas</strong>.
-                Se os gastos acontecem na outra instituição, importe o extrato de lá também; senão
-                seu mês fica com a receita aqui e as despesas em lugar nenhum.
               </p>
+              {analise.diagnostico.transferenciasConciliadas > 0 && (
+                <p style={{ margin: 'var(--space-2) 0 0' }}>
+                  ✓ <strong>{analise.diagnostico.transferenciasConciliadas} já fecharam em zero:</strong>{' '}
+                  achei o outro lado num extrato que você importou antes. Saiu de uma conta sua,
+                  entrou na outra — não some dinheiro nem aparece receita do nada.
+                </p>
+              )}
+              {analise.diagnostico.transferenciasConciliadas <
+                analise.diagnostico.transferenciasProprias && (
+                <p style={{ margin: 'var(--space-2) 0 0' }}>
+                  As que ficaram sem par eu guardo mesmo assim. Quando você importar o extrato da
+                  outra instituição, elas se encontram sozinhas. Sem isso, seu mês fica com a
+                  receita aqui e as despesas em lugar nenhum.
+                </p>
+              )}
             </div>
           )}
 
@@ -304,10 +364,14 @@ export function Importar() {
           <button
             className="pf-btn pf-btn-primary"
             style={{ marginTop: 'var(--space-6)' }}
-            disabled={ocupado || !aprovados.length}
+            disabled={ocupado || (!aprovados.length && !proprias.length)}
             onClick={() => void salvar()}
           >
-            {ocupado ? 'Salvando…' : `Salvar ${aprovados.length} lançamento(s)`}
+            {ocupado
+              ? 'Salvando…'
+              : aprovados.length
+                ? `Salvar ${aprovados.length} lançamento(s)`
+                : `Guardar ${proprias.length} transferência(s) pra conciliação`}
           </button>
           {resumo.semCategoria > 0 && (
             <p className="pf-hint" style={{ textAlign: 'center', marginTop: 'var(--space-2)' }}>
@@ -327,6 +391,12 @@ export function Importar() {
               : `Distribuídos entre ${resumo.meses.map(rotuloMes).join(', ')}.`}{' '}
             O que você categorizou virou regra — na próxima importação já vem pronto.
           </p>
+          {guardadas > 0 && (
+            <p className="pf-hint">
+              Guardei também {guardadas} transferência(s) suas pra você mesmo. Elas não entram em
+              receita nem em despesa — ficam esperando o extrato da outra ponta pra fechar em zero.
+            </p>
+          )}
           <div style={{ display: 'grid', gap: 'var(--space-2)', marginTop: 'var(--space-4)' }}>
             {resumo.meses.map((m) => (
               <button key={m} className="pf-btn pf-btn-ghost" onClick={() => navigate(`/detalhar/${m}`)}>
@@ -384,13 +454,24 @@ function EtapaArquivo({
         </div>
       </Campo>
 
-      <Campo rotulo="De qual instituição?" opcional dica="Só pra rotular a importação. Não muda o resultado.">
+      <Campo
+        rotulo="De qual instituição?"
+        opcional
+        dica="Não muda a leitura do arquivo — mas é o que me deixa dizer depois “o outro lado dessa transferência está no extrato do Bradesco”."
+      >
         <input
           className="pf-input"
+          list="pf-instituicoes"
           value={ctx.instituicao ?? ''}
-          placeholder="Nubank, Itaú, XP…"
+          placeholder="Nubank, Itaú, Mercado Pago…"
           onChange={(e) => setCtx({ ...ctx, instituicao: e.target.value })}
+          onBlur={(e) => setCtx({ ...ctx, instituicao: canonizarInstituicao(e.target.value) || undefined })}
         />
+        <datalist id="pf-instituicoes">
+          {INSTITUICOES.map((i) => (
+            <option key={i} value={i} />
+          ))}
+        </datalist>
       </Campo>
 
       <Campo rotulo="De que mês?" opcional dica="Se o arquivo trouxer lançamentos de outro mês, eu aviso — mas cada item vai pro mês da própria data.">

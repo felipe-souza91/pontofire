@@ -34,6 +34,10 @@ const SUBCOLECOES: { colecao: string; sub: string }[] = [
   { colecao: 'assets', sub: 'itens' },
   { colecao: 'achievements', sub: 'itens' },
   { colecao: 'goals', sub: 'itens' },
+  // o importador também guarda dado do usuário: as regras que ele ensinou e as
+  // transferências dele pra ele mesmo. Ficar de fora daqui seria dado órfão.
+  { colecao: 'importRules', sub: 'itens' },
+  { colecao: 'transfers', sub: 'itens' },
 ];
 
 /** Docs únicos por uid. */
@@ -69,6 +73,8 @@ export interface DadosExportados {
   bens: unknown[];
   conquistas: unknown[];
   convites: unknown;
+  regrasDeImportacao: unknown[];
+  transferenciasProprias: unknown[];
 }
 
 export async function exportarDados(user: User): Promise<DadosExportados> {
@@ -89,6 +95,8 @@ export async function exportarDados(user: User): Promise<DadosExportados> {
     bens: await ler('assets', 'itens'),
     conquistas: await ler('achievements', 'itens'),
     convites: convitesSnap.exists() ? convitesSnap.data() : null,
+    regrasDeImportacao: await ler('importRules', 'itens'),
+    transferenciasProprias: await ler('transfers', 'itens'),
   };
 }
 

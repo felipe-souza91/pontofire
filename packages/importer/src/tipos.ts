@@ -37,7 +37,8 @@ export type AlertaItem =
   | 'transferencia' // pagamento de fatura, aplicação: contaria em dobro
   | 'fora-do-periodo' // mês diferente do que o usuário declarou
   | 'direcao-incerta' // o arquivo não disse se é entrada ou saída
-  | 'transferencia-propria'; // dinheiro seu indo/vindo de outra conta sua
+  | 'transferencia-propria' // dinheiro seu indo/vindo de outra conta sua
+  | 'conciliada'; // achei o outro lado dessa transferência: fecha em zero
 
 export interface ItemImportado {
   /** id estável dentro desta análise */
@@ -50,6 +51,8 @@ export interface ItemImportado {
   descricaoOriginal: string;
   /** quem recebeu ou enviou, quando o arquivo informa (Bradesco) */
   contraparte?: string;
+  /** quando é transferência própria: o outro lado, se foi encontrado */
+  conciliadaCom?: { data: string; instituicao?: string };
   /** SEMPRE positivo — a direção mora em `tipo` */
   valor: number;
   tipo: TipoLancamento;
@@ -85,6 +88,8 @@ export interface Diagnostico {
   direcaoIncerta: boolean;
   /** quantas transferências do usuário pra ele mesmo apareceram */
   transferenciasProprias: number;
+  /** dessas, quantas acharam o par do outro lado */
+  transferenciasConciliadas: number;
 }
 
 export interface ResultadoAnalise {
@@ -105,4 +110,20 @@ export interface MemoriaCategoria {
 export interface JaSalvo {
   impressao?: string;
   fitid?: string;
+}
+
+/**
+ * Transferência do usuário pra ele mesmo, guardada de uma importação anterior.
+ *
+ * Existe pra fechar a conta entre instituições: o Bradesco registra a saída, o
+ * Mercado Pago registra a entrada, e só quando os dois lados se encontram dá
+ * pra afirmar que aquilo é 0 a 0 em vez de simplesmente sumir com os dois.
+ */
+export interface TransferenciaSalva {
+  impressao: string;
+  /** YYYY-MM-DD */
+  data: string;
+  valor: number;
+  sentido: 'entrada' | 'saida';
+  instituicao?: string;
 }
