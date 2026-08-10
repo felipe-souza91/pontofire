@@ -1,4 +1,4 @@
-import { impactoAporteExtra, jaEhCoastFire, mesesAteFire } from '@pontofire/engine';
+import { ehCategoriaNeutra, impactoAporteExtra, jaEhCoastFire, mesesAteFire } from '@pontofire/engine';
 import { hl, type Insight, type Regra } from './tipos';
 
 const MARCOS_PROGRESSO = [0.1, 0.25, 0.5, 0.75, 0.9];
@@ -186,7 +186,12 @@ export const coastAtingido: Regra = (ctx) => {
 
 /** Maior categoria do mês e seu peso — informa o trade-off, não julga (§14). */
 export const maiorCategoria: Regra = (ctx, fmt) => {
-  const itens = (ctx.transacoesMes ?? []).filter((t) => t.tipo === 'saida');
+  // Categoria neutra fica de fora: "Fatura de cartão foi 40% do seu gasto — se
+  // virasse aporte sua data andaria 8 meses" é conselho vazio. O dinheiro do
+  // pagamento da fatura já foi gasto nas compras que a fatura lista.
+  const itens = (ctx.transacoesMes ?? []).filter(
+    (t) => t.tipo === 'saida' && !ehCategoriaNeutra(t.categoria),
+  );
   if (itens.length < 2) return null;
   const soma = new Map<string, number>();
   for (const t of itens) soma.set(t.categoria, (soma.get(t.categoria) ?? 0) + t.valor);

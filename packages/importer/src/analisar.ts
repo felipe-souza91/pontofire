@@ -6,6 +6,7 @@
  * palavra em cada linha.
  */
 
+import { CATEGORIA_TRANSFERENCIA } from '@pontofire/engine';
 import { classificar } from './categorizar';
 import { detectarSeparador, extrairRegistros, mapearColunas, parseCSV, type RegistroCSV } from './csv';
 import { pareceOFX, parseOFX } from './ofx';
@@ -296,7 +297,12 @@ function montar(
       contraparte,
       valor,
       tipo: cls.tipo,
-      categoria: cls.categoria === 'Transferência' ? '' : cls.categoria || c.categoriaSugerida?.trim() || '',
+      // "você → você" é transferência mesmo quando o dicionário não pegou:
+      // "Pix recebido MARIA DA SILVA SANTOS" não casa com padrão nenhum, mas o
+      // nome no destinatário já diz tudo.
+      categoria: propria
+        ? CATEGORIA_TRANSFERENCIA
+        : cls.categoria || c.categoriaSugerida?.trim() || '',
       incluir: !cls.transferencia && !propria,
       motivo: cls.motivo,
       alertas,

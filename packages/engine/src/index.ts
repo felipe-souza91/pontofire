@@ -3,6 +3,7 @@
  * TypeScript puro: sem React, sem Firebase. Testável e offline.
  */
 
+export * from './categorias';
 export * from './rates';
 export * from './fire';
 export * from './patrimonio';

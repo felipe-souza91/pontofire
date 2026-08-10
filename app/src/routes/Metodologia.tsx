@@ -417,6 +417,15 @@ export function Metodologia() {
           afirmar um encontro que não houve.
         </p>
         <p className="pf-metodo-nota">
+          Movimento entre contas ganha rótulo próprio —{' '}
+          <strong>Transferência entre contas</strong> e <strong>Fatura de cartão</strong> —, em vez
+          de ficar sem categoria e cair em "Outros". São categorias <em>neutras</em>: se você optar
+          por salvá-las, elas aparecem no extrato do mês, mas ficam de fora das análises que
+          respondem "onde meu dinheiro está indo". Dizer que a fatura foi 40% do seu gasto e sugerir
+          transformá-la em aporte seria conselho vazio — aquele dinheiro já foi gasto nas compras
+          que a própria fatura lista.
+        </p>
+        <p className="pf-metodo-nota">
           Contra duplicata, cada lançamento ganha uma impressão digital{' '}
           <Mono>data | valor | estabelecimento</Mono> (mais o FITID, quando o OFX traz). Reimportar o
           mesmo arquivo não duplica nada. E "pagamento de fatura" no extrato vem desmarcado, porque

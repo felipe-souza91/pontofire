@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { CATEGORIA_FATURA, CATEGORIA_TRANSFERENCIA } from '@pontofire/engine';
 import { analisar, type EntradaAnalise } from './analisar';
 import type {
   ContextoImport,
@@ -71,8 +72,17 @@ describe('OFX — extrato bancário', () => {
     expect(r.avisos.some((a) => a.includes('contar em dobro'))).toBe(true);
   });
 
+  it('pagamento de fatura já vem rotulado, não em branco', () => {
+    // antes ficava sem categoria: se o usuário incluísse, virava "Outros" e
+    // engordava um balde de consumo com dinheiro que não é consumo
+    expect(acha(r.itens, 'PAGAMENTO DE FATURA')!.categoria).toBe(CATEGORIA_FATURA);
+  });
+
   it('desmarca aplicação — é movimento entre contas, não despesa', () => {
-    expect(acha(r.itens, 'APLICACAO')!.incluir).toBe(false);
+    expect(acha(r.itens, 'APLICACAO')).toMatchObject({
+      incluir: false,
+      categoria: CATEGORIA_TRANSFERENCIA,
+    });
   });
 
   it('agrupa as duas corridas de Uber na mesma chave', () => {
@@ -189,6 +199,28 @@ describe('memória memo→categoria', () => {
     expect(uber.categoria).toBe('Lazer');
     expect(uber.motivo).toContain('já classificou');
   });
+
+  it('categoria neutra aprendida CONTINUA sendo transferência', () => {
+    // Armadilha: a memória ganha do dicionário, então um "Transferência entre
+    // contas" aprendido faria o próximo entrar MARCADO e contar como gasto —
+    // com o nome da transferência estampado nele.
+    const uber = rodar(OFX_EXTRATO).itens.find((i) => i.descricao.includes('UBER'))!;
+    const r = rodar(OFX_EXTRATO, undefined, {
+      memoria: [{ chave: uber.chave, categoria: CATEGORIA_TRANSFERENCIA, tipo: 'saida' }],
+    });
+    const depois = r.itens.find((i) => i.descricao.includes('UBER'))!;
+    expect(depois.categoria).toBe(CATEGORIA_TRANSFERENCIA);
+    expect(depois.alertas).toContain('transferencia');
+    expect(depois.incluir).toBe(false);
+  });
+
+  it('aceita a categoria neutra escrita à mão, sem acento', () => {
+    const uber = rodar(OFX_EXTRATO).itens.find((i) => i.descricao.includes('UBER'))!;
+    const r = rodar(OFX_EXTRATO, undefined, {
+      memoria: [{ chave: uber.chave, categoria: 'transferencia entre contas', tipo: 'saida' }],
+    });
+    expect(r.itens.find((i) => i.descricao.includes('UBER'))!.incluir).toBe(false);
+  });
 });
 
 describe('dedupe', () => {
@@ -299,6 +331,7 @@ describe('Mercado Pago — layout real', () => {
       const i = acha(r.itens, t)!;
       expect(i.incluir, t).toBe(false);
       expect(i.alertas, t).toContain('transferencia');
+      expect(i.categoria, t).toBe(CATEGORIA_TRANSFERENCIA);
     }
   });
 
@@ -370,6 +403,15 @@ describe('transferência do usuário pra ele mesmo', () => {
     const r = rodar(CSV_MERCADO_PAGO, { nomeUsuario: 'Maria da Silva Santos' });
     const propria = r.itens.find((i) => i.alertas.includes('transferencia-propria'))!;
     expect(propria.incluir).toBe(false);
+  });
+
+  it('ganha a categoria mesmo sem casar com o dicionário', () => {
+    // "Pix recebido MARIA DA SILVA SANTOS" não bate com padrão nenhum; quem
+    // resolve é o nome no destinatário
+    const r = rodar(CSV_MERCADO_PAGO, { nomeUsuario: 'Maria da Silva Santos' });
+    const proprias = r.itens.filter((i) => i.alertas.includes('transferencia-propria'));
+    expect(proprias.length).toBeGreaterThan(0);
+    expect(proprias.every((i) => i.categoria === CATEGORIA_TRANSFERENCIA)).toBe(true);
   });
 
   it('sugere importar o extrato da outra instituição', () => {

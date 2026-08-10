@@ -1,7 +1,13 @@
 import type { TipoTransacao } from './transactions';
-import type { AssetTipo } from '@pontofire/engine';
+import { CATEGORIA_FATURA, CATEGORIA_TRANSFERENCIA, type AssetTipo } from '@pontofire/engine';
 
-/** Sugestões conhecidas por tipo de lançamento (o usuário pode digitar outra). */
+/**
+ * Sugestões conhecidas por tipo de lançamento (o usuário pode digitar outra).
+ *
+ * As duas últimas de cada lista são NEUTRAS: rotulam dinheiro que só trocou de
+ * bolso. Ficam no fim de propósito — servem pra dar nome ao que o importador já
+ * identificou, não pra competir com "Mercado" e "Delivery" no dia a dia.
+ */
 export const CATEGORIAS: Record<TipoTransacao, string[]> = {
   saida: [
     'Moradia',
@@ -21,10 +27,32 @@ export const CATEGORIAS: Record<TipoTransacao, string[]> = {
     'Compras',
     'Seguros',
     'Outros',
+    CATEGORIA_FATURA,
+    CATEGORIA_TRANSFERENCIA,
   ],
-  ativa: ['Salário', 'Freelance / PJ', 'Comissões', 'Bônus', '13º / férias', 'Reembolsos', 'Outros'],
+  ativa: [
+    'Salário',
+    'Freelance / PJ',
+    'Comissões',
+    'Bônus',
+    '13º / férias',
+    'Reembolsos',
+    'Outros',
+    CATEGORIA_TRANSFERENCIA,
+  ],
   passiva: ['Aluguéis', 'Dividendos', 'Juros / Renda fixa', 'FIIs', 'Royalties', 'Outros'],
-  aporte: ['Renda fixa', 'Tesouro Direto', 'Ações', 'FIIs', 'ETFs', 'Cripto', 'Previdência', 'Fundos', 'Outros'],
+  aporte: [
+    'Renda fixa',
+    'Tesouro Direto',
+    'Ações',
+    'FIIs',
+    'ETFs',
+    'Cripto',
+    'Previdência',
+    'Fundos',
+    'Outros',
+    CATEGORIA_TRANSFERENCIA,
+  ],
 };
 
 /** Sugestões de nome por tipo de bem. */

@@ -14,6 +14,7 @@
  * "EXTRATO", "MAX", "TIM"), o `\b` final está escrito na própria alternativa.
  */
 
+import { CATEGORIA_FATURA, CATEGORIA_TRANSFERENCIA, ehCategoriaNeutra } from '@pontofire/engine';
 import { normalizar } from './texto';
 import type { MemoriaCategoria, TipoLancamento } from './tipos';
 
@@ -72,15 +73,17 @@ const ENTRADAS: RegraCategoria[] = [
  * `tipo` é o balde certo caso o usuário decida incluir mesmo assim — pagamento
  * de fatura continua sendo saída, mas aplicação em CDB é APORTE, não consumo.
  */
-const TRANSFERENCIAS: { padrao: RegExp; tipo: TipoLancamento; explicacao: string }[] = [
+const TRANSFERENCIAS: { padrao: RegExp; tipo: TipoLancamento; categoria: string; explicacao: string }[] = [
   {
     padrao: /\b(PAGAMENTO DE FATURA|PAGAMENTO FATURA|PAGTO FATURA|PAGAMENTO CARTAO|PAGTO CARTAO|PAGAMENTO DE CARTAO|FATURA CARTAO)/,
     tipo: 'saida',
+    categoria: CATEGORIA_FATURA,
     explicacao: 'pagamento de fatura — as compras entram pelo arquivo da fatura, não por aqui',
   },
   {
     padrao: /\b(APLICACAO|APLIC AUTOMATICA|INVEST FACIL|RESGATE|TRANSF ENTRE CONTAS|TRANSFERENCIA ENTRE CONTAS|CONTA INVESTIMENTO|POUPANCA)/,
     tipo: 'aporte',
+    categoria: CATEGORIA_TRANSFERENCIA,
     explicacao: 'dinheiro indo pra sua carteira — o patrimônio já registra isso',
   },
   {
@@ -89,6 +92,7 @@ const TRANSFERENCIAS: { padrao: RegExp; tipo: TipoLancamento; explicacao: string
     // inflavam o gasto do mês inteiro se contassem como despesa.
     padrao: /\b(RESERVA POR GASTOS|RESERVA PROGRAMADA|DINHEIRO RESERVADO|DINHEIRO RETIRADO|COFRINHO|CAIXINHA|GUARDAR DINHEIRO)/,
     tipo: 'aporte',
+    categoria: CATEGORIA_TRANSFERENCIA,
     explicacao: 'movimento do seu cofrinho — o dinheiro continua seu',
   },
 ];
@@ -129,7 +133,17 @@ export function classificar(
 
   const lembrado = memoria.find((m) => m.chave === chave);
   if (lembrado) {
-    return { categoria: lembrado.categoria, tipo: lembrado.tipo, motivo: 'você já classificou assim antes' };
+    // Ressalva: se o rótulo aprendido é uma categoria neutra, o lançamento
+    // continua sendo transferência. Sem isto, aprovar uma transferência uma vez
+    // faria a próxima entrar MARCADA e contar como gasto de verdade — com o
+    // nome "Transferência entre contas" estampado nela.
+    const neutra = ehCategoriaNeutra(lembrado.categoria);
+    return {
+      categoria: lembrado.categoria,
+      tipo: lembrado.tipo,
+      motivo: 'você já classificou assim antes',
+      ...(neutra ? { transferencia: 'movimento entre contas suas — não conta como gasto' } : {}),
+    };
   }
 
   if (direcao === 'entrada' && RENDIMENTO_DE_SALDO.test(n)) {
@@ -139,7 +153,7 @@ export function classificar(
   for (const t of TRANSFERENCIAS) {
     if (t.padrao.test(n)) {
       return {
-        categoria: 'Transferência',
+        categoria: t.categoria,
         tipo: direcao === 'entrada' ? 'ativa' : t.tipo,
         transferencia: t.explicacao,
         motivo: t.explicacao,

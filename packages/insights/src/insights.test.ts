@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { realMensalDeAnual } from '@pontofire/engine';
+import { CATEGORIA_FATURA, CATEGORIA_TRANSFERENCIA, realMensalDeAnual } from '@pontofire/engine';
 import { gerarInsights, textoDoInsight } from './gerar';
 import {
   alavancaAporte,
+  maiorCategoria,
   marcoCobertura,
   marcoProgresso,
   mesNegativo,
@@ -193,5 +194,63 @@ describe('gerarInsights', () => {
   it('sempre devolve algo pra um usuário novo com dados mínimos', () => {
     const l = gerarInsights(ctxBase({ snapshots: [] }), fmt);
     expect(l.length).toBeGreaterThan(0);
+  });
+});
+
+describe('maior categoria do mês', () => {
+  const gastos = (l: [string, number][]) =>
+    l.map(([categoria, valor]) => ({ tipo: 'saida' as const, categoria, valor }));
+
+  it('aponta a maior categoria e o trade-off', () => {
+    const i = maiorCategoria(
+      ctxBase({ transacoesMes: gastos([['Delivery', 1_200], ['Mercado', 800], ['Lazer', 200]]) }),
+      fmt,
+    );
+    expect(textoDoInsight(i!)).toContain('Delivery');
+  });
+
+  it('IGNORA transferência entre contas — não é gasto', () => {
+    // sem o filtro, a transferência de 20 mil seria "88% do seu gasto no mês"
+    // e o app sugeriria transformá-la em aporte. O dinheiro já é dele.
+    const i = maiorCategoria(
+      ctxBase({
+        transacoesMes: gastos([
+          [CATEGORIA_TRANSFERENCIA, 20_000],
+          ['Delivery', 1_200],
+          ['Mercado', 800],
+        ]),
+      }),
+      fmt,
+    );
+    const texto = textoDoInsight(i!);
+    expect(texto).not.toContain('Transferência');
+    expect(texto).toContain('Delivery');
+  });
+
+  it('IGNORA pagamento de fatura — as compras já entram pela fatura', () => {
+    const i = maiorCategoria(
+      ctxBase({
+        transacoesMes: gastos([
+          [CATEGORIA_FATURA, 9_000],
+          ['Mercado', 900],
+          ['Transporte', 400],
+        ]),
+      }),
+      fmt,
+    );
+    expect(textoDoInsight(i!)).toContain('Mercado');
+  });
+
+  it('só neutras: cala a boca em vez de inventar', () => {
+    const i = maiorCategoria(
+      ctxBase({
+        transacoesMes: gastos([
+          [CATEGORIA_TRANSFERENCIA, 5_000],
+          [CATEGORIA_FATURA, 3_000],
+        ]),
+      }),
+      fmt,
+    );
+    expect(i).toBeNull();
   });
 });
