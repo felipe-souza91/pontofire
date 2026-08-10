@@ -9,7 +9,7 @@
 import { classificar } from './categorizar';
 import { detectarSeparador, extrairRegistros, mapearColunas, parseCSV, type RegistroCSV } from './csv';
 import { pareceOFX, parseOFX } from './ofx';
-import { chaveEstabelecimento, decodificar, detectarFormatoData, limparMemo, mesDe, parseData } from './texto';
+import { chaveEstabelecimento, decodificar, detectarFormatoData, limparMemo, mesDe, normalizar, parseData } from './texto';
 import type {
   AlertaItem,
   ContextoImport,
@@ -39,6 +39,7 @@ export interface EntradaAnalise {
 interface Cru {
   data: string | null;
   descricao: string;
+  contraparte?: string;
   valor: number;
   sinalConfiavel: boolean;
   fitid?: string;
@@ -127,6 +128,7 @@ function lerCSV(texto: string, ctx: ContextoImport, avisos: string[]): Lido {
     crus: registros.map((r: RegistroCSV) => ({
       data: parseData(r.dataBruta, det.formato),
       descricao: r.descricao,
+      contraparte: r.contraparte,
       valor: r.valor ?? 0,
       sinalConfiavel: r.sinalConfiavel,
       categoriaSugerida: r.categoriaSugerida,
@@ -183,6 +185,36 @@ function direcaoDe(valor: number, p: Politica): 'entrada' | 'saida' {
 }
 
 // ---------------------------------------------------------------------------
+// transferência do usuário pra ele mesmo
+
+const LIGACOES = new Set(['DE', 'DA', 'DO', 'DAS', 'DOS', 'E']);
+
+/** Tokens que identificam uma pessoa: fora as ligações e as iniciais soltas. */
+function tokensDoNome(nome: string): string[] {
+  return normalizar(nome)
+    .split(' ')
+    .filter((t) => t.length >= 3 && !LIGACOES.has(t));
+}
+
+/**
+ * O usuário mandou dinheiro pra ele mesmo?
+ *
+ * Comparação por TOKENS, não por texto inteiro, porque os bancos truncam:
+ * o Bradesco grava "Des: Luis Felipe Batista d" e o Mercado Pago grava
+ * "Pix recebido LUIS FELIPE BATISTA DE SOUZA". Exigir o primeiro nome mais ao
+ * menos um sobrenome evita confundir com um xará qualquer.
+ */
+export function ehTransferenciaPropria(texto: string, nomeUsuario?: string): boolean {
+  if (!nomeUsuario) return false;
+  const meus = tokensDoNome(nomeUsuario);
+  if (meus.length < 2) return false;
+
+  const alvo = normalizar(texto);
+  const presentes = meus.filter((t) => alvo.includes(t));
+  return presentes.length >= 2 && presentes.includes(meus[0]!);
+}
+
+// ---------------------------------------------------------------------------
 // montagem final
 
 function montar(
@@ -207,14 +239,21 @@ function montar(
 
   const itens: ItemImportado[] = lote.map((c, i) => {
     const direcao = direcaoDe(c.valor, politica);
-    const descricao = limparMemo(c.descricao) || '(sem descrição)';
-    const chave = chaveEstabelecimento(descricao);
+    const base = limparMemo(c.descricao);
+    const contraparte = c.contraparte ? limparMemo(c.contraparte) : undefined;
+    // A contraparte entra no texto classificado: "Transfe Pix" sozinho não
+    // diz nada, "Transfe Pix · Leandro Onda Nakahata" diz tudo.
+    const descricao = [base, contraparte].filter(Boolean).join(' · ') || '(sem descrição)';
+    const chave = chaveEstabelecimento(contraparte && base.length < 24 ? `${base} ${contraparte}` : base || descricao);
     const cls = classificar(descricao, direcao, memoria, chave);
     const valor = Math.abs(c.valor);
     const data = c.data!;
 
+    const propria = ehTransferenciaPropria(descricao, ctx.nomeUsuario);
+
     const alertas: AlertaItem[] = [];
     if (politica.modo === 'incerta') alertas.push('direcao-incerta');
+    if (propria) alertas.push('transferencia-propria');
     if (cls.transferencia) alertas.push('transferencia');
     if (ctx.mesEsperado && mesDe(data) !== ctx.mesEsperado) alertas.push('fora-do-periodo');
 
@@ -223,10 +262,11 @@ function montar(
       data,
       descricao,
       descricaoOriginal: c.descricao,
+      contraparte,
       valor,
       tipo: cls.tipo,
       categoria: cls.categoria === 'Transferência' ? '' : cls.categoria || c.categoriaSugerida?.trim() || '',
-      incluir: !cls.transferencia,
+      incluir: !cls.transferencia && !propria,
       motivo: cls.motivo,
       alertas,
       fitid: c.fitid,
@@ -243,6 +283,15 @@ function montar(
   }
   if (politica.modo === 'incerta' && itens.length) {
     avisos.push('Não deu pra saber o que é entrada e o que é saída neste arquivo. Marquei tudo como despesa — corrija abaixo antes de salvar.');
+  }
+  const proprias = itens.filter((i) => i.alertas.includes('transferencia-propria'));
+  if (proprias.length) {
+    const total = proprias.reduce((s2, i) => s2 + i.valor, 0);
+    avisos.push(
+      `${proprias.length} transferência(s) suas pra você mesmo, somando ${total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}. ` +
+        'Não são receita nem despesa, então vieram desmarcadas. Se esse dinheiro foi pra outra conta sua, ' +
+        'importe o extrato de lá também — senão os gastos feitos por lá ficam de fora do seu mês.',
+    );
   }
   const transf = itens.filter((i) => i.alertas.includes('transferencia')).length;
   if (transf) {
@@ -279,6 +328,7 @@ function montar(
     conta: lido.conta,
     documentoDetectado: documento,
     direcaoIncerta: politica.modo === 'incerta',
+    transferenciasProprias: proprias.length,
   };
 
   return { itens, diagnostico, avisos };

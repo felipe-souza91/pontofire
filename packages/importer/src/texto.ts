@@ -48,6 +48,10 @@ export function limparMemo(s: string): string {
 
 /** Prefixos de adquirente/maquininha que só poluem a identificação. */
 const RUIDO = [
+  'PAGAMENTO COM QR PIX',
+  'PAGAMENTO COM QR',
+  'PAGAMENTO DE CONTA',
+  'REEMBOLSO DE TRANSFERENCIA ENVIADA',
   'COMPRA CARTAO',
   'COMPRA COM CARTAO',
   'CARTAO DE DEBITO',

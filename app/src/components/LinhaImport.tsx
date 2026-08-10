@@ -35,6 +35,11 @@ const ALERTA: Record<AlertaItem, { rotulo: string; explicacao: string }> = {
     rotulo: 'entrada ou saída?',
     explicacao: 'o arquivo não disse a direção; confira o tipo',
   },
+  'transferencia-propria': {
+    rotulo: 'você → você',
+    explicacao:
+      'dinheiro seu indo pra outra conta sua: não é receita nem despesa. Importe o extrato da outra instituição pra não perder os gastos de lá',
+  },
 };
 
 /**

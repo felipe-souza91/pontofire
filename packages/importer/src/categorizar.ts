@@ -26,8 +26,8 @@ interface RegraCategoria {
 
 /** Casado contra a descrição normalizada (MAIÚSCULA, sem acento). */
 const SAIDAS: RegraCategoria[] = [
-  { padrao: /\b(IFOOD|RAPPI|UBER EATS|JAMES DELIVERY|AIQFOME|DELIVERY)/, categoria: 'Delivery' },
-  { padrao: /\b(UBER\b|99 ?POP|99 ?TAXI|CABIFY|TAXI\b|BLABLACAR|BUSER|CLICKBUS)/, categoria: 'Transporte' },
+  { padrao: /\b(IFOOD|RAPPI|UBER EATS|JAMES DELIVERY|AIQFOME|DELIVERY|99 ?FOOD)/, categoria: 'Delivery' },
+  { padrao: /\b(UBER\b|99 ?POP|99 ?TAXI|99 TECNOLOGIA|CABIFY|TAXI\b|BLABLACAR|BUSER|CLICKBUS)/, categoria: 'Transporte' },
   { padrao: /\b(POSTO|IPIRANGA|SHELL\b|ALESAT|BR MANIA|PETROBRAS|COMBUSTIVEL)/, categoria: 'Transporte' },
   { padrao: /\b(ESTACIONAMENTO|ZONA AZUL|SEM PARAR|CONECTCAR|VELOE|PEDAGIO|METRO\b|BILHETE UNICO)/, categoria: 'Transporte' },
   { padrao: /\b(DETRAN|IPVA|LICENCIAMENTO|MECANICA|AUTO CENTER|PNEU)/, categoria: 'Transporte' },
@@ -83,7 +83,22 @@ const TRANSFERENCIAS: { padrao: RegExp; tipo: TipoLancamento; explicacao: string
     tipo: 'aporte',
     explicacao: 'dinheiro indo pra sua carteira — o patrimônio já registra isso',
   },
+  {
+    // Cofrinho do Mercado Pago: "Reserva por gastos", "Dinheiro retirado",
+    // "Reserva programada". São ~30 lançamentos por mês num extrato real e
+    // inflavam o gasto do mês inteiro se contassem como despesa.
+    padrao: /\b(RESERVA POR GASTOS|RESERVA PROGRAMADA|DINHEIRO RESERVADO|DINHEIRO RETIRADO|COFRINHO|CAIXINHA|GUARDAR DINHEIRO)/,
+    tipo: 'aporte',
+    explicacao: 'movimento do seu cofrinho — o dinheiro continua seu',
+  },
 ];
+
+/**
+ * Rendimento de saldo em conta. Precisa ser testado ANTES das transferências:
+ * "Rentab.invest Facilcred" do Bradesco casava com o padrão de aplicação e
+ * virava transferência, quando na verdade é renda passiva entrando.
+ */
+const RENDIMENTO_DE_SALDO = /\b(RENTAB|RENDIMENTO|REMUNERACAO DE SALDO|RENDE FACIL)/;
 
 /** Saída pra corretora: é aporte, não consumo. */
 const APORTES = /\b(TESOURO DIRETO|CORRETORA|XP INVESTIMENTOS|RICO INVEST|CLEAR\b|BTG\b|NUINVEST|EASYNVEST|AVENUE|BINANCE|MERCADO ?BITCOIN|FOXBIT|APORTE|COMPRA DE ACOES|COMPRA DE TITULO)/;
@@ -115,6 +130,10 @@ export function classificar(
   const lembrado = memoria.find((m) => m.chave === chave);
   if (lembrado) {
     return { categoria: lembrado.categoria, tipo: lembrado.tipo, motivo: 'você já classificou assim antes' };
+  }
+
+  if (direcao === 'entrada' && RENDIMENTO_DE_SALDO.test(n)) {
+    return { categoria: 'Juros / Renda fixa', tipo: 'passiva', motivo: 'rendimento do saldo em conta' };
   }
 
   for (const t of TRANSFERENCIAS) {
