@@ -11,6 +11,7 @@ import {
 } from '../data/transactions';
 import { atualizarSnapshot } from '../data/snapshots';
 import { CATEGORIAS, normalizarCategoria } from '../data/categorias';
+import { ehCategoriaNeutra, taxaPoupanca } from '@pontofire/engine';
 import { MoedaInput } from '../components/MoedaInput';
 import { CategoriaInput } from '../components/CategoriaInput';
 import { Campo } from '../components/Campo';
@@ -39,11 +40,54 @@ export function Detalhar() {
   const [descricao, setDescricao] = useState('');
   const [ocupado, setOcupado] = useState(false);
 
+  /**
+   * Categoria neutra fica FORA da reconciliação.
+   *
+   * "Fatura de cartão" e "Transferência entre contas" são dinheiro trocando de
+   * bolso. Contá-las como despesa categorizada fazia a conta estourar o total
+   * declarado por um valor que nunca foi consumo — e o card acusava um rombo
+   * que não existe.
+   */
   const soma = useMemo(() => {
-    const s = { ativa: 0, passiva: 0, aporte: 0, saida: 0 };
-    for (const it of itens) s[it.tipo] += it.valor;
+    const s = { ativa: 0, passiva: 0, aporte: 0, saida: 0, neutro: 0 };
+    for (const it of itens) {
+      if (ehCategoriaNeutra(it.categoria)) s.neutro += it.valor;
+      else s[it.tipo] += it.valor;
+    }
     return s;
   }, [itens]);
+
+  /** O que os itens dizem que o mês foi — a alternativa ao total declarado. */
+  const doItens = useMemo(() => {
+    const receita = soma.ativa + soma.passiva;
+    const despesa = soma.saida;
+    return {
+      receita,
+      despesa,
+      aporte: receita - despesa,
+      taxa: taxaPoupanca(receita, despesa),
+    };
+  }, [soma]);
+
+  const divergente =
+    !!snap &&
+    (Math.abs(doItens.receita - snap.receitaLiquida) > 1 ||
+      Math.abs(doItens.despesa - snap.gastoTotal) > 1);
+
+  async function usarOsItens() {
+    if (!user || !snap) return;
+    setOcupado(true);
+    try {
+      await atualizarSnapshot(user.uid, mes, {
+        receitaLiquida: doItens.receita,
+        gastoTotal: doItens.despesa,
+        aportesMes: doItens.aporte,
+        taxaPoupanca: doItens.taxa,
+      });
+    } finally {
+      setOcupado(false);
+    }
+  }
 
   // renda passiva derivada → grava no snapshot (alimenta a cobertura passiva)
   useEffect(() => {
@@ -99,12 +143,43 @@ export function Detalhar() {
             <Recon rotulo="Despesa" total={snap.gastoTotal} categorizado={soma.saida} />
             <Recon rotulo="Receita" total={snap.receitaLiquida} categorizado={soma.ativa + soma.passiva} />
             <Recon rotulo="Aporte" total={snap.aportesMes} categorizado={soma.aporte} />
+            {soma.neutro > 0 && (
+              <p className="pf-hint" style={{ margin: 'var(--space-3) 0 0' }}>
+                + {formatBRL(soma.neutro)} em movimentação entre contas (fatura, transferência).
+                Fora da conta de propósito: esse dinheiro não foi consumido nem ganho, só mudou de
+                lugar.
+              </p>
+            )}
             {soma.passiva > 0 && (
               <p style={{ margin: 'var(--space-3) 0 0', color: 'var(--mint)', fontSize: '0.9rem' }}>
                 Renda passiva: {formatBRL(soma.passiva)}/mês — já entra na sua cobertura passiva. 🔥
               </p>
             )}
           </div>
+
+          {divergente && (
+            <div className="pf-card-alerta" style={{ marginTop: 'var(--space-4)' }}>
+              <strong>Os itens contam uma história diferente do total.</strong>
+              <p style={{ margin: 'var(--space-2) 0 var(--space-3)' }}>
+                O total que você digitou no modo rápido continua sendo a verdade — é assim de
+                propósito, porque item esquecido é mais comum que total errado. Mas se estes{' '}
+                {itens.length} lançamentos são o mês inteiro, o mais fiel é adotar o que eles somam:
+              </p>
+              <div style={{ display: 'grid', gap: 4, marginBottom: 'var(--space-3)' }}>
+                <Troca rotulo="Receita" de={snap.receitaLiquida} para={doItens.receita} />
+                <Troca rotulo="Despesa" de={snap.gastoTotal} para={doItens.despesa} />
+                <Troca rotulo="Aporte" de={snap.aportesMes} para={doItens.aporte} />
+              </div>
+              <button className="pf-btn pf-btn-ghost" disabled={ocupado} onClick={() => void usarOsItens()}>
+                {ocupado ? 'Ajustando…' : 'Usar o que os itens somam'}
+              </button>
+              <p className="pf-hint" style={{ marginTop: 'var(--space-2)' }}>
+                Confira antes: se faltou importar um extrato, ou se sobrou transferência marcada como
+                receita, o número dos itens fica pior que o seu. Dá pra desfazer refazendo o modo
+                rápido.
+              </p>
+            </div>
+          )}
 
           {/* Adicionar item */}
           <p className="pf-eyebrow" style={{ margin: 'var(--space-8) 0 var(--space-3)' }}>Adicionar lançamento</p>
@@ -167,6 +242,20 @@ export function Detalhar() {
         </>
       )}
     </main>
+  );
+}
+
+/** "Despesa  R$ 8.000 → R$ 16.247,29" — o antes e o depois, sem surpresa. */
+function Troca({ rotulo, de, para }: { rotulo: string; de: number; para: number }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--space-3)', fontSize: '0.85rem' }}>
+      <span style={{ color: 'var(--muted)' }}>{rotulo}</span>
+      <span className="mono">
+        <span style={{ color: 'var(--muted)', textDecoration: 'line-through' }}>{formatBRL(de)}</span>
+        {' → '}
+        {formatBRL(para)}
+      </span>
+    </div>
   );
 }
 

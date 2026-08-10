@@ -1,4 +1,10 @@
-import { ehCategoriaNeutra, impactoAporteExtra, jaEhCoastFire, mesesAteFire } from '@pontofire/engine';
+import {
+  ehCategoriaNeutra,
+  impactoAporteExtra,
+  jaEhCoastFire,
+  mesesAteFire,
+  metaComCusto,
+} from '@pontofire/engine';
 import { hl, type Insight, type Regra } from './tipos';
 
 const MARCOS_PROGRESSO = [0.1, 0.25, 0.5, 0.75, 0.9];
@@ -131,6 +137,81 @@ export const rendimentoDoMes: Regra = (ctx, fmt) => {
     partes.push('.');
   }
   return { id: 'rendimento-mes', tom: 'fato', prioridade: 75, partes };
+};
+
+/** Quantos meses de histórico bastam pra afirmar que o perfil está defasado. */
+const MESES_PRA_COMPARAR = 3;
+/** Abaixo disso é variação normal de mês, não descolamento. */
+const DESVIO_RELEVANTE = 0.15;
+
+const mediana = (l: readonly number[]): number => {
+  const o = [...l].sort((a, b) => a - b);
+  const m = Math.floor(o.length / 2);
+  return o.length % 2 ? o[m]! : (o[m - 1]! + o[m]!) / 2;
+};
+
+/**
+ * O custo do perfil descolou do que ele vem lançando.
+ *
+ * É o insight mais importante do catálogo e o mais fácil de não existir: a data
+ * FIRE sai de `custoVidaMensal`, que foi digitado uma vez no onboarding e nunca
+ * mais. Quem lança mês a mês assume que os lançamentos alimentam a conta — e
+ * não alimentam. Se a mediana real está 40% acima do perfil, a data na tela é
+ * otimista e ninguém avisou.
+ *
+ * Mediana, não média: um mês com a viagem do ano não pode reescrever a rotina.
+ */
+export const custoDoPerfilDefasado: Regra = (ctx, fmt) => {
+  const meses = ctx.snapshots.slice(-MESES_PRA_COMPARAR).filter((s) => s.gastoTotal > 0);
+  if (meses.length < MESES_PRA_COMPARAR) return null;
+
+  const C = ctx.custoVidaMensal;
+  if (!(C > 0)) return null;
+
+  const real = mediana(meses.map((s) => s.gastoTotal));
+  const desvio = (real - C) / C;
+  if (Math.abs(desvio) < DESVIO_RELEVANTE) return null;
+
+  const maisCaro = desvio > 0;
+  const partes = [
+    'Sua data é calculada com ',
+    hl(fmt.moeda(C)),
+    '/mês de custo — foi o que você informou no perfil. Mas a mediana dos seus últimos ',
+    `${meses.length} meses lançados é `,
+    hl(fmt.moeda(real)),
+    maisCaro ? ', bem acima.' : ', bem abaixo.',
+  ];
+
+  // O que aconteceria com a data se o número real virasse o oficial.
+  //
+  // As DUAS pontas saem do motor, com as mesmas entradas. Comparar contra o
+  // `ctx.mesesAteFire` que veio pronto parece equivalente e não é: basta o
+  // chamador ter calculado aquele número com outra premissa pra o delta sair
+  // com o sinal trocado — custo menor "adiando" a data.
+  const metaReal = metaComCusto(ctx.metaFire, C, real);
+  const base = mesesAteFire(ctx.patrimonioAtual, ctx.aporteMensal, ctx.iMensal, ctx.metaFire);
+  const r = mesesAteFire(ctx.patrimonioAtual, ctx.aporteMensal, ctx.iMensal, metaReal);
+  if (r.status === 'ok' && base.status === 'ok') {
+    const delta = r.meses - base.meses;
+    if (Math.abs(delta) >= 1) {
+      partes.push(
+        ' Com o número real, sua data ',
+        delta > 0 ? 'andaria ' : 'voltaria ',
+        hl(fmt.duracao(Math.abs(delta))),
+        delta > 0 ? ' pra frente.' : ' pra trás.',
+      );
+    }
+  } else if (r.status === 'inalcancavel') {
+    partes.push(' Com o número real, a meta não fecha com o aporte de hoje.');
+  }
+
+  partes.push(' Vale atualizar o perfil — ou conferir se sobrou transferência marcada como gasto.');
+  return {
+    id: 'custo-perfil-defasado',
+    tom: maisCaro ? 'atencao' : 'fato',
+    prioridade: 93,
+    partes,
+  };
 };
 
 /** Mês no vermelho — fato, sem culpa (§14). */
@@ -271,6 +352,7 @@ export const CATALOGO: Regra[] = [
   marcoCobertura,
   coastAtingido,
   taxaPoupancaVariou,
+  custoDoPerfilDefasado,
   mesNegativo,
   streakAzul,
   maiorCategoria,

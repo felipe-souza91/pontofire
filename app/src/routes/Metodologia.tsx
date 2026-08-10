@@ -417,6 +417,13 @@ export function Metodologia() {
           afirmar um encontro que não houve.
         </p>
         <p className="pf-metodo-nota">
+          <strong>Onde os lançamentos NÃO entram:</strong> sua data FIRE é calculada com o custo de
+          vida e o aporte do <strong>seu perfil</strong>, não com a soma dos itens do mês. Os itens
+          decompõem o mês e alimentam a renda passiva; quem move a data é o perfil. Quando a mediana
+          dos seus últimos meses lançados descola do perfil em mais de 15%, o app avisa e mostra
+          quanto a data mudaria — porque data calculada com número velho é otimismo, não previsão.
+        </p>
+        <p className="pf-metodo-nota">
           Movimento entre contas ganha rótulo próprio —{' '}
           <strong>Transferência entre contas</strong> e <strong>Fatura de cartão</strong> —, em vez
           de ficar sem categoria e cair em "Outros". São categorias <em>neutras</em>: se você optar
