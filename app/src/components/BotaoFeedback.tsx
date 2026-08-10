@@ -1,8 +1,12 @@
 import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { enviarFeedback, ROTULO_FEEDBACK, type TipoFeedback } from '../data/feedback';
+import { ordenarPor } from '../utils/ordenar';
 
-const TIPOS: TipoFeedback[] = ['ideia', 'problema', 'elogio', 'outro'];
+const TIPOS: TipoFeedback[] = ordenarPor(
+  ['ideia', 'problema', 'elogio', 'outro'],
+  (t) => ROTULO_FEEDBACK[t],
+);
 
 /** Botão flutuante + modal de feedback (mão única). */
 export function BotaoFeedback({ plano = 'free' }: { plano?: string }) {

@@ -11,7 +11,16 @@
  */
 const COLLATOR = new Intl.Collator('pt-BR', { numeric: true, sensitivity: 'base' });
 
-export const compararPtBr = (a: string, b: string): number => COLLATOR.compare(a, b);
+/**
+ * Emoji e símbolo no começo do rótulo não contam na ordenação.
+ *
+ * "💡 Ideia" e "🐛 Problema" ordenariam pelo code point do emoji, que não tem
+ * relação nenhuma com o alfabeto — o usuário lê "Ideia" e "Problema".
+ */
+const chaveDeOrdenacao = (s: string) => s.replace(/^[^\p{L}\p{N}]+/u, '');
+
+export const compararPtBr = (a: string, b: string): number =>
+  COLLATOR.compare(chaveDeOrdenacao(a), chaveDeOrdenacao(b));
 
 /**
  * Ordena em ordem alfabética, com `aoFim` fixado no rodapé da lista.
@@ -23,4 +32,14 @@ export const compararPtBr = (a: string, b: string): number => COLLATOR.compare(a
 export function ordenar(itens: readonly string[], aoFim: readonly string[] = []): string[] {
   const fim = new Set(aoFim);
   return [...itens.filter((i) => !fim.has(i)).sort(compararPtBr), ...aoFim];
+}
+
+/**
+ * Ordena pelo RÓTULO, não pelo valor.
+ *
+ * Listas cujo item é um código (`'imovel-renda'`, `'ideia'`) precisam disso: o
+ * usuário lê "Imóvel de renda" e "Ideia", e é por aí que ele procura.
+ */
+export function ordenarPor<T>(itens: readonly T[], rotulo: (item: T) => string): T[] {
+  return [...itens].sort((a, b) => compararPtBr(rotulo(a), rotulo(b)));
 }

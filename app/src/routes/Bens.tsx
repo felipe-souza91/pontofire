@@ -9,9 +9,13 @@ import { MoedaInput } from '../components/MoedaInput';
 import { CategoriaInput } from '../components/CategoriaInput';
 import { Campo } from '../components/Campo';
 import { formatBRL } from '../utils/format';
+import { ordenarPor } from '../utils/ordenar';
 
 // financeiro fica de fora: seu investido já vem do modo rápido (patrimônio lançado)
-const TIPOS_BENS: AssetTipo[] = ['imovel-uso', 'imovel-renda', 'veiculo', 'outro'];
+const TIPOS_BENS: AssetTipo[] = ordenarPor(
+  ['imovel-uso', 'imovel-renda', 'veiculo', 'outro'],
+  (t) => ROTULO_ASSET[t],
+);
 
 export function Bens() {
   const { user } = useAuth();
