@@ -176,9 +176,49 @@ export function mapearColunas(linhas: string[][]): MapaColunas {
   }
 
   if (melhor.nota >= 10) {
-    return { cabecalhoEm: melhor.linha, indices: melhor.indices, rotulos: melhor.rotulos, porPalpite: false };
+    return validarNatureza(linhas, {
+      cabecalhoEm: melhor.linha,
+      indices: melhor.indices,
+      rotulos: melhor.rotulos,
+      porPalpite: false,
+    });
   }
   return palpitePosicional(linhas);
+}
+
+/**
+ * Vocabulário de uma coluna de natureza de verdade. "TRANSACTION_TYPE" do
+ * Mercado Pago casa com a palavra `TYPE`, mas o conteúdo dela é a descrição
+ * do lançamento — e mapear errado custava TODAS as descrições do arquivo.
+ */
+const NATUREZA_VALIDA = /^(D|C|DEBITO|CREDITO|ENTRADA|SAIDA|RECEITA|DESPESA|DEB|CRED)$/;
+
+/**
+ * Confere se a coluna marcada como `natureza` realmente carrega D/C.
+ * Se o conteúdo for texto livre, ela é rebaixada — e vira `descricao` quando
+ * ainda não houver uma.
+ */
+function validarNatureza(linhas: string[][], mapa: MapaColunas): MapaColunas {
+  const j = mapa.indices.natureza;
+  if (j === undefined) return mapa;
+
+  const amostra = linhas
+    .slice(mapa.cabecalhoEm + 1, mapa.cabecalhoEm + 40)
+    .map((l) => normalizar(l[j] ?? ''))
+    .filter(Boolean);
+
+  const parecemNatureza = amostra.filter((v) => NATUREZA_VALIDA.test(v)).length;
+  if (amostra.length === 0 || parecemNatureza >= amostra.length * 0.8) return mapa;
+
+  const indices = { ...mapa.indices };
+  const rotulos = { ...mapa.rotulos };
+  delete indices.natureza;
+  if (indices.descricao === undefined) {
+    indices.descricao = j;
+    rotulos.descricao = mapa.rotulos.natureza;
+  }
+  delete rotulos.natureza;
+  return { ...mapa, indices, rotulos };
 }
 
 /** Sem cabeçalho: olha o conteúdo das colunas e chuta — sempre avisando. */
@@ -234,6 +274,8 @@ function melhorIndice(pontos: number[]): number {
 export interface RegistroCSV {
   dataBruta: string;
   descricao: string;
+  /** quem recebeu ou enviou — vem das linhas de continuação (Bradesco) */
+  contraparte?: string;
   /** já com sinal quando dá pra saber; null quando não tem número */
   valor: number | null;
   /** true quando o sinal veio de coluna crédito/débito ou natureza (confiável) */
@@ -282,6 +324,16 @@ export function extrairRegistros(
     }
 
     if (valor === null || !dataBruta || parseData(dataBruta) === null) {
+      // Linha sem data e sem valor, mas COM texto, logo depois de um
+      // lançamento: é continuação. O Bradesco põe aí o nome de quem recebeu
+      // ou enviou ("Des: Fulano", "Rem: Fulano", o nome do empregador) — a
+      // informação que mais ajuda a identificar a transação.
+      const anterior = registros[registros.length - 1];
+      const texto = continuacao(linha);
+      if (anterior && valor === null && texto && !anterior.contraparte) {
+        anterior.contraparte = texto;
+        continue;
+      }
       // cabeçalho repetido, linha de total, rodapé — some sem drama
       if (linha.some((c) => c !== '')) ignoradas++;
       continue;
@@ -301,4 +353,24 @@ export function extrairRegistros(
 
 function celula(linha: string[], i: number | undefined): string {
   return i === undefined ? '' : (linha[i] ?? '').trim();
+}
+
+/**
+ * Rodapé e títulos de seção que o Bradesco emenda no fim do arquivo. Sem esse
+ * filtro, "Os dados acima têm como base…" e "Saldos Invest Fácil" grudavam na
+ * última transação — e o segundo ainda a classificava como aporte.
+ */
+const RUIDO_DE_RODAPE = /(os dados acima|sujeitos a altera|ultimos lan|últimos lan|saldos invest|saldo anterior|^total$)/i;
+
+/** O texto útil de uma linha de continuação: a célula mais longa que não é número nem data. */
+function continuacao(linha: string[]): string {
+  const candidatos = linha
+    .map((c) => c.trim())
+    .filter((c) => c.length > 2 && c.length <= 60 && parseData(c) === null && !pareceNumero(c))
+    .filter((c) => !RUIDO_DE_RODAPE.test(c));
+  if (!candidatos.length) return '';
+  const texto = candidatos.reduce((a, b) => (b.length > a.length ? b : a));
+  // "Des: Fulano 04/07", "Rem: Fulano", "Remet.amazon" — tira o prefixo e a
+  // data solta do fim. Remet ANTES de Rem, senão sobra "et.amazon".
+  return texto.replace(/^(Remet|Des|Rem)\.?:?\s*/i, '').replace(/\s+\d{2}\/\d{2}$/, '').trim();
 }

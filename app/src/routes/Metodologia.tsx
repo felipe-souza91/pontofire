@@ -395,6 +395,18 @@ export function Metodologia() {
           <li><strong>tudo positivo sem contexto</strong> → o app assume que não sabe e pergunta</li>
         </ul>
         <p className="pf-metodo-nota">
+          Quando o arquivo traz <strong>quem recebeu ou enviou</strong> numa linha separada — é o
+          caso do Bradesco —, esse nome é recuperado e entra na descrição. "Transfe Pix" sozinho não
+          identifica nada; "Transfe Pix · Vivo Móvel" identifica.
+        </p>
+        <p className="pf-metodo-nota">
+          Se o nome da contraparte for <strong>o seu</strong>, o lançamento é marcado como{' '}
+          <em>você → você</em> e vem desmarcado: dinheiro trocando de conta não é receita nem
+          despesa. A comparação é por partes do nome, porque os bancos truncam ("Des: Maria da
+          Silva S"). Quando isso aparece, o app sugere importar o extrato da outra instituição —
+          senão a receita fica registrada aqui e os gastos, em lugar nenhum.
+        </p>
+        <p className="pf-metodo-nota">
           Contra duplicata, cada lançamento ganha uma impressão digital{' '}
           <Mono>data | valor | estabelecimento</Mono> (mais o FITID, quando o OFX traz). Reimportar o
           mesmo arquivo não duplica nada. E "pagamento de fatura" no extrato vem desmarcado, porque

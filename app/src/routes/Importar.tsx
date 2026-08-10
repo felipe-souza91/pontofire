@@ -10,6 +10,7 @@ import {
 } from '@pontofire/importer';
 import { useAuth } from '../auth/useAuth';
 import { useSnapshots } from '../hooks/useSnapshots';
+import { useUserDoc } from '../hooks/useUserDoc';
 import { buscarImpressoes, salvarTransacoesEmLote, ROTULO_TIPO, type TipoTransacao } from '../data/transactions';
 import { carregarMemoria, ensinarRegras } from '../data/importRules';
 import { CATEGORIAS, normalizarCategoria } from '../data/categorias';
@@ -30,6 +31,14 @@ export function Importar() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { lista: snaps } = useSnapshots(user?.uid ?? null);
+  const { doc } = useUserDoc(user?.uid ?? null);
+
+  // Nome do usuário pro reconhecimento de transferência pra si mesmo. Vale o
+  // mais completo que existir: o banco grava o nome inteiro, e apelido sozinho
+  // ("Felipe") não é suficiente pra distinguir de um xará.
+  const nomeUsuario = [doc?.nome, user?.displayName, doc?.apelido]
+    .filter((n): n is string => Boolean(n && n.trim()))
+    .sort((a, b) => b.length - a.length)[0];
   const inputArquivo = useRef<HTMLInputElement>(null);
 
   const [etapa, setEtapa] = useState<Etapa>('arquivo');
@@ -53,12 +62,13 @@ export function Importar() {
       const memoria = await carregarMemoria(user.uid).catch(() => [] as MemoriaCategoria[]);
 
       // 1ª passada: descobre quais meses o arquivo toca
-      const previa = analisar({ nome: file.name, bytes, contexto: ctx, memoria });
+      const comNome: ContextoImport = { ...ctx, nomeUsuario };
+      const previa = analisar({ nome: file.name, bytes, contexto: comNome, memoria });
       const meses = [...new Set(previa.itens.map((i) => i.data.slice(0, 7)))];
 
       // 2ª passada: agora com o que já está salvo nesses meses, pro dedupe
       const jaSalvos = meses.length ? await buscarImpressoes(user.uid, meses).catch(() => []) : [];
-      const r = analisar({ nome: file.name, bytes, contexto: ctx, memoria, jaSalvos });
+      const r = analisar({ nome: file.name, bytes, contexto: comNome, memoria, jaSalvos });
 
       if (!r.itens.length) {
         setErro(
@@ -219,6 +229,19 @@ export function Importar() {
                 <button className="pf-chip" onClick={() => todosPara('ativa')}>Tudo é receita</button>
                 <button className="pf-chip" onClick={() => todosPara('aporte')}>Tudo é aporte</button>
               </div>
+            </div>
+          )}
+
+          {analise.diagnostico.transferenciasProprias > 0 && (
+            <div className="pf-card-alerta">
+              <strong>Achei dinheiro seu indo pra você mesmo.</strong>
+              <p style={{ margin: 'var(--space-2) 0 0' }}>
+                {analise.diagnostico.transferenciasProprias} transferência(s) em que o nome do
+                destinatário ou do remetente é o seu. Não são receita nem despesa, então vieram
+                desmarcadas — mas elas indicam que <strong>você move dinheiro entre contas</strong>.
+                Se os gastos acontecem na outra instituição, importe o extrato de lá também; senão
+                seu mês fica com a receita aqui e as despesas em lugar nenhum.
+              </p>
             </div>
           )}
 

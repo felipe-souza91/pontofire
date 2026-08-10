@@ -127,3 +127,57 @@ export const CSV_PLANILHA_NATUREZA = `Data;Descrição;Tipo;Valor
 export const CSV_SEM_CABECALHO = `14/08/2026;Padaria Sao Jose;-24,50
 15/08/2026;Posto Ipiranga;-180,00
 16/08/2026;Farmacia Sao Joao;-62,30`;
+
+/**
+ * Layout do Mercado Pago — ANONIMIZADO, mas com as feiúras que quebraram o
+ * parser de verdade:
+ *  - dois blocos de cabeçalho (o de saldos vem antes do de lançamentos);
+ *  - `TRANSACTION_TYPE` casa com a palavra "TYPE" e parece coluna de natureza,
+ *    quando na verdade é a DESCRIÇÃO — mapear errado apagava todos os memos;
+ *  - data DD-MM-YYYY com hífen;
+ *  - dezenas de "Reserva por gastos"/"Dinheiro retirado" do cofrinho, que não
+ *    são gasto nem receita;
+ *  - Pix do usuário PRA ELE MESMO em outra instituição.
+ */
+export const CSV_MERCADO_PAGO = `INITIAL_BALANCE;CREDITS;DEBITS;FINAL_BALANCE
+377,22;16.183,18;-16.552,61;7,79
+
+RELEASE_DATE;TRANSACTION_TYPE;REFERENCE_ID;TRANSACTION_NET_AMOUNT;PARTIAL_BALANCE
+01-07-2026;Rendimentos ;1746070030010;0,17;377,39
+02-07-2026;Pagamento com QR Pix 99 TECNOLOGIA LTDA;166796556722;-12,80;364,76
+02-07-2026;Reserva por gastos Emergency;166796853458;-15,00;349,76
+03-07-2026;Pix recebido MARIA DA SILVA SANTOS;166955469866;394,74;744,66
+03-07-2026;Pix enviado Joao Pereira Lima;167007937230;-15,00;697,16
+04-07-2026;Pix recebido MARIA DA SILVA SANTOS;166288037669;6.770,00;7.422,76
+05-07-2026;Reserva programada Emergency;166452204217;-50,00;7.321,26
+06-07-2026;Pagamento com QR Pix 99 TECNOLOGIA LTDA;167470166544;-6,45;7.210,14
+07-07-2026;Pagamento de conta EMPRESA DE COBRANCA LTDA;166766263487;-116,60;6.944,70
+10-07-2026;Dinheiro retirado Emergency;168173434060;1.343,00;1.534,87
+10-07-2026;Pix enviado Maria da Silva Santos;167316433271;-500,00;1.034,87
+15-07-2026;Pagamento com QR Pix IFOOD.COM AGENCIA DE RESTAURANTES ONLINE S.A.;168134968607;-43,00;23,16
+20-07-2026;Pagamento com QR Pix 99 FOOD LTDA.;169771356162;-40,62;2,55
+29-07-2026;Pagamento com QR Pix JTM Textil Ltda;171035181648;-120,97;7,79`;
+
+/**
+ * Layout do Bradesco — ANONIMIZADO. Duas armadilhas reais:
+ *  - o arquivo inteiro usa `\r` sozinho como quebra de linha (formato antigo);
+ *  - a CONTRAPARTE vem numa LINHA DE CONTINUAÇÃO, sem data e sem valor, logo
+ *    depois do lançamento. Era o que virava "linha ignorada" e sumia.
+ * O rodapé emendado no fim também é fiel ao original.
+ */
+export const CSV_BRADESCO = [
+  'Extrato de: Ag: 2 | Conta: 000000-0 | Entre 01/07/2026 e 31/07/2026',
+  'Data;Histórico;Docto.;Crédito (R$);Débito (R$);Saldo (R$);',
+  '30/06/26;SALDO ANTERIOR;;;;"1,76";',
+  '06/07/26; Trans Sal p/c/c;0603493;"6.769,11";;"6.770,87";',
+  ';Empregador Exemplo Ltda;;',
+  '06/07/26; Transfe Pix;0635133;;"-6.770,00";;',
+  'Des: Maria da Silva Santos 04/07;;',
+  '06/07/26; Conta Telefone;0001943;;"-64,00";"-63,13";',
+  ';Vivo Movel-sp-11000019432;;',
+  '10/07/26; Transfe Pix;1453354;;"-500,00";"0,88";',
+  'Des: Joao Pereira Lima 10/07;;',
+  '06/08/26; Rentab.invest Facilcred*;6767450;"0,01";;',
+  ';Total;;"11.524,40";"-11.440,00";"86,16"',
+  'Os dados acima têm como base 10/08/2026 e estão sujeitos a alterações.',
+].join('\r');

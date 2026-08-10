@@ -23,6 +23,12 @@ export interface ContextoImport {
   mesEsperado?: string;
   /** o usuário pode desempatar quando 03/04 é ambíguo */
   formatoData?: FormatoData;
+  /**
+   * Nome do usuário. Serve pra reconhecer transferência que ele fez PRA SI
+   * MESMO em outra instituição — que não é receita nem despesa, e é a pista
+   * de que falta importar o extrato do outro banco.
+   */
+  nomeUsuario?: string;
 }
 
 export type AlertaItem =
@@ -30,7 +36,8 @@ export type AlertaItem =
   | 'duplicata-salva' // já existe no Ponto FIRE (reimportação)
   | 'transferencia' // pagamento de fatura, aplicação: contaria em dobro
   | 'fora-do-periodo' // mês diferente do que o usuário declarou
-  | 'direcao-incerta'; // o arquivo não disse se é entrada ou saída
+  | 'direcao-incerta' // o arquivo não disse se é entrada ou saída
+  | 'transferencia-propria'; // dinheiro seu indo/vindo de outra conta sua
 
 export interface ItemImportado {
   /** id estável dentro desta análise */
@@ -41,6 +48,8 @@ export interface ItemImportado {
   descricao: string;
   /** exatamente o que veio no arquivo */
   descricaoOriginal: string;
+  /** quem recebeu ou enviou, quando o arquivo informa (Bradesco) */
+  contraparte?: string;
   /** SEMPRE positivo — a direção mora em `tipo` */
   valor: number;
   tipo: TipoLancamento;
@@ -74,6 +83,8 @@ export interface Diagnostico {
   documentoDetectado?: TipoDocumento;
   /** true quando o arquivo não permitiu inferir entrada × saída */
   direcaoIncerta: boolean;
+  /** quantas transferências do usuário pra ele mesmo apareceram */
+  transferenciasProprias: number;
 }
 
 export interface ResultadoAnalise {

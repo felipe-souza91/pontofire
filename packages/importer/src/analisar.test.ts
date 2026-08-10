@@ -3,6 +3,8 @@ import { analisar, type EntradaAnalise } from './analisar';
 import type { ContextoImport, ItemImportado, JaSalvo, MemoriaCategoria } from './tipos';
 import {
   CSV_BAGUNCADO,
+  CSV_BRADESCO,
+  CSV_MERCADO_PAGO,
   CSV_EXTRATO_VIRGULA,
   CSV_FATURA_POSITIVA,
   CSV_PLANILHA_AMBIGUA,
@@ -255,5 +257,131 @@ describe('robustez', () => {
   it('aplicação em CDB, se o usuário resolver incluir, cai como aporte', () => {
     const r = rodar(OFX_EXTRATO);
     expect(acha(r.itens, 'APLICACAO')).toMatchObject({ tipo: 'aporte', incluir: false });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Regressões achadas rodando o parser em extratos REAIS (jul/2026).
+// Cada teste aqui nasceu de um bug que só apareceu com arquivo de banco de
+// verdade — as fixtures são anonimizadas, os formatos são fiéis.
+
+describe('Mercado Pago — layout real', () => {
+  const ctx = { nomeUsuario: 'Maria da Silva Santos' };
+  const r = rodar(CSV_MERCADO_PAGO, ctx);
+
+  it('NÃO confunde TRANSACTION_TYPE com coluna de natureza', () => {
+    // Era o bug mais grave: a coluna casava com a palavra "TYPE", virava
+    // `natureza`, e TODAS as 89 descrições do arquivo viravam "(sem descrição)"
+    expect(r.diagnostico.colunas).toMatchObject({ descricao: 'TRANSACTION_TYPE' });
+    expect(r.diagnostico.colunas).not.toHaveProperty('natureza');
+    expect(r.itens.every((i) => i.descricao !== '(sem descrição)')).toBe(true);
+  });
+
+  it('atravessa o bloco de saldos que vem antes do cabeçalho real', () => {
+    expect(r.itens.length).toBe(14);
+    expect(r.diagnostico.periodo).toEqual({ inicio: '2026-07-01', fim: '2026-07-29' });
+  });
+
+  it('lê data com hífen (DD-MM-YYYY)', () => {
+    expect(r.diagnostico.formatoData).toBe('DD/MM/AAAA');
+    expect(acha(r.itens, 'JTM')!.data).toBe('2026-07-29');
+  });
+
+  it('cofrinho não é gasto nem receita', () => {
+    for (const t of ['Reserva por gastos', 'Reserva programada', 'Dinheiro retirado']) {
+      const i = acha(r.itens, t)!;
+      expect(i.incluir, t).toBe(false);
+      expect(i.alertas, t).toContain('transferencia');
+    }
+  });
+
+  it('a chave é o estabelecimento, não o prefixo "Pagamento com QR Pix"', () => {
+    const noves = r.itens.filter((i) => i.descricao.includes('99 TECNOLOGIA'));
+    expect(noves.length).toBeGreaterThan(1);
+    expect(new Set(noves.map((i) => i.chave)).size).toBe(1);
+    expect(noves[0]!.chave).toContain('99 TECNOLOGIA');
+    expect(noves.every((i) => i.categoria === 'Transporte')).toBe(true);
+  });
+
+  it('99 Food é delivery, 99 Tecnologia é transporte', () => {
+    expect(acha(r.itens, '99 FOOD')!.categoria).toBe('Delivery');
+    expect(acha(r.itens, 'IFOOD')!.categoria).toBe('Delivery');
+  });
+
+  it('rendimento do saldo é renda passiva', () => {
+    expect(acha(r.itens, 'Rendimentos')).toMatchObject({ tipo: 'passiva', categoria: 'Juros / Renda fixa' });
+  });
+});
+
+describe('Bradesco — layout real', () => {
+  const r = rodar(CSV_BRADESCO, { nomeUsuario: 'Maria da Silva Santos' }, {}, 'latin1');
+
+  it('lê arquivo com \\r sozinho como quebra de linha', () => {
+    expect(r.itens.length).toBe(5);
+    expect(r.diagnostico.codificacao).toBe('Windows-1252');
+  });
+
+  it('RECUPERA A CONTRAPARTE da linha de continuação', () => {
+    // Era jogada fora como "linha ignorada" — e é a informação que mais ajuda
+    // a identificar a transação
+    expect(acha(r.itens, 'Conta Telefone')!.contraparte).toContain('Vivo');
+    expect(acha(r.itens, 'Trans Sal')!.contraparte).toBe('Empregador Exemplo Ltda');
+    expect(acha(r.itens, 'Joao Pereira')!.contraparte).toBe('Joao Pereira Lima');
+  });
+
+  it('a contraparte entra na categorização', () => {
+    // "Conta Telefone" sozinho não diz nada; com "Vivo" vira Contas
+    expect(acha(r.itens, 'Conta Telefone')!.categoria).toBe('Contas');
+  });
+
+  it('tira o prefixo Des:/Rem:/Remet. sem comer letra do nome', () => {
+    expect(acha(r.itens, 'Joao Pereira')!.contraparte).not.toMatch(/^(es|em|et)/);
+  });
+
+  it('não gruda o rodapé nem o título de seção na última transação', () => {
+    expect(r.itens.every((i) => !/dados acima|Total/i.test(i.contraparte ?? ''))).toBe(true);
+  });
+
+  it('"Rentab.invest" é rendimento, não aplicação', () => {
+    // O padrão de transferência "INVEST FACIL" casava com "invest Facilcred"
+    expect(acha(r.itens, 'Rentab')).toMatchObject({ tipo: 'passiva', incluir: true });
+  });
+});
+
+describe('transferência do usuário pra ele mesmo', () => {
+  it('reconhece mesmo com o nome truncado pelo banco', () => {
+    // Bradesco grava "Des: Maria da Silva Santos 04/07"; o Mercado Pago grava
+    // o nome inteiro. Os dois lados têm que casar com o mesmo usuário.
+    const bra = rodar(CSV_BRADESCO, { nomeUsuario: 'Maria da Silva Santos' }, {}, 'latin1');
+    const mp = rodar(CSV_MERCADO_PAGO, { nomeUsuario: 'Maria da Silva Santos' });
+
+    expect(bra.diagnostico.transferenciasProprias).toBeGreaterThan(0);
+    expect(mp.diagnostico.transferenciasProprias).toBeGreaterThan(0);
+  });
+
+  it('vem desmarcada — não é receita nem despesa', () => {
+    const r = rodar(CSV_MERCADO_PAGO, { nomeUsuario: 'Maria da Silva Santos' });
+    const propria = r.itens.find((i) => i.alertas.includes('transferencia-propria'))!;
+    expect(propria.incluir).toBe(false);
+  });
+
+  it('sugere importar o extrato da outra instituição', () => {
+    const r = rodar(CSV_MERCADO_PAGO, { nomeUsuario: 'Maria da Silva Santos' });
+    expect(r.avisos.some((a) => a.includes('importe o extrato de lá'))).toBe(true);
+  });
+
+  it('não confunde um terceiro com o próprio usuário', () => {
+    const r = rodar(CSV_MERCADO_PAGO, { nomeUsuario: 'Maria da Silva Santos' });
+    expect(acha(r.itens, 'Joao Pereira')!.alertas).not.toContain('transferencia-propria');
+  });
+
+  it('sem o nome do usuário, nada é marcado como próprio', () => {
+    const r = rodar(CSV_MERCADO_PAGO);
+    expect(r.diagnostico.transferenciasProprias).toBe(0);
+  });
+
+  it('nome de uma palavra só não dispara (evita falso positivo)', () => {
+    const r = rodar(CSV_MERCADO_PAGO, { nomeUsuario: 'Maria' });
+    expect(r.diagnostico.transferenciasProprias).toBe(0);
   });
 });
