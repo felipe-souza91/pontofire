@@ -16,6 +16,8 @@ import { CATEGORIAS, normalizarCategoria } from '../data/categorias';
 import {
   deveVoltarAoDeclarado,
   divergiu,
+  podeAdotarItens,
+  residualDosItens,
   somarItens,
   totaisDosItens,
 } from '../data/reconciliacao';
@@ -45,10 +47,12 @@ export function Detalhar() {
 
   const soma = useMemo(() => somarItens(itens), [itens]);
   const doItens = useMemo(() => totaisDosItens(soma), [soma]);
-  const divergente = !!snap && divergiu(snap, doItens);
+  const residual = useMemo(() => residualDosItens(soma), [soma]);
+  const divergente =
+    !!snap && podeAdotarItens(itens.length, carregando) && divergiu(snap, doItens);
 
   async function usarOsItens() {
-    if (!user || !snap) return;
+    if (!user || !snap || !podeAdotarItens(itens.length, carregando)) return;
     setOcupado(true);
     try {
       await adotarTotaisDosItens(user.uid, snap, doItens);
@@ -150,6 +154,23 @@ export function Detalhar() {
             <Recon rotulo="Despesa" total={snap.gastoTotal} categorizado={soma.saida} />
             <Recon rotulo="Receita" total={snap.receitaLiquida} categorizado={soma.ativa + soma.passiva} />
             <Recon rotulo="Aporte" total={snap.aportesMes} categorizado={soma.aporte} />
+            {Math.abs(residual) > 0.5 && soma.aporte > 0 && (
+              <p className="pf-hint" style={{ margin: 'var(--space-3) 0 0' }}>
+                {residual < 0 ? (
+                  <>
+                    Pelos lançamentos, saíram <strong>{formatBRL(-residual)}</strong> a mais do que
+                    entraram neste mês. Ou faltou importar uma receita, ou o aporte saiu de saldo
+                    que já existia — as duas coisas acontecem, e nenhuma é erro de conta.
+                  </>
+                ) : (
+                  <>
+                    Sobraram <strong>{formatBRL(residual)}</strong> que os lançamentos não apontam
+                    como aporte. Se esse dinheiro ficou na conta, está certo assim; se foi
+                    investido, falta o lançamento de aporte.
+                  </>
+                )}
+              </p>
+            )}
             {soma.neutro > 0 && (
               <p className="pf-hint" style={{ margin: 'var(--space-3) 0 0' }}>
                 + {formatBRL(soma.neutro)} em movimentação entre contas (fatura, transferência).

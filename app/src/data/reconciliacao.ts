@@ -63,16 +63,53 @@ export function somarItens(itens: readonly Transacao[]): SomaItens {
   return s;
 }
 
-/** O mês como os lançamentos o descrevem — a alternativa ao trio declarado. */
+/**
+ * O mês como os lançamentos o descrevem — a alternativa ao trio declarado.
+ *
+ * O APORTE É OBSERVADO, NÃO DERIVADO.
+ *
+ * No modo rápido, `receita − despesa` é um proxy do aporte: assume que tudo que
+ * sobrou foi investido. Quando existem lançamentos de aporte, o proxy vira
+ * mentira — o valor real está ali, marcado um por um. Derivar mesmo assim
+ * produzia o absurdo de um aporte de −R$ 849,78 no mesmo mês em que os itens
+ * registravam R$ 2.000 entrando na carteira, e a linha da reconciliação
+ * comparava as duas coisas como se fossem a mesma.
+ *
+ * Isso importa além da tela: `rendimentoMes = P − P_anterior − aportesMes`. Com
+ * o aporte errado, todo o rendimento por marcação a mercado sai errado junto.
+ */
 export function totaisDosItens(soma: SomaItens): TrioDeclarado {
   const receitaLiquida = soma.ativa + soma.passiva;
   const gastoTotal = soma.saida;
   return {
     receitaLiquida,
     gastoTotal,
-    aportesMes: receitaLiquida - gastoTotal,
+    aportesMes: soma.aporte > 0 ? soma.aporte : receitaLiquida - gastoTotal,
     taxaPoupanca: taxaPoupanca(receitaLiquida, gastoTotal),
   };
+}
+
+/**
+ * O que os lançamentos NÃO explicam: `receita − despesa − aporte`.
+ *
+ * Negativo significa que saiu mais do que entrou pelos itens — ou faltou
+ * importar uma receita, ou o aporte veio de saldo que já existia. Positivo
+ * significa dinheiro que sobrou e não foi apontado como aporte. Nos dois casos
+ * é informação, não erro: some quando o mês fecha.
+ */
+export function residualDosItens(soma: SomaItens): number {
+  return soma.ativa + soma.passiva - soma.saida - soma.aporte;
+}
+
+/**
+ * Adotar a soma dos itens só faz sentido com itens na tela.
+ *
+ * Sem esta guarda, um clique com a lista vazia (ou ainda carregando) grava um
+ * mês de zeros e arquiva o trio digitado como "caminho de volta" — o usuário
+ * perde os 3 números e ganha um mês que não existiu.
+ */
+export function podeAdotarItens(quantidadeDeItens: number, carregando: boolean): boolean {
+  return !carregando && quantidadeDeItens > 0;
 }
 
 /** Centavo de diferença é arredondamento, não divergência. */
