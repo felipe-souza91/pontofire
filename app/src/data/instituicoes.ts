@@ -1,3 +1,5 @@
+import { ordenar } from '../utils/ordenar';
+
 /**
  * Instituições financeiras mais usadas no Brasil.
  *
@@ -6,55 +8,50 @@
  * extrato do Bradesco" só sai bonito se ele escreveu "Bradesco" nas duas vezes,
  * e não "bradesco" numa e "Banco Bradesco" na outra.
  *
- * Ordem: bancos digitais e corretoras primeiro (mais prováveis de exportar
- * OFX/CSV), depois os grandes tradicionais.
+ * Ordem alfabética pt-BR: a lista é longa demais pra procurar de olho sem ela.
  */
-export const INSTITUICOES: readonly string[] = [
-  // digitais / carteiras
-  'Nubank',
-  'Mercado Pago',
-  'Inter',
+export const INSTITUICOES: readonly string[] = ordenar([
+  'Agibank',
+  'Ágora',
+  'Amex',
+  'Avenue',
+  'Banco BV',
+  'Banco do Brasil',
+  'Banco Pan',
+  'Banrisul',
+  'Bradesco',
+  'BRB',
+  'BTG Pactual',
   'C6 Bank',
-  'PicPay',
+  'Caixa',
+  'Cartão Elo',
+  'Clear',
+  'Credicard',
+  'Digio',
+  'Genial',
+  'Inter',
+  'Itaú',
+  'Mercado Pago',
+  'Modalmais',
   'Neon',
   'Next',
+  'Nomad',
+  'Nubank',
   'Original',
-  'Banco Pan',
-  'Will Bank',
-  'Digio',
-  'Agibank',
+  'PagBank',
+  'PicPay',
+  'Porto Seguro',
+  'Rico',
+  'Safra',
+  'Santander',
   'Sicoob',
   'Sicredi',
-  'PagBank',
   'Stone',
-  'Banco BV',
-  // tradicionais
-  'Itaú',
-  'Bradesco',
-  'Banco do Brasil',
-  'Caixa',
-  'Santander',
-  'Safra',
-  'Banrisul',
-  'BRB',
-  // corretoras / investimento
-  'XP Investimentos',
-  'Rico',
-  'Clear',
-  'BTG Pactual',
-  'Avenue',
-  'Nomad',
-  'Genial',
-  'Ágora',
-  'Modalmais',
   'Toro',
   'Warren',
-  // cartões
-  'Cartão Elo',
-  'Credicard',
-  'Porto Seguro',
-  'Amex',
-];
+  'Will Bank',
+  'XP Investimentos',
+]);
 
 /**
  * Normaliza o que o usuário digitou pro nome canônico quando dá — assim

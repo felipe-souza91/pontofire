@@ -17,6 +17,7 @@ import { buscarTransferencias, salvarTransferencias } from '../data/transfers';
 import { CATEGORIAS, normalizarCategoria } from '../data/categorias';
 import { INSTITUICOES, canonizarInstituicao } from '../data/instituicoes';
 import { Campo } from '../components/Campo';
+import { CategoriaInput } from '../components/CategoriaInput';
 import { LinhaImport } from '../components/LinhaImport';
 import { formatBRL, formatMesAno } from '../utils/format';
 
@@ -459,19 +460,12 @@ function EtapaArquivo({
         opcional
         dica="Não muda a leitura do arquivo — mas é o que me deixa dizer depois “o outro lado dessa transferência está no extrato do Bradesco”."
       >
-        <input
-          className="pf-input"
-          list="pf-instituicoes"
+        <CategoriaInput
           value={ctx.instituicao ?? ''}
+          onChange={(v) => setCtx({ ...ctx, instituicao: canonizarInstituicao(v) || undefined })}
+          opcoes={INSTITUICOES}
           placeholder="Nubank, Itaú, Mercado Pago…"
-          onChange={(e) => setCtx({ ...ctx, instituicao: e.target.value })}
-          onBlur={(e) => setCtx({ ...ctx, instituicao: canonizarInstituicao(e.target.value) || undefined })}
         />
-        <datalist id="pf-instituicoes">
-          {INSTITUICOES.map((i) => (
-            <option key={i} value={i} />
-          ))}
-        </datalist>
       </Campo>
 
       <Campo rotulo="De que mês?" opcional dica="Se o arquivo trouxer lançamentos de outro mês, eu aviso — mas cada item vai pro mês da própria data.">
