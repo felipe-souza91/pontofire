@@ -5,32 +5,34 @@ import { useSnapshots } from '../hooks/useSnapshots';
 import { useTransactions } from '../hooks/useTransactions';
 import {
   adicionarTransacao,
+  atualizarTransacao,
+  limparMes,
   removerTransacao,
   ROTULO_TIPO,
   type TipoTransacao,
 } from '../data/transactions';
-import { atualizarSnapshot } from '../data/snapshots';
+import { adotarTotaisDosItens, atualizarSnapshot, voltarAoDeclarado } from '../data/snapshots';
 import { CATEGORIAS, normalizarCategoria } from '../data/categorias';
-import { ehCategoriaNeutra, taxaPoupanca } from '@pontofire/engine';
+import {
+  deveVoltarAoDeclarado,
+  divergiu,
+  somarItens,
+  totaisDosItens,
+} from '../data/reconciliacao';
 import { MoedaInput } from '../components/MoedaInput';
 import { CategoriaInput } from '../components/CategoriaInput';
 import { Campo } from '../components/Campo';
+import { LinhaTransacao } from '../components/LinhaTransacao';
 import { formatBRL, formatMesAno } from '../utils/format';
 
 const TIPOS: TipoTransacao[] = ['saida', 'ativa', 'passiva', 'aporte'];
-const COR_TIPO: Record<TipoTransacao, string> = {
-  saida: 'var(--muted)',
-  ativa: 'var(--paper)',
-  passiva: 'var(--mint)',
-  aporte: 'var(--ember-2)',
-};
 
 export function Detalhar() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { mes = '' } = useParams();
   const { lista: snaps } = useSnapshots(user?.uid ?? null);
-  const { lista: itens } = useTransactions(user?.uid ?? null, mes);
+  const { lista: itens, carregando } = useTransactions(user?.uid ?? null, mes);
 
   const snap = snaps.find((s) => s.mes === mes);
 
@@ -39,51 +41,29 @@ export function Detalhar() {
   const [valor, setValor] = useState(0);
   const [descricao, setDescricao] = useState('');
   const [ocupado, setOcupado] = useState(false);
+  const [confirmando, setConfirmando] = useState(false);
 
-  /**
-   * Categoria neutra fica FORA da reconciliação.
-   *
-   * "Fatura de cartão" e "Transferência entre contas" são dinheiro trocando de
-   * bolso. Contá-las como despesa categorizada fazia a conta estourar o total
-   * declarado por um valor que nunca foi consumo — e o card acusava um rombo
-   * que não existe.
-   */
-  const soma = useMemo(() => {
-    const s = { ativa: 0, passiva: 0, aporte: 0, saida: 0, neutro: 0 };
-    for (const it of itens) {
-      if (ehCategoriaNeutra(it.categoria)) s.neutro += it.valor;
-      else s[it.tipo] += it.valor;
-    }
-    return s;
-  }, [itens]);
-
-  /** O que os itens dizem que o mês foi — a alternativa ao total declarado. */
-  const doItens = useMemo(() => {
-    const receita = soma.ativa + soma.passiva;
-    const despesa = soma.saida;
-    return {
-      receita,
-      despesa,
-      aporte: receita - despesa,
-      taxa: taxaPoupanca(receita, despesa),
-    };
-  }, [soma]);
-
-  const divergente =
-    !!snap &&
-    (Math.abs(doItens.receita - snap.receitaLiquida) > 1 ||
-      Math.abs(doItens.despesa - snap.gastoTotal) > 1);
+  const soma = useMemo(() => somarItens(itens), [itens]);
+  const doItens = useMemo(() => totaisDosItens(soma), [soma]);
+  const divergente = !!snap && divergiu(snap, doItens);
 
   async function usarOsItens() {
     if (!user || !snap) return;
     setOcupado(true);
     try {
-      await atualizarSnapshot(user.uid, mes, {
-        receitaLiquida: doItens.receita,
-        gastoTotal: doItens.despesa,
-        aportesMes: doItens.aporte,
-        taxaPoupanca: doItens.taxa,
-      });
+      await adotarTotaisDosItens(user.uid, snap, doItens);
+    } finally {
+      setOcupado(false);
+    }
+  }
+
+  async function limparTudo() {
+    if (!user) return;
+    setOcupado(true);
+    try {
+      await limparMes(user.uid, mes);
+      setConfirmando(false);
+      // o trio volta sozinho pelo efeito abaixo, assim que a lista esvaziar
     } finally {
       setOcupado(false);
     }
@@ -91,11 +71,28 @@ export function Detalhar() {
 
   // renda passiva derivada → grava no snapshot (alimenta a cobertura passiva)
   useEffect(() => {
-    if (!user || !snap) return;
+    if (!user || !snap || carregando) return;
     if ((snap.rendaPassiva ?? 0) !== soma.passiva) {
       void atualizarSnapshot(user.uid, mes, { rendaPassiva: soma.passiva });
     }
-  }, [user, snap, mes, soma.passiva]);
+  }, [user, snap, mes, soma.passiva, carregando]);
+
+  /**
+   * Mês sem lançamento nenhum volta a valer pelos 3 números do modo rápido.
+   *
+   * Se o usuário adotou a soma dos itens e depois apagou os itens, manter os
+   * totais derivados seria o pior dos dois mundos: números calculados a partir
+   * de lançamentos que não existem mais, sem nada na tela que explique de onde
+   * vieram. `carregando` segura o gatilho — a lista nasce vazia antes do
+   * primeiro snapshot do Firestore chegar, e restaurar ali apagaria o ajuste
+   * de quem só abriu a tela.
+   */
+  useEffect(() => {
+    if (!user || !snap || !snap.declarado) return;
+    if (deveVoltarAoDeclarado(snap, itens.length, carregando)) {
+      void voltarAoDeclarado(user.uid, mes, snap.declarado);
+    }
+  }, [user, snap, mes, itens.length, carregando]);
 
   async function adicionar() {
     if (!user || !categoria.trim() || valor <= 0) return;
@@ -138,8 +135,18 @@ export function Detalhar() {
       ) : (
         <>
           {/* Reconciliação híbrida */}
-          <p className="pf-eyebrow" style={{ marginBottom: 'var(--space-3)' }}>Reconciliação</p>
+          <p className="pf-eyebrow" style={{ marginBottom: 'var(--space-3)' }}>
+            Reconciliação{snap.declarado ? ' · totais vindos dos itens' : ''}
+          </p>
           <div className="pf-hero-card">
+            {snap.declarado && (
+              <p className="pf-hint" style={{ margin: '0 0 var(--space-3)' }}>
+                Você adotou a soma dos lançamentos neste mês. Seus 3 números originais estão
+                guardados ({formatBRL(snap.declarado.receitaLiquida)} de receita ·{' '}
+                {formatBRL(snap.declarado.gastoTotal)} de despesa) e voltam sozinhos se você apagar
+                os lançamentos.
+              </p>
+            )}
             <Recon rotulo="Despesa" total={snap.gastoTotal} categorizado={soma.saida} />
             <Recon rotulo="Receita" total={snap.receitaLiquida} categorizado={soma.ativa + soma.passiva} />
             <Recon rotulo="Aporte" total={snap.aportesMes} categorizado={soma.aporte} />
@@ -166,17 +173,17 @@ export function Detalhar() {
                 {itens.length} lançamentos são o mês inteiro, o mais fiel é adotar o que eles somam:
               </p>
               <div style={{ display: 'grid', gap: 4, marginBottom: 'var(--space-3)' }}>
-                <Troca rotulo="Receita" de={snap.receitaLiquida} para={doItens.receita} />
-                <Troca rotulo="Despesa" de={snap.gastoTotal} para={doItens.despesa} />
-                <Troca rotulo="Aporte" de={snap.aportesMes} para={doItens.aporte} />
+                <Troca rotulo="Receita" de={snap.receitaLiquida} para={doItens.receitaLiquida} />
+                <Troca rotulo="Despesa" de={snap.gastoTotal} para={doItens.gastoTotal} />
+                <Troca rotulo="Aporte" de={snap.aportesMes} para={doItens.aportesMes} />
               </div>
               <button className="pf-btn pf-btn-ghost" disabled={ocupado} onClick={() => void usarOsItens()}>
                 {ocupado ? 'Ajustando…' : 'Usar o que os itens somam'}
               </button>
               <p className="pf-hint" style={{ marginTop: 'var(--space-2)' }}>
                 Confira antes: se faltou importar um extrato, ou se sobrou transferência marcada como
-                receita, o número dos itens fica pior que o seu. Dá pra desfazer refazendo o modo
-                rápido.
+                receita, o número dos itens fica pior que o seu. Guardo o que você digitou — apagar
+                os lançamentos devolve os 3 números originais.
               </p>
             </div>
           )}
@@ -211,31 +218,50 @@ export function Detalhar() {
                 {[...itens]
                   .sort((a, b) => TIPOS.indexOf(a.tipo) - TIPOS.indexOf(b.tipo) || b.valor - a.valor)
                   .map((it) => (
-                    <div
+                    <LinhaTransacao
                       key={it.id}
-                      className="pf-stat"
-                      style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-3) var(--space-4)' }}
-                    >
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'baseline' }}>
-                          <span style={{ textTransform: 'capitalize' }}>{it.categoria}</span>
-                          <span className="mono" style={{ fontSize: '0.66rem', color: COR_TIPO[it.tipo], textTransform: 'uppercase' }}>
-                            {ROTULO_TIPO[it.tipo]}
-                          </span>
-                        </div>
-                        {it.descricao && <div className="pf-hint" style={{ margin: 0 }}>{it.descricao}</div>}
-                      </div>
-                      <span className="mono">{formatBRL(it.valor)}</span>
-                      <button
-                        className="pf-btn-link"
-                        style={{ padding: 0, color: 'var(--muted)' }}
-                        aria-label="Remover"
-                        onClick={() => user && void removerTransacao(user.uid, it.id)}
-                      >
-                        ✕
+                      item={it}
+                      onSalvar={async (patch) => {
+                        if (user) await atualizarTransacao(user.uid, it.id, patch);
+                      }}
+                      onRemover={() => user && void removerTransacao(user.uid, it.id)}
+                    />
+                  ))}
+              </div>
+
+              {/* Limpar o mês inteiro */}
+              <div style={{ marginTop: 'var(--space-6)' }}>
+                {!confirmando ? (
+                  <button
+                    className="pf-btn-link"
+                    style={{ padding: 0, color: 'var(--muted)' }}
+                    onClick={() => setConfirmando(true)}
+                  >
+                    limpar os {itens.length} lançamentos deste mês
+                  </button>
+                ) : (
+                  <div className="pf-card-alerta">
+                    <strong>Apagar os {itens.length} lançamentos de {rotuloMes(mes)}?</strong>
+                    <p style={{ margin: 'var(--space-2) 0 var(--space-3)' }}>
+                      Some a decomposição do mês — a categorização, a renda passiva derivada e, se
+                      você tinha adotado a soma dos itens, os totais voltam a ser{' '}
+                      <strong>os 3 números do modo rápido</strong>
+                      {snap.declarado
+                        ? `: ${formatBRL(snap.declarado.receitaLiquida)} de receita e ${formatBRL(snap.declarado.gastoTotal)} de despesa.`
+                        : ' que você já tem.'}{' '}
+                      Seu patrimônio e sua data FIRE não mudam. As regras que você ensinou ao
+                      importador continuam valendo.
+                    </p>
+                    <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
+                      <button className="pf-btn pf-btn-ghost" disabled={ocupado} onClick={() => void limparTudo()}>
+                        {ocupado ? 'Apagando…' : 'Apagar tudo'}
+                      </button>
+                      <button className="pf-btn-link" disabled={ocupado} onClick={() => setConfirmando(false)}>
+                        Cancelar
                       </button>
                     </div>
-                  ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -244,6 +270,8 @@ export function Detalhar() {
     </main>
   );
 }
+
+const rotuloMes = (m: string) => formatMesAno(new Date(`${m}-01T00:00:00`));
 
 /** "Despesa  R$ 8.000 → R$ 16.247,29" — o antes e o depois, sem surpresa. */
 function Troca({ rotulo, de, para }: { rotulo: string; de: number; para: number }) {

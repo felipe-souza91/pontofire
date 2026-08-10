@@ -7,6 +7,7 @@ import {
   onSnapshot,
   query,
   serverTimestamp,
+  updateDoc,
   where,
   writeBatch,
   type Unsubscribe,
@@ -51,8 +52,34 @@ export async function removerTransacao(uid: string, id: string): Promise<void> {
   await deleteDoc(doc(db, 'transactions', uid, 'itens', id));
 }
 
+/** Edição de um lançamento já salvo. `mes` e `origem` não mudam por aqui. */
+export async function atualizarTransacao(
+  uid: string,
+  id: string,
+  patch: Partial<Pick<Transacao, 'tipo' | 'categoria' | 'valor' | 'descricao' | 'data'>>,
+): Promise<void> {
+  await updateDoc(doc(db, 'transactions', uid, 'itens', id), { ...patch });
+}
+
 /** Limite do Firestore por batch é 500; 400 deixa folga. */
 const LOTE = 400;
+
+/**
+ * Apaga todos os lançamentos de um mês. Devolve quantos foram.
+ *
+ * Existe pra desfazer uma importação inteira que saiu torta — sem isso o
+ * usuário teria que clicar ✕ 58 vezes, e na dúvida deixaria lixo no mês.
+ */
+export async function limparMes(uid: string, mes: string): Promise<number> {
+  const snap = await getDocs(query(itensRef(uid), where('mes', '==', mes)));
+  if (snap.empty) return 0;
+  for (let i = 0; i < snap.docs.length; i += LOTE) {
+    const batch = writeBatch(db);
+    for (const d of snap.docs.slice(i, i + LOTE)) batch.delete(d.ref);
+    await batch.commit();
+  }
+  return snap.docs.length;
+}
 
 /** Grava as transações aprovadas na revisão do import, em lotes. */
 export async function salvarTransacoesEmLote(

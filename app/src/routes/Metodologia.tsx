@@ -424,6 +424,12 @@ export function Metodologia() {
           quanto a data mudaria — porque data calculada com número velho é otimismo, não previsão.
         </p>
         <p className="pf-metodo-nota">
+          Adotar a soma dos lançamentos como total do mês é <strong>reversível</strong>: os 3
+          números que você digitou ficam guardados e voltam sozinhos se você apagar os lançamentos.
+          Um mês sem nenhum item vale exatamente pelo modo rápido — nunca por números derivados de
+          lançamentos que não existem mais.
+        </p>
+        <p className="pf-metodo-nota">
           Movimento entre contas ganha rótulo próprio —{' '}
           <strong>Transferência entre contas</strong> e <strong>Fatura de cartão</strong> —, em vez
           de ficar sem categoria e cair em "Outros". São categorias <em>neutras</em>: se você optar
