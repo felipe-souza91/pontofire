@@ -449,13 +449,33 @@
   cursor: pointer;
   transition: border-color 0.15s ease, background 0.15s ease;
 }
-.pf-chip:hover {
-  border-color: var(--ember);
+/*
+ * Hover NÃO pode parecer seleção.
+ *
+ * Os dois estados usavam a mesma borda ember: passar o mouse sobre um chip com
+ * outro já marcado fazia os dois parecerem marcados — e no toque o :hover gruda
+ * depois do tap, então no celular ficava marcado de vez. Reportado como "dá pra
+ * selecionar mais de um tipo de arquivo".
+ *
+ * Agora hover só clareia a borda, e `hover: hover` mantém a regra longe de
+ * quem navega por toque.
+ */
+@media (hover: hover) {
+  .pf-chip:hover {
+    border-color: var(--muted);
+    background: var(--ink-2);
+  }
 }
-.pf-chip.on {
+.pf-chip:focus-visible {
+  outline: 2px solid var(--ember);
+  outline-offset: 2px;
+}
+.pf-chip.on,
+.pf-chip.on:hover {
   background: rgba(255, 122, 69, 0.14);
   border-color: var(--ember);
   color: var(--ember-2);
+  font-weight: 600;
 }
 
 /* comparativo INSS em faixa cheia: números | narrativa lado a lado */

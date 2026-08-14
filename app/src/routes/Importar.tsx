@@ -446,6 +446,7 @@ function EtapaArquivo({
               key={d.valor}
               type="button"
               className={`pf-chip ${ctx.tipoDocumento === d.valor ? 'on' : ''}`}
+              aria-pressed={ctx.tipoDocumento === d.valor}
               onClick={() => setCtx({ ...ctx, tipoDocumento: ctx.tipoDocumento === d.valor ? undefined : d.valor })}
               title={d.dica}
             >
@@ -484,6 +485,7 @@ function EtapaArquivo({
               key={v}
               type="button"
               className={`pf-chip ${ctx.formatoData === v ? 'on' : ''}`}
+              aria-pressed={ctx.formatoData === v}
               onClick={() => setCtx({ ...ctx, formatoData: ctx.formatoData === v ? undefined : v })}
             >
               {r}

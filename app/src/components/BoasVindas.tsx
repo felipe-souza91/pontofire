@@ -78,7 +78,9 @@ export function BoasVindas({ nome, onFechar }: { nome: string; onFechar: () => v
     {
       icone: <span className="pf-bv-emoji">🏆</span>,
       eyebrow: 'pra não desistir no meio',
-      titulo: 'Marcos, sequência e o card da semana.',
+      // "Marcos" abria a frase e virava nome próprio na leitura (feedback do
+      // beta). O slide fala de conquistas — a palavra do corpo do texto.
+      titulo: 'Conquistas, sequência e o card da semana.',
       corpo: (
         <>
           São 17 conquistas ligadas a coisas reais (primeiro mês, 10% da meta, primeira renda
