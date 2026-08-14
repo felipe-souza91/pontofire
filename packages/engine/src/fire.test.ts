@@ -4,6 +4,8 @@ import {
   progresso,
   coberturaPassiva,
   taxaPoupanca,
+  taxaInvestimento,
+  residualDoMes,
   saqueMensalSustentavel,
   valorFuturo,
   mesesAteFire,
@@ -110,5 +112,41 @@ describe('idade e data na liberdade', () => {
     const base = new Date(2026, 5, 10);
     const d = dataFire(base, 0);
     expect(d.getTime()).toBe(base.getTime());
+  });
+});
+
+describe('as duas taxas e o que sobra entre elas', () => {
+  // Poupança mede o que você NÃO consumiu; investimento mede o que VIROU
+  // patrimônio. A diferença é o vazamento de quem economiza e deixa na conta.
+  it('são coisas diferentes quando sobra dinheiro parado', () => {
+    const receita = 10_000;
+    const despesa = 7_000;
+    const aporte = 1_800;
+    expect(taxaPoupanca(receita, despesa)).toBeCloseTo(0.3, 12);
+    expect(taxaInvestimento(aporte, receita)).toBeCloseTo(0.18, 12);
+    expect(residualDoMes(receita, despesa, aporte)).toBe(1_200);
+  });
+
+  it('coincidem quando tudo que sobrou foi investido', () => {
+    const receita = 10_000;
+    const despesa = 7_000;
+    expect(taxaInvestimento(3_000, receita)).toBeCloseTo(taxaPoupanca(receita, despesa), 12);
+    expect(residualDoMes(receita, despesa, 3_000)).toBe(0);
+  });
+
+  it('aporte maior que a sobra dá residual negativo — veio de saldo antigo', () => {
+    // mês do PPR investido junto com dinheiro que já estava na conta
+    expect(residualDoMes(10_000, 9_000, 5_000)).toBe(-4_000);
+  });
+
+  it('receita zero não vira divisão por zero', () => {
+    expect(taxaInvestimento(500, 0)).toBe(0);
+    expect(taxaPoupanca(0, 500)).toBe(0);
+  });
+
+  it('mês no vermelho: taxa de poupança negativa, investimento pode ser positiva', () => {
+    // gastou mais do que ganhou E ainda aportou — as duas verdades convivem
+    expect(taxaPoupanca(5_000, 6_000)).toBeCloseTo(-0.2, 12);
+    expect(taxaInvestimento(500, 5_000)).toBeCloseTo(0.1, 12);
   });
 });

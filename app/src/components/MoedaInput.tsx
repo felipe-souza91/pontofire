@@ -21,6 +21,7 @@ export function MoedaInput({
   autoFocus,
   ariaLabel,
   onTocar,
+  tocado,
 }: {
   value: number;
   onChange: (v: number) => void;
@@ -28,6 +29,14 @@ export function MoedaInput({
   ariaLabel?: string;
   /** avisa que o usuário mexeu neste campo (mesmo que pra digitar zero) */
   onTocar?: () => void;
+  /**
+   * Campo já respondido — mostra "0,00" como VALOR quando o total é zero.
+   *
+   * Sem isso, digitar 0 não muda nada na tela (zero à esquerda é normalizado
+   * pra vazio) e o usuário não sabe se a resposta entrou. Num formulário onde
+   * zero é resposta obrigatória e válida, "não aconteceu nada" é inaceitável.
+   */
+  tocado?: boolean;
 }) {
   const [digitos, setDigitos] = useState(() => valorParaDigitos(value));
   const digitando = useRef(false);
@@ -79,7 +88,7 @@ export function MoedaInput({
         inputMode="numeric"
         aria-label={ariaLabel}
         autoFocus={autoFocus}
-        value={formatarDigitos(digitos)}
+        value={formatarDigitos(digitos) || (tocado ? '0,00' : '')}
         placeholder="0,00"
         onKeyDown={teclado}
         // teclado virtual e colar não passam por onKeyDown: aqui o que vale é

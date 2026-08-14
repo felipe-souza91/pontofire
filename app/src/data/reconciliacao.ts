@@ -3,37 +3,42 @@ import type { Transacao } from './transactions';
 import type { Snapshot } from './snapshots';
 
 /**
- * O trio do modo rápido.
+ * Os números que o usuário declarou no modo rápido.
  *
- * Guardado à parte quando os totais do mês passam a vir dos itens, pra que
+ * Guardados à parte quando os totais do mês passam a vir dos itens, pra que
  * adotar a soma dos lançamentos seja REVERSÍVEL. Sem isso, apagar os itens
  * depois deixaria o mês preso a números derivados de lançamentos que não
  * existem mais — o pior dos dois mundos.
  */
-export interface TrioDeclarado {
+export interface TotaisDeclarados {
   receitaLiquida: number;
   gastoTotal: number;
   aportesMes: number;
   taxaPoupanca: number;
+  /** viaja junto pra que voltar ao declarado não transforme fato em inferência */
+  aporteObservado?: boolean;
 }
 
-export const trioDe = (s: Snapshot): TrioDeclarado => ({
+export const totaisDe = (s: Snapshot): TotaisDeclarados => ({
   receitaLiquida: s.receitaLiquida,
   gastoTotal: s.gastoTotal,
   aportesMes: s.aportesMes,
   taxaPoupanca: s.taxaPoupanca,
+  // `?? false` e não `undefined`: voltar ao declarado tem que devolver também a
+  // procedência do aporte, senão inferência antiga volta como se fosse fato
+  aporteObservado: s.aporteObservado ?? false,
 });
 
 /**
- * Qual trio guardar como caminho de volta ao adotar a soma dos itens.
+ * quais totais guardar como caminho de volta ao adotar a soma dos itens.
  *
  * Só a PRIMEIRA adoção grava. Adotar, mexer nos itens e adotar de novo tem que
  * continuar apontando pro número que o usuário digitou — se cada adoção
  * regravasse, a segunda arquivaria a primeira derivada e o modo rápido dele se
  * perderia sem aviso.
  */
-export function trioAPreservar(snap: Snapshot): TrioDeclarado {
-  return snap.declarado ?? trioDe(snap);
+export function totaisAPreservar(snap: Snapshot): TotaisDeclarados {
+  return snap.declarado ?? totaisDe(snap);
 }
 
 /**
@@ -64,7 +69,7 @@ export function somarItens(itens: readonly Transacao[]): SomaItens {
 }
 
 /**
- * O mês como os lançamentos o descrevem — a alternativa ao trio declarado.
+ * O mês como os lançamentos o descrevem — a alternativa aos totais declarados.
  *
  * O APORTE É OBSERVADO, NÃO DERIVADO.
  *
@@ -78,7 +83,7 @@ export function somarItens(itens: readonly Transacao[]): SomaItens {
  * Isso importa além da tela: `rendimentoMes = P − P_anterior − aportesMes`. Com
  * o aporte errado, todo o rendimento por marcação a mercado sai errado junto.
  */
-export function totaisDosItens(soma: SomaItens): TrioDeclarado {
+export function totaisDosItens(soma: SomaItens): TotaisDeclarados {
   const receitaLiquida = soma.ativa + soma.passiva;
   const gastoTotal = soma.saida;
   return {
@@ -86,6 +91,9 @@ export function totaisDosItens(soma: SomaItens): TrioDeclarado {
     gastoTotal,
     aportesMes: soma.aporte > 0 ? soma.aporte : receitaLiquida - gastoTotal,
     taxaPoupanca: taxaPoupanca(receitaLiquida, gastoTotal),
+    // lançamento a lançamento é observação, não estimativa — mesmo quando cai
+    // no proxy, foi o usuário quem aprovou os itens que o formaram
+    aporteObservado: true,
   };
 }
 
@@ -105,7 +113,7 @@ export function residualDosItens(soma: SomaItens): number {
  * Adotar a soma dos itens só faz sentido com itens na tela.
  *
  * Sem esta guarda, um clique com a lista vazia (ou ainda carregando) grava um
- * mês de zeros e arquiva o trio digitado como "caminho de volta" — o usuário
+ * mês de zeros e arquiva o números digitados como "caminho de volta" — o usuário
  * perde os 3 números e ganha um mês que não existiu.
  */
 export function podeAdotarItens(quantidadeDeItens: number, carregando: boolean): boolean {
@@ -115,7 +123,7 @@ export function podeAdotarItens(quantidadeDeItens: number, carregando: boolean):
 /** Centavo de diferença é arredondamento, não divergência. */
 const TOLERANCIA = 1;
 
-export function divergiu(snap: Snapshot, totais: TrioDeclarado): boolean {
+export function divergiu(snap: Snapshot, totais: TotaisDeclarados): boolean {
   return (
     Math.abs(totais.receitaLiquida - snap.receitaLiquida) > TOLERANCIA ||
     Math.abs(totais.gastoTotal - snap.gastoTotal) > TOLERANCIA

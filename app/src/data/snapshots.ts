@@ -11,9 +11,9 @@ import {
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 // a aritmética pura mora em reconciliacao.ts (sem Firestore, testável direto)
-import { trioAPreservar, type TrioDeclarado } from './reconciliacao';
+import { totaisAPreservar, type TotaisDeclarados } from './reconciliacao';
 
-export type { TrioDeclarado };
+export type { TotaisDeclarados };
 
 /** snapshots/{uid}/meses/{YYYY-MM} — fonte da verdade mensal (§5). */
 export interface Snapshot {
@@ -21,12 +21,39 @@ export interface Snapshot {
   patrimonioTotal: number;
   receitaLiquida: number;
   gastoTotal: number;
-  aportesMes: number; // derivado: receita − gasto (sobra investida)
+  /**
+   * Quanto entrou na carteira. DIGITADO pelo usuário (ou somado dos itens).
+   *
+   * Era `receita − gasto`, o que assumia que tudo que sobrou foi investido. No
+   * mês do PPR isso registrava aporte que não aconteceu, e como
+   * `rendimentoMes = P − P_anterior − aporte`, o app acusava rendimento
+   * negativo justo no mês em que a pessoa ganhou dinheiro.
+   */
+  aportesMes: number;
+  /**
+   * false/ausente = veio da subtração antiga, não da mão do usuário.
+   *
+   * A média móvel do aporte (Fase 3) ignora estes meses: usá-los seria tratar
+   * inferência como fato. `gastoTotal` não precisa de flag — sempre foi entrada
+   * real.
+   */
+  aporteObservado?: boolean;
   rendimentosMes: number; // derivado por marcação a mercado
   taxaPoupanca: number; // derivado: (receita − gasto)/receita
+  /** derivado: aporte/receita — quanto da renda virou patrimônio */
+  taxaInvestimento?: number;
+  /** o que o usuário quis lembrar deste mês ("carro quebrou", "entrou PPR") */
+  observacao?: string;
+  /**
+   * Mês fora do padrão — sai das medianas de custo e aporte.
+   *
+   * É o usuário curando o próprio histórico: a viagem do ano não pode virar
+   * rotina, nem o PPR inflar o aporte médio.
+   */
+  atipico?: boolean;
   rendaPassiva?: number; // soma das transações do tipo passiva (modo detalhado) → R
   /** presente só enquanto os totais vêm dos itens; é o caminho de volta */
-  declarado?: TrioDeclarado;
+  declarado?: TotaisDeclarados;
   /**
    * A data FIRE como estava quando ESTE mês foi lançado. null = inalcançável.
    *
@@ -60,7 +87,7 @@ export async function atualizarSnapshot(uid: string, mes: string, patch: Partial
 }
 
 /**
- * Passa a usar o que os itens somam, preservando o trio do modo rápido.
+ * Passa a usar o que os itens somam, preservando os totais do modo rápido.
  *
  * `declarado` só é gravado na PRIMEIRA vez: se o usuário adotar os itens, mexer
  * neles e adotar de novo, o caminho de volta continua sendo o número que ele
@@ -69,13 +96,13 @@ export async function atualizarSnapshot(uid: string, mes: string, patch: Partial
 export async function adotarTotaisDosItens(
   uid: string,
   snap: Snapshot,
-  novo: TrioDeclarado,
+  novo: TotaisDeclarados,
 ): Promise<void> {
-  await atualizarSnapshot(uid, snap.mes, { ...novo, declarado: trioAPreservar(snap) });
+  await atualizarSnapshot(uid, snap.mes, { ...novo, declarado: totaisAPreservar(snap) });
 }
 
-/** Volta ao trio do modo rápido e esquece o desvio. */
-export async function voltarAoDeclarado(uid: string, mes: string, declarado: TrioDeclarado): Promise<void> {
+/** Volta aos totais do modo rápido e esquece o desvio. */
+export async function voltarAoDeclarado(uid: string, mes: string, declarado: TotaisDeclarados): Promise<void> {
   await setDoc(
     doc(db, 'snapshots', uid, 'meses', mes),
     { ...declarado, rendaPassiva: 0, declarado: deleteField(), atualizadoEm: serverTimestamp() },

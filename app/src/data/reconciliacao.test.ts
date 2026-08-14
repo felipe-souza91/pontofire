@@ -7,8 +7,8 @@ import {
   residualDosItens,
   somarItens,
   totaisDosItens,
-  trioAPreservar,
-  trioDe,
+  totaisAPreservar,
+  totaisDe,
 } from './reconciliacao';
 import type { Snapshot } from './snapshots';
 import type { Transacao } from './transactions';
@@ -90,23 +90,24 @@ describe('totais que os itens descrevem', () => {
 describe('divergência', () => {
   it('centavo de diferença não é divergência', () => {
     const snap = snapshot();
-    expect(divergiu(snap, { ...trioDe(snap), gastoTotal: 8_000.5 })).toBe(false);
+    expect(divergiu(snap, { ...totaisDe(snap), gastoTotal: 8_000.5 })).toBe(false);
   });
 
   it('acusa quando os itens contam outra história', () => {
     const snap = snapshot();
-    expect(divergiu(snap, { ...trioDe(snap), gastoTotal: 16_247.29 })).toBe(true);
+    expect(divergiu(snap, { ...totaisDe(snap), gastoTotal: 16_247.29 })).toBe(true);
   });
 });
 
 describe('reversibilidade — os 3 números voltam', () => {
-  it('a primeira adoção guarda o trio digitado', () => {
+  it('a primeira adoção guarda o números digitados', () => {
     const snap = snapshot();
-    expect(trioAPreservar(snap)).toEqual({
+    expect(totaisAPreservar(snap)).toEqual({
       receitaLiquida: 10_500,
       gastoTotal: 8_000,
       aportesMes: 2_500,
       taxaPoupanca: 2_500 / 10_500,
+      aporteObservado: false,
     });
   });
 
@@ -116,23 +117,23 @@ describe('reversibilidade — os 3 números voltam', () => {
     // dele se perderia sem nenhum aviso na tela.
     const declarado = { receitaLiquida: 10_500, gastoTotal: 8_000, aportesMes: 2_500, taxaPoupanca: 0.238 };
     const jaAdotado = snapshot({ receitaLiquida: 22_811, gastoTotal: 16_247, declarado });
-    expect(trioAPreservar(jaAdotado)).toEqual(declarado);
+    expect(totaisAPreservar(jaAdotado)).toEqual(declarado);
   });
 
-  it('mês vazio com trio guardado volta ao declarado', () => {
-    const snap = snapshot({ declarado: trioDe(snapshot()) });
+  it('mês vazio com totais guardados volta ao declarado', () => {
+    const snap = snapshot({ declarado: totaisDe(snapshot()) });
     expect(deveVoltarAoDeclarado(snap, 0, false)).toBe(true);
   });
 
   it('NÃO volta enquanto a lista está carregando', () => {
     // A lista nasce vazia antes do primeiro snapshot do Firestore chegar;
     // restaurar ali desfaria o ajuste de quem só abriu a tela.
-    const snap = snapshot({ declarado: trioDe(snapshot()) });
+    const snap = snapshot({ declarado: totaisDe(snapshot()) });
     expect(deveVoltarAoDeclarado(snap, 0, true)).toBe(false);
   });
 
   it('não volta enquanto ainda houver lançamento', () => {
-    const snap = snapshot({ declarado: trioDe(snapshot()) });
+    const snap = snapshot({ declarado: totaisDe(snapshot()) });
     expect(deveVoltarAoDeclarado(snap, 1, false)).toBe(false);
   });
 
@@ -182,7 +183,7 @@ describe('aporte observado × derivado', () => {
 });
 
 describe('guarda contra adotar um mês vazio', () => {
-  it('não adota sem lançamento — gravaria zeros e arquivaria o trio digitado', () => {
+  it('não adota sem lançamento — gravaria zeros e arquivaria o números digitados', () => {
     expect(podeAdotarItens(0, false)).toBe(false);
   });
 
@@ -192,5 +193,23 @@ describe('guarda contra adotar um mês vazio', () => {
 
   it('adota com lançamentos na tela', () => {
     expect(podeAdotarItens(48, false)).toBe(true);
+  });
+});
+
+describe('procedência do aporte', () => {
+  it('totais vindos dos itens são observação', () => {
+    const t = totaisDosItens(somarItens([item('aporte', 'Ações', 1_000)]));
+    expect(t.aporteObservado).toBe(true);
+  });
+
+  it('mês legado (aporte derivado) volta marcado como não observado', () => {
+    // sem isto, restaurar os totais devolveria a subtração antiga como se fosse
+    // valor digitado — e a mediana da Fase 3 usaria inferência como fato
+    expect(totaisDe(snapshot()).aporteObservado).toBe(false);
+  });
+
+  it('mês novo preserva a procedência ao ir e voltar', () => {
+    const novo = snapshot({ aporteObservado: true });
+    expect(totaisAPreservar(novo).aporteObservado).toBe(true);
   });
 });

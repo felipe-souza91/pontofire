@@ -42,10 +42,11 @@ export function BoasVindas({ nome, onFechar }: { nome: string; onFechar: () => v
       titulo: 'Lançar leva 30 segundos.',
       corpo: (
         <>
-          São <b>três números</b>: quanto você tem investido hoje, quanto entrou e quanto saiu. O
-          resto o motor deriva sozinho — aporte, rendimento e taxa de poupança. Se quiser detalhar
-          por categoria, dá. E se não quiser digitar nada, <b>importa o extrato ou a fatura</b>: eu
-          leio o arquivo, classifico o que reconheço e te mostro tudo pra aprovar antes de salvar.
+          São <b>quatro números</b>: quanto você tem investido hoje, quanto entrou, quanto saiu e
+          quanto virou investimento. O resto o motor deriva — rendimento e as duas taxas. Se quiser
+          detalhar por categoria, dá. E se não quiser digitar nada, <b>importa o extrato ou a
+          fatura</b>: eu leio o arquivo, classifico o que reconheço e te mostro tudo pra aprovar
+          antes de salvar.
         </>
       ),
     },
@@ -113,7 +114,7 @@ export function BoasVindas({ nome, onFechar }: { nome: string; onFechar: () => v
               <Opcao
                 emoji="✍️"
                 titulo="Lançar o mês na mão"
-                sub="três números, meio minuto"
+                sub="quatro números, meio minuto"
                 onClick={() => { onFechar(); navigate('/lancar'); }}
               />
               <Opcao

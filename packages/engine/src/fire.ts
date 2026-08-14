@@ -29,10 +29,35 @@ export function coberturaPassiva(R: number, C: number): number {
   return R / C;
 }
 
-/** Taxa de poupança: (receita − despesa) / receita. */
+/** Taxa de poupança (§6): (receita − despesa) / receita. Quanto você NÃO consumiu. */
 export function taxaPoupanca(receita: number, despesa: number): number {
   if (!(receita > 0)) return 0;
   return (receita - despesa) / receita;
+}
+
+/**
+ * Taxa de investimento: aporte / receita. Quanto de fato VIROU PATRIMÔNIO.
+ *
+ * Não é a mesma coisa que a taxa de poupança, e a diferença entre as duas é o
+ * assunto: dá pra economizar de verdade e o dinheiro nunca chegar na carteira.
+ */
+export function taxaInvestimento(aporte: number, receita: number): number {
+  if (!(receita > 0)) return 0;
+  return aporte / receita;
+}
+
+/**
+ * O que o mês NÃO explica: receita − despesa − aporte.
+ *
+ * Negativo = saiu mais do que entrou (faltou registrar uma receita, ou o aporte
+ * veio de saldo que já existia). Positivo = sobrou dinheiro que não virou
+ * patrimônio — o vazamento silencioso de quem economiza e deixa na conta.
+ *
+ * É INFORMAÇÃO, não erro, e não entra em cálculo nenhum: o motor usa o aporte
+ * observado. Some sozinho quando o mês fecha.
+ */
+export function residualDoMes(receita: number, despesa: number, aporte: number): number {
+  return receita - despesa - aporte;
 }
 
 /** Saque mensal sustentável ao atingir a meta: M × TSS / 12. */

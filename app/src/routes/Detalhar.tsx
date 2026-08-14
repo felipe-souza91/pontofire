@@ -67,7 +67,7 @@ export function Detalhar() {
     try {
       await limparMes(user.uid, mes);
       setConfirmando(false);
-      // o trio volta sozinho pelo efeito abaixo, assim que a lista esvaziar
+      // os totais voltam sozinhos pelo efeito abaixo, assim que a lista esvaziar
     } finally {
       setOcupado(false);
     }
@@ -82,7 +82,7 @@ export function Detalhar() {
   }, [user, snap, mes, soma.passiva, carregando]);
 
   /**
-   * Mês sem lançamento nenhum volta a valer pelos 3 números do modo rápido.
+   * Mês sem lançamento nenhum volta a valer pelos 4 números do modo rápido.
    *
    * Se o usuário adotou a soma dos itens e depois apagou os itens, manter os
    * totais derivados seria o pior dos dois mundos: números calculados a partir
@@ -145,7 +145,7 @@ export function Detalhar() {
           <div className="pf-hero-card">
             {snap.declarado && (
               <p className="pf-hint" style={{ margin: '0 0 var(--space-3)' }}>
-                Você adotou a soma dos lançamentos neste mês. Seus 3 números originais estão
+                Você adotou a soma dos lançamentos neste mês. Seus 4 números originais estão
                 guardados ({formatBRL(snap.declarado.receitaLiquida)} de receita ·{' '}
                 {formatBRL(snap.declarado.gastoTotal)} de despesa) e voltam sozinhos se você apagar
                 os lançamentos.
@@ -204,7 +204,7 @@ export function Detalhar() {
               <p className="pf-hint" style={{ marginTop: 'var(--space-2)' }}>
                 Confira antes: se faltou importar um extrato, ou se sobrou transferência marcada como
                 receita, o número dos itens fica pior que o seu. Guardo o que você digitou — apagar
-                os lançamentos devolve os 3 números originais.
+                os lançamentos devolve os 4 números originais.
               </p>
             </div>
           )}
@@ -266,7 +266,7 @@ export function Detalhar() {
                     <p style={{ margin: 'var(--space-2) 0 var(--space-3)' }}>
                       Some a decomposição do mês — a categorização, a renda passiva derivada e, se
                       você tinha adotado a soma dos itens, os totais voltam a ser{' '}
-                      <strong>os 3 números do modo rápido</strong>
+                      <strong>os 4 números do modo rápido</strong>
                       {snap.declarado
                         ? `: ${formatBRL(snap.declarado.receitaLiquida)} de receita e ${formatBRL(snap.declarado.gastoTotal)} de despesa.`
                         : ' que você já tem.'}{' '}
