@@ -5,6 +5,7 @@
 
 export * from './categorias';
 export * from './partida';
+export * from './vigente';
 export * from './rates';
 export * from './fire';
 export * from './patrimonio';

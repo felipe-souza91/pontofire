@@ -3,7 +3,6 @@ import {
   impactoAporteExtra,
   jaEhCoastFire,
   mesesAteFire,
-  metaComCusto,
 } from '@pontofire/engine';
 import { hl, type Insight, type Regra } from './tipos';
 
@@ -140,77 +139,42 @@ export const rendimentoDoMes: Regra = (ctx, fmt) => {
 };
 
 /** Quantos meses de histórico bastam pra afirmar que o perfil está defasado. */
-const MESES_PRA_COMPARAR = 3;
 /** Abaixo disso é variação normal de mês, não descolamento. */
 const DESVIO_RELEVANTE = 0.15;
 
-const mediana = (l: readonly number[]): number => {
-  const o = [...l].sort((a, b) => a - b);
-  const m = Math.floor(o.length / 2);
-  return o.length % 2 ? o[m]! : (o[m - 1]! + o[m]!) / 2;
-};
-
 /**
- * O custo do perfil descolou do que ele vem lançando.
+ * O número do perfil ficou velho.
  *
- * É o insight mais importante do catálogo e o mais fácil de não existir: a data
- * FIRE sai de `custoVidaMensal`, que foi digitado uma vez no onboarding e nunca
- * mais. Quem lança mês a mês assume que os lançamentos alimentam a conta — e
- * não alimentam. Se a mediana real está 40% acima do perfil, a data na tela é
- * otimista e ninguém avisou.
+ * ANTES DA FASE 3 esta regra dizia outra coisa: que a data era calculada com o
+ * custo do perfil enquanto os meses lançados diziam outro número. Isso deixou
+ * de ser verdade — o motor já usa a mediana dos lançamentos. Manter o texto
+ * antigo seria mentir com precisão.
  *
- * Mediana, não média: um mês com a viagem do ano não pode reescrever a rotina.
+ * O que sobrou de útil é menor, mas real: o custo declarado ainda é o fallback
+ * de quem tem menos de 3 meses lançados, e ainda aparece no Perfil. Deixá-lo
+ * defasado faz o usuário ver dois números diferentes pra mesma coisa.
  */
 export const custoDoPerfilDefasado: Regra = (ctx, fmt) => {
-  const meses = ctx.snapshots.slice(-MESES_PRA_COMPARAR).filter((s) => s.gastoTotal > 0);
-  if (meses.length < MESES_PRA_COMPARAR) return null;
+  const declarado = ctx.custoDeclarado;
+  const vigente = ctx.custoVidaMensal;
+  if (!declarado || !(declarado > 0) || !(vigente > 0)) return null;
 
-  const C = ctx.custoVidaMensal;
-  if (!(C > 0)) return null;
-
-  const real = mediana(meses.map((s) => s.gastoTotal));
-  const desvio = (real - C) / C;
+  const desvio = (vigente - declarado) / declarado;
   if (Math.abs(desvio) < DESVIO_RELEVANTE) return null;
 
-  const maisCaro = desvio > 0;
-  const partes = [
-    'Sua data é calculada com ',
-    hl(fmt.moeda(C)),
-    '/mês de custo — foi o que você informou no perfil. Mas a mediana dos seus últimos ',
-    `${meses.length} meses lançados é `,
-    hl(fmt.moeda(real)),
-    maisCaro ? ', bem acima.' : ', bem abaixo.',
-  ];
-
-  // O que aconteceria com a data se o número real virasse o oficial.
-  //
-  // As DUAS pontas saem do motor, com as mesmas entradas. Comparar contra o
-  // `ctx.mesesAteFire` que veio pronto parece equivalente e não é: basta o
-  // chamador ter calculado aquele número com outra premissa pra o delta sair
-  // com o sinal trocado — custo menor "adiando" a data.
-  const metaReal = metaComCusto(ctx.metaFire, C, real);
-  const base = mesesAteFire(ctx.patrimonioAtual, ctx.aporteMensal, ctx.iMensal, ctx.metaFire);
-  const r = mesesAteFire(ctx.patrimonioAtual, ctx.aporteMensal, ctx.iMensal, metaReal);
-  if (r.status === 'ok' && base.status === 'ok') {
-    const delta = r.meses - base.meses;
-    if (Math.abs(delta) >= 1) {
-      partes.push(
-        ' Com o número real, sua data ',
-        delta > 0 ? 'andaria ' : 'voltaria ',
-        hl(fmt.duracao(Math.abs(delta))),
-        delta > 0 ? ' pra frente.' : ' pra trás.',
-      );
-    }
-  } else if (r.status === 'inalcancavel') {
-    partes.push(' Com o número real, a meta não fecha com o aporte de hoje.');
-  }
-
-  partes.push(' Vale atualizar o perfil — ou conferir se sobrou transferência marcada como gasto.');
   return {
     id: 'custo-perfil-defasado',
-    tom: maisCaro ? 'atencao' : 'fato',
-    prioridade: 93,
-    partes,
+    tom: 'fato',
+    prioridade: 70,
+    partes: [
+      'Sua data já usa ',
+      hl(fmt.moeda(vigente)),
+      '/mês — a mediana do que você vem lançando. No seu perfil ainda está ',
+      hl(fmt.moeda(declarado)),
+      desvio > 0 ? ', bem abaixo do real.' : ', bem acima do real.',
+      ' O motor não se importa, mas vale atualizar pra você não ver dois números ',
+      'diferentes pra mesma coisa.',
+    ],
   };
 };
 

@@ -1,5 +1,11 @@
 import { useMemo } from 'react';
-import { calcularPlanoFire, metaVigente, resumoPatrimonio, type PlanoFire } from '@pontofire/engine';
+import {
+  calcularPlanoFire,
+  estadoVigente,
+  resumoPatrimonio,
+  type EstadoVigente,
+  type PlanoFire,
+} from '@pontofire/engine';
 import type { ContextoInsights } from '@pontofire/insights';
 import { useUserDoc } from './useUserDoc';
 import { useSnapshots } from './useSnapshots';
@@ -25,6 +31,8 @@ export interface Painel {
   doc: UserDoc | null;
   plano: PlanoFire | null;
   ctx: ContextoInsights | null;
+  /** custo, aporte e meta que valem hoje (mediana dos meses lançados) */
+  vigente: EstadoVigente | null;
   /** base do FIRE (investido + bens marcados) */
   P: number;
   /** renda passiva mensal (detalhado + aluguéis) */
@@ -51,33 +59,47 @@ export function usePainel(uid: string | null): Painel {
   const netWorth = pBase + resumoBens.patrimonioLiquidoTotal;
   const R = (ultimo?.rendaPassiva ?? 0) + resumoBens.rendaPassivaBens;
 
+  /**
+   * Custo, aporte e meta que valem hoje — tirados dos meses lançados.
+   *
+   * Fonte ÚNICA: duas telas resolvendo isso por conta própria dariam duas datas
+   * diferentes pro mesmo usuário, e a data é a promessa do produto.
+   */
+  const vigente = useMemo(
+    () => (doc ? estadoVigente(doc, snapshots) : null),
+    [doc, snapshots],
+  );
+
   const plano = useMemo(() => {
-    if (!doc) return null;
+    if (!doc || !vigente) return null;
     return calcularPlanoFire({
       patrimonioInvestivel: P,
-      aporteMensal: doc.aporteMensal,
-      custoVidaMensal: doc.custoVidaMensal,
+      aporteMensal: vigente.aporte.valor,
+      custoVidaMensal: vigente.custo.valor,
       retornoRealAnual: doc.retornoRealEsperado,
-      metaFire: metaVigente(doc),
+      metaFire: vigente.meta,
       tss: doc.taxaSaqueSegura,
       idadeAtual: idadeDe(doc.dataNascimento),
       hoje: new Date(),
     });
-  }, [doc, P]);
+  }, [doc, vigente, P]);
 
   const ctx = useMemo<ContextoInsights | null>(() => {
-    if (!doc || !plano) return null;
+    if (!doc || !plano || !vigente) return null;
+    const C = vigente.custo.valor;
     return {
       apelido: doc.apelido || doc.nome?.split(' ')[0],
       nomeSonho: doc.nomeSonho,
       porQues: doc.porQues,
-      custoVidaMensal: doc.custoVidaMensal,
-      metaFire: metaVigente(doc),
-      aporteMensal: doc.aporteMensal,
+      custoVidaMensal: C,
+      // o que ele digitou no onboarding — vira fallback e ponto de comparação
+      custoDeclarado: doc.custoVidaMensal,
+      metaFire: vigente.meta,
+      aporteMensal: vigente.aporte.valor,
       iMensal: plano.iMensal,
       patrimonioAtual: P,
       progresso: plano.progresso,
-      coberturaPassiva: doc.custoVidaMensal > 0 ? R / doc.custoVidaMensal : 0,
+      coberturaPassiva: C > 0 ? R / C : 0,
       mesesAteFire: plano.meses,
       statusFire: plano.status,
       idadeAlvo: doc.idadeAlvo,
@@ -85,7 +107,7 @@ export function usePainel(uid: string | null): Painel {
       snapshots,
       transacoesMes,
     };
-  }, [doc, plano, P, R, snapshots, transacoesMes]);
+  }, [doc, plano, vigente, P, R, snapshots, transacoesMes]);
 
-  return { carregando, doc, plano, ctx, P, R, netWorth, snapshots, ultimo, bens };
+  return { carregando, doc, plano, ctx, vigente, P, R, netWorth, snapshots, ultimo, bens };
 }

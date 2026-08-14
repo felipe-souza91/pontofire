@@ -1,6 +1,11 @@
 import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { coberturaPassiva, metaVigente, valorFuturo } from '@pontofire/engine';
+import {
+  coberturaPassiva,
+  proporcaoAtipica,
+  valorFuturo,
+  type EstadoVigente,
+} from '@pontofire/engine';
 import { useAuth } from '../auth/useAuth';
 import { usePainel, idadeDe } from '../hooks/usePainel';
 import { useConquistas } from '../hooks/useConquistas';
@@ -26,7 +31,7 @@ function mesCurto(m: string): string {
 
 export function Dashboard() {
   const { user, sair } = useAuth();
-  const { doc, plano, ctx, P, R, netWorth, snapshots: lista, ultimo, bens, carregando } = usePainel(
+  const { doc, plano, ctx, vigente, P, R, netWorth, snapshots: lista, ultimo, bens, carregando } = usePainel(
     user?.uid ?? null,
   );
   const atingidas = ctx ? conquistasAtingidas(ctx) : [];
@@ -38,7 +43,7 @@ export function Dashboard() {
   if (carregando) return <Centro>Carregando…</Centro>;
   if (!doc || !plano || !ctx) return <Centro>Sem dados ainda.</Centro>;
 
-  const meta = metaVigente(doc);
+  const meta = vigente?.meta ?? 0;
   const saudacao = doc.apelido || doc.nome?.split(' ')[0] || 'você';
   const progressoPct = Math.min(100, Math.max(0, plano.progresso * 100));
 
@@ -72,9 +77,9 @@ export function Dashboard() {
     stats.push({ rot: 'Taxa de poupança', val: formatPct(ultimo.taxaPoupanca), tom: 'mint' });
   }
   if (R > 0) {
-    stats.push({ rot: 'Cobertura passiva', val: formatPct(coberturaPassiva(R, doc.custoVidaMensal)), tom: 'mint' });
+    stats.push({ rot: 'Cobertura passiva', val: formatPct(coberturaPassiva(R, vigente?.custo.valor ?? 0)), tom: 'mint' });
   }
-  stats.push({ rot: 'Aporte mensal', val: `${formatBRLcompact(doc.aporteMensal)}/mês` });
+  stats.push({ rot: 'Aporte mensal', val: `${formatBRLcompact(vigente?.aporte.valor ?? 0)}/mês` });
   stats.push({ rot: 'Retorno real a.a.', val: formatPct(doc.retornoRealEsperado), tom: 'ember' });
 
   const mostraTour = doc.tourVisto === false && !tourFechado;
@@ -137,6 +142,8 @@ export function Dashboard() {
           </p>
         )}
 
+        {vigente && <Vigencia vigente={vigente} snapshots={lista} />}
+
         <div className="pf-bar">
           <i style={{ width: `${progressoPct}%` }} />
         </div>
@@ -166,7 +173,7 @@ export function Dashboard() {
                 de hoje até a meta, no seu ritmo
               </p>
               <GraficoLinha
-                pontos={pontosProjecao(P, doc.aporteMensal, plano.iMensal, plano.meses!)}
+                pontos={pontosProjecao(P, vigente?.aporte.valor ?? 0, plano.iMensal, plano.meses!)}
                 cor="#FF7A45"
                 meta={meta}
                 rotuloMeta={`meta ${formatBRLcompact(meta)}`}
@@ -216,8 +223,8 @@ export function Dashboard() {
       </div>
 
       <div style={{ marginTop: 'var(--space-4)', display: 'grid', gap: 'var(--space-4)' }}>
-        <CardMetaIdade doc={doc} plano={plano} P={P} />
-        <CardINSS doc={doc} plano={plano} />
+        {vigente && <CardMetaIdade doc={doc} plano={plano} P={P} vigente={vigente} />}
+        <CardINSS doc={doc} plano={plano} meta={meta} />
       </div>
 
       <div style={{ textAlign: 'center', marginTop: 'var(--space-8)' }}>
@@ -279,5 +286,45 @@ function Centro({ children }: { children: ReactNode }) {
     <main style={{ minHeight: '100dvh', display: 'grid', placeItems: 'center', color: 'var(--muted)' }}>
       {children}
     </main>
+  );
+}
+
+/**
+ * De onde vieram os números que geraram a data.
+ *
+ * A data agora se mexe conforme o usuário lança, e movimento sem explicação é
+ * ansiedade. Estes dois avisos cobrem os momentos em que ela se comporta de um
+ * jeito que parece defeito: quando ainda NÃO responde (histórico curto) e
+ * quando parou de responder (o usuário marcou quase tudo como atípico).
+ */
+function Vigencia({ vigente, snapshots }: { vigente: EstadoVigente; snapshots: Snapshot[] }) {
+  const { atipicos, total } = proporcaoAtipica(snapshots);
+  const faltam = Math.max(vigente.custo.faltam, vigente.aporte.faltam);
+
+  if (total >= 3 && atipicos > total / 2) {
+    return (
+      <p className="pf-hint" style={{ marginTop: '-6px', marginBottom: '18px' }}>
+        Você marcou {atipicos} dos últimos {total} meses como atípicos, então eles ficam de fora da
+        sua média — talvez o atípico já seja o normal.
+      </p>
+    );
+  }
+
+  if (faltam > 0) {
+    return (
+      <p className="pf-hint" style={{ marginTop: '-6px', marginBottom: '18px' }}>
+        Esta data ainda usa os números do seu perfil.{' '}
+        {faltam === 1 ? 'Falta 1 mês lançado' : `Faltam ${faltam} meses lançados`} pra ela passar a
+        responder ao que você vive de verdade.
+      </p>
+    );
+  }
+
+  return (
+    <p className="pf-hint" style={{ marginTop: '-6px', marginBottom: '18px' }}>
+      Calculada com {formatBRLcompact(vigente.custo.valor)}/mês de custo e{' '}
+      {formatBRLcompact(vigente.aporte.valor)}/mês de aporte — a mediana dos seus últimos{' '}
+      {vigente.custo.mesesUsados} meses.
+    </p>
   );
 }

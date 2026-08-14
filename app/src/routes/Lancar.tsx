@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   calcularPlanoFire,
-  metaVigente,
+  estadoVigente,
   rendimentoMes,
   residualDoMes,
   taxaInvestimento,
@@ -104,16 +104,18 @@ export function Lancar() {
    */
   const mesesAteFireAgora = useMemo(() => {
     if (!doc) return null;
+    // mesma fonte que o painel: duas contas daria duas datas pro mesmo usuário
+    const v = estadoVigente(doc, lista);
     return calcularPlanoFire({
       patrimonioInvestivel: patrimonio,
-      aporteMensal: doc.aporteMensal,
-      custoVidaMensal: doc.custoVidaMensal,
+      aporteMensal: v.aporte.valor,
+      custoVidaMensal: v.custo.valor,
       retornoRealAnual: doc.retornoRealEsperado,
-      metaFire: metaVigente(doc),
+      metaFire: v.meta,
       tss: doc.taxaSaqueSegura,
       hoje: new Date(),
     }).meses;
-  }, [doc, patrimonio]);
+  }, [doc, lista, patrimonio]);
 
   const faltando = CAMPOS.filter((c) => !tocados[c]);
   const valido = faltando.length === 0;

@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { metaVigente, numeroFire, patrimonioCoast, INSS_2026 } from '@pontofire/engine';
+import { numeroFire, patrimonioCoast, INSS_2026 } from '@pontofire/engine';
 import { useAuth } from '../auth/useAuth';
 import { usePainel, idadeDe } from '../hooks/usePainel';
 import { useIndicadores } from '../hooks/useIndicadores';
@@ -22,7 +22,7 @@ export function Metodologia() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { hash } = useLocation();
-  const { doc, plano, P, R, netWorth, snapshots, bens, carregando } = usePainel(user?.uid ?? null);
+  const { doc, plano, vigente, P, R, netWorth, snapshots, bens, carregando } = usePainel(user?.uid ?? null);
   const ind = useIndicadores();
 
   // React Router não rola para a âncora sozinho
@@ -32,7 +32,7 @@ export function Metodologia() {
     if (alvo) alvo.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [hash, carregando]);
 
-  if (carregando || !doc || !plano) {
+  if (carregando || !doc || !plano || !vigente) {
     return (
       <main className="pf-container" style={{ paddingTop: 'var(--space-8)' }}>
         <p style={{ color: 'var(--muted)' }}>Carregando…</p>
@@ -41,9 +41,10 @@ export function Metodologia() {
   }
 
   const tss = doc.taxaSaqueSegura;
-  const C = doc.custoVidaMensal;
-  const A = doc.aporteMensal;
-  const M = metaVigente(doc);
+  // os MESMOS números que o motor usou — senão a prova não prova nada
+  const C = vigente.custo.valor;
+  const A = vigente.aporte.valor;
+  const M = vigente.meta;
   const i = plano.iMensal;
   const rAnual = doc.retornoRealEsperado;
   const idadeAtual = idadeDe(doc.dataNascimento);
@@ -53,6 +54,7 @@ export function Metodologia() {
   const secoes: [string, string][] = [
     ['numero-fire', 'Seu número FIRE'],
     ['data', 'A data da liberdade'],
+    ['vigente', 'De onde saem o custo e o aporte'],
     ['juro-real', 'Juro real (e por que tudo aqui é real)'],
     ['patrimonio', 'O que conta como patrimônio'],
     ['coast', 'CoastFIRE'],
@@ -101,7 +103,7 @@ export function Metodologia() {
         <Formula>M = C × 12 ÷ TSS</Formula>
         <Prova
           linhas={[
-            ['C — seu custo de vida mensal', formatBRL(C)],
+            [`C — seu custo de vida (${vigente.custo.fonte === 'observado' ? `mediana de ${vigente.custo.mesesUsados} meses` : 'do seu perfil'})`, formatBRL(C)],
             ['× 12 meses', formatBRL(C * 12)],
             [`÷ TSS (${formatPct(tss)} ao ano)`, formatBRLcompact(metaPelaRegra)],
           ]}
@@ -135,7 +137,7 @@ export function Metodologia() {
         <Prova
           linhas={[
             ['P — patrimônio investível hoje', formatBRLcompact(P)],
-            ['A — aporte mensal', formatBRL(A)],
+            [`A — aporte mensal (${vigente.aporte.fonte === 'observado' ? `mediana de ${vigente.aporte.mesesUsados} meses` : 'do seu perfil'})`, formatBRL(A)],
             ['i — retorno real MENSAL', `${(i * 100).toFixed(4).replace('.', ',')}%`],
             ['M — sua meta', formatBRLcompact(M)],
           ]}
@@ -157,6 +159,45 @@ export function Metodologia() {
           A data assume aporte constante, retorno constante e custo de vida constante — três coisas
           que a vida não respeita. Ela não é previsão: é o retrato de "se tudo continuar como está
           hoje". É por isso que ela muda a cada mês que você lança.
+        </Limite>
+      </Secao>
+
+      {/* ------------------------------------------------------------------ */}
+      <Secao
+        id="vigente"
+        titulo="De onde saem o custo e o aporte"
+        pergunta="Por que minha data muda quando eu lanço um mês?"
+      >
+        <p>
+          Porque ela responde ao que você viveu, não ao que você digitou uma vez. Custo e aporte são{' '}
+          <strong>observados</strong>: saem da <strong>mediana dos seus últimos 6 meses lançados</strong>.
+          O retorno real continua declarado — seis meses de mercado não dizem nada sobre vinte anos —
+          e o patrimônio sempre foi observação.
+        </p>
+        <Prova
+          linhas={[
+            ['Custo vigente', `${formatBRL(C)} · ${rotuloFonte(vigente.custo)}`],
+            ['Aporte vigente', `${formatBRL(A)} · ${rotuloFonte(vigente.aporte)}`],
+            ['Meta derivada', `${formatBRLcompact(M)}${doc.metaTravada ? ' (travada por você)' : ' = C × 12 ÷ TSS'}`],
+          ]}
+          resultado={['Meses lançados na janela', String(vigente.custo.mesesUsados)]}
+        />
+        <p className="pf-metodo-nota">
+          <strong>Mediana, não média.</strong> A média deixa um mês de reforma reescrever a rotina
+          inteira; a mediana ignora o extremo por construção. E um mês que você marcar como{' '}
+          <strong>atípico</strong> sai da conta de vez — é você curando o próprio histórico.
+        </p>
+        <p className="pf-metodo-nota">
+          Com <strong>menos de 3 meses</strong> lançados a mediana é ruído, então o app usa o que
+          você declarou no onboarding e avisa na tela. O aporte tem uma exigência a mais: só conta
+          mês em que ele foi <strong>digitado</strong>. Antes ele era deduzido de{' '}
+          <Mono>receita − despesa</Mono>, e usar dedução como se fosse observação seria promover
+          palpite a fato — logo no número que decide a data.
+        </p>
+        <Limite>
+          Nos primeiros meses a data oscila mais, e isso não é defeito: com 3 pontos, um mês estranho
+          pesa um terço. A partir de uns 6 ela assenta. O que a mediana <strong>não</strong> faz é
+          prever mudança de vida — ela descreve o passado recente e assume que ele continua.
         </Limite>
       </Secao>
 
@@ -560,4 +601,12 @@ function Limite({ children }: { children: ReactNode }) {
       <p>{children}</p>
     </div>
   );
+}
+
+/** "mediana de 6 meses lançados" ou "do seu perfil (faltam 2 meses)". */
+function rotuloFonte(v: { fonte: 'observado' | 'declarado'; mesesUsados: number; faltam: number }): string {
+  if (v.fonte === 'observado') return `mediana de ${v.mesesUsados} ${v.mesesUsados === 1 ? 'mês' : 'meses'}`;
+  return v.faltam > 0
+    ? `do seu perfil — faltam ${v.faltam} ${v.faltam === 1 ? 'mês' : 'meses'} lançados`
+    : 'do seu perfil';
 }

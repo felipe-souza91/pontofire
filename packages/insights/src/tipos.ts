@@ -57,6 +57,15 @@ export interface ContextoInsights {
   patrimonioAtual: number;
   /** 0..1 */
   progresso: number;
+  /**
+   * O custo que o usuário declarou no onboarding.
+   *
+   * `custoVidaMensal` agora é o VIGENTE (mediana dos meses lançados). Este é o
+   * ponto de comparação: quando os dois divergem muito, vale dizer que o número
+   * do perfil ficou velho — o motor já usa o real.
+   */
+  custoDeclarado?: number;
+
   /** 0..1 — R/C */
   coberturaPassiva: number;
   mesesAteFire: number | null;

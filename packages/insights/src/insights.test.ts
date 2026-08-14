@@ -257,62 +257,35 @@ describe('maior categoria do mês', () => {
 });
 
 describe('custo do perfil defasado', () => {
-  // O elo que faltava: a data FIRE sai de custoVidaMensal (perfil), não dos
-  // meses lançados. Sem este aviso dá pra lançar um ano inteiro de dados reais
-  // e a data na tela nunca refletir nenhum deles.
-  const meses = (gastos: number[]) =>
-    gastos.map((g, k) => snap(`2026-0${k + 5}`, 300_000, { gastoTotal: g }));
-
-  it('avisa quando a mediana real está muito acima do perfil', () => {
+  // Depois da Fase 3 a data JÁ usa a mediana dos lançamentos. O que sobrou é
+  // avisar que o número do Perfil ficou velho — ele ainda é o fallback de quem
+  // tem menos de 3 meses e ainda aparece na tela.
+  it('avisa quando o declarado descolou do que o motor usa', () => {
     const i = custoDoPerfilDefasado(
-      ctxBase({ custoVidaMensal: 8_000, snapshots: meses([15_800, 16_200, 16_000]) }),
+      ctxBase({ custoVidaMensal: 16_000, custoDeclarado: 8_000 }),
       fmt,
     );
     const texto = textoDoInsight(i!);
-    expect(texto).toContain('R$ 8000');
     expect(texto).toContain('R$ 16000');
-    expect(i!.tom).toBe('atencao');
+    expect(texto).toContain('R$ 8000');
+    expect(texto).toMatch(/abaixo do real/);
   });
 
-  it('diz o que aconteceria com a data', () => {
+  it('diz "acima" quando o perfil superestima', () => {
     const i = custoDoPerfilDefasado(
-      ctxBase({ custoVidaMensal: 8_000, snapshots: meses([16_000, 16_000, 16_000]) }),
+      ctxBase({ custoVidaMensal: 5_000, custoDeclarado: 8_000 }),
       fmt,
     );
-    // custo dobrado → meta dobrada → a data anda pra frente, nunca pra trás
-    expect(textoDoInsight(i!)).toMatch(/andaria .* pra frente/);
+    expect(textoDoInsight(i!)).toMatch(/acima do real/);
   });
 
-  it('cala a boca quando o perfil bate com a realidade', () => {
-    const i = custoDoPerfilDefasado(
-      ctxBase({ custoVidaMensal: 8_000, snapshots: meses([8_100, 7_900, 8_050]) }),
-      fmt,
-    );
-    expect(i).toBeNull();
+  it('cala a boca quando os dois batem', () => {
+    expect(
+      custoDoPerfilDefasado(ctxBase({ custoVidaMensal: 8_100, custoDeclarado: 8_000 }), fmt),
+    ).toBeNull();
   });
 
-  it('usa MEDIANA — um mês de viagem não reescreve a rotina', () => {
-    const i = custoDoPerfilDefasado(
-      ctxBase({ custoVidaMensal: 8_000, snapshots: meses([8_000, 40_000, 8_100]) }),
-      fmt,
-    );
-    expect(i).toBeNull();
-  });
-
-  it('não opina com histórico curto demais', () => {
-    const i = custoDoPerfilDefasado(
-      ctxBase({ custoVidaMensal: 8_000, snapshots: meses([16_000, 16_000]) }),
-      fmt,
-    );
-    expect(i).toBeNull();
-  });
-
-  it('também avisa quando o perfil está pessimista (gasta menos)', () => {
-    const i = custoDoPerfilDefasado(
-      ctxBase({ custoVidaMensal: 8_000, snapshots: meses([5_000, 5_200, 5_100]) }),
-      fmt,
-    );
-    expect(textoDoInsight(i!)).toMatch(/voltaria .* pra tr(á|a)s/);
-    expect(i!.tom).toBe('fato');
+  it('sem declarado no contexto, não opina', () => {
+    expect(custoDoPerfilDefasado(ctxBase({ custoVidaMensal: 16_000 }), fmt)).toBeNull();
   });
 });

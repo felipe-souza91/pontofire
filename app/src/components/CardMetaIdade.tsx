@@ -4,9 +4,9 @@ import {
   alavancasParaAlvo,
   jaEhCoastFire,
   metaComCusto,
-  metaVigente,
   patrimonioCoast,
   type Alavanca,
+  type EstadoVigente,
   type PlanoFire,
 } from '@pontofire/engine';
 import type { UserDoc } from '../data/types';
@@ -24,10 +24,20 @@ import { formatBRL, formatBRLcompact, formatDuracao, formatPct } from '../utils/
  * §14: nenhuma alavanca é conselho, é conta. E a última linha sempre oferece
  * a saída honesta — a data de hoje já é boa, mesmo sem mudar nada.
  */
-export function CardMetaIdade({ doc, plano, P }: { doc: UserDoc; plano: PlanoFire; P: number }) {
+export function CardMetaIdade({
+  doc,
+  plano,
+  P,
+  vigente,
+}: {
+  doc: UserDoc;
+  plano: PlanoFire;
+  P: number;
+  vigente: EstadoVigente;
+}) {
+  // as alavancas têm que partir dos MESMOS números que geraram a data
+  const meta = vigente.meta;
   const idadeAtual = idadeDe(doc.dataNascimento);
-
-  const meta = metaVigente(doc);
 
   const dados = useMemo(() => {
     if (
@@ -45,14 +55,14 @@ export function CardMetaIdade({ doc, plano, P }: { doc: UserDoc; plano: PlanoFir
       idadeLib: Math.round(plano.idadeNaLiberdade),
       alavancas: alavancasParaAlvo({
         patrimonio: P,
-        aporteMensal: doc.aporteMensal,
-        custoVidaMensal: doc.custoVidaMensal,
+        aporteMensal: vigente.aporte.valor,
+        custoVidaMensal: vigente.custo.valor,
         metaFire: meta,
         iMensal: plano.iMensal,
         mesesAlvo,
       }),
     };
-  }, [doc, plano, P, idadeAtual, meta]);
+  }, [doc, plano, P, idadeAtual, vigente]);
 
   if (!dados || idadeAtual === undefined || !doc.idadeAlvo) return null;
 
@@ -95,7 +105,7 @@ export function CardMetaIdade({ doc, plano, P }: { doc: UserDoc; plano: PlanoFir
   // ---------------------------------------------------- chega depois: alavancas
   const novaMeta =
     alavancas.gasto.status === 'possivel' || alavancas.gasto.status === 'drastica'
-      ? metaComCusto(meta, doc.custoVidaMensal, alavancas.gasto.alvo)
+      ? metaComCusto(meta, vigente.custo.valor, alavancas.gasto.alvo)
       : null;
 
   const idadeComMetade =

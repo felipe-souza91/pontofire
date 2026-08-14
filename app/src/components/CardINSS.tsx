@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { estimarINSS, metaVigente, type PlanoFire } from '@pontofire/engine';
+import { estimarINSS, type PlanoFire } from '@pontofire/engine';
 import type { UserDoc } from '../data/types';
 import { formatBRL, formatBRLcompact, formatMesAno } from '../utils/format';
 
@@ -8,7 +8,7 @@ import { formatBRL, formatBRLcompact, formatMesAno } from '../utils/format';
  * INSS vs. Liberdade (§8) — o choque de realidade.
  * É ESTIMATIVA: deixa isso explícito e manda conferir no Meu INSS.
  */
-export function CardINSS({ doc, plano }: { doc: UserDoc; plano: PlanoFire }) {
+export function CardINSS({ doc, plano, meta }: { doc: UserDoc; plano: PlanoFire; meta: number }) {
   const est = useMemo(() => {
     if (!doc.dataNascimento || !doc.inicioContribuicao || !doc.salario || !doc.sexoINSS) return null;
     return estimarINSS({
@@ -75,7 +75,7 @@ export function CardINSS({ doc, plano }: { doc: UserDoc; plano: PlanoFire }) {
                 : ', quando a meta fechar'}
           </div>
           <div className="pf-patrim" style={{ color: 'var(--mint)' }}>
-            com <strong className="mono">{formatBRLcompact(metaVigente(doc))}</strong> de patrimônio
+            com <strong className="mono">{formatBRLcompact(meta)}</strong> de patrimônio
           </div>
           {plano.status === 'ok' && plano.dataLiberdade && (
             <div className="pf-hint" style={{ margin: '2px 0 0' }}>({formatMesAno(plano.dataLiberdade)})</div>

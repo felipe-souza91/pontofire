@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { cabeNoOrcamento, metaVigente, taxaEmbutida, type VeredictoOrcamento } from '@pontofire/engine';
+import { cabeNoOrcamento, taxaEmbutida, type VeredictoOrcamento } from '@pontofire/engine';
 import { useAuth } from '../auth/useAuth';
 import { usePainel } from '../hooks/usePainel';
 import { MoedaInput } from '../components/MoedaInput';
@@ -24,24 +24,24 @@ const ESTILO: Record<VeredictoOrcamento, { rotulo: string; cor: string; borda: s
  */
 export function CalcNovaDivida() {
   const { user } = useAuth();
-  const { doc, plano, P, carregando } = usePainel(user?.uid ?? null);
+  const { doc, plano, vigente, P, carregando } = usePainel(user?.uid ?? null);
 
   const [parcela, setParcela] = useState(0);
   const [meses, setMeses] = useState(24);
   const [precoAVista, setPrecoAVista] = useState(0);
 
   const r = useMemo(() => {
-    if (!doc || !plano || parcela <= 0 || meses <= 0) return null;
+    if (!doc || !plano || !vigente || parcela <= 0 || meses <= 0) return null;
     return cabeNoOrcamento({
       parcela,
       mesesDaDivida: meses,
       patrimonio: P,
-      aporteMensal: doc.aporteMensal,
-      custoVidaMensal: doc.custoVidaMensal,
-      metaFire: metaVigente(doc),
+      aporteMensal: vigente.aporte.valor,
+      custoVidaMensal: vigente.custo.valor,
+      metaFire: vigente.meta,
       iMensal: plano.iMensal,
     });
-  }, [doc, plano, P, parcela, meses]);
+  }, [doc, plano, vigente, P, parcela, meses]);
 
   /** Se ele souber o preço à vista, dá pra revelar o juro escondido. */
   const juroEmbutido = useMemo(() => {
@@ -53,7 +53,7 @@ export function CalcNovaDivida() {
   }, [precoAVista, parcela, meses]);
 
   if (carregando) return <p className="pf-hint">Carregando seus números…</p>;
-  if (!doc || !plano) return <p className="pf-hint">Complete seu perfil pra usar esta calculadora.</p>;
+  if (!doc || !plano || !vigente) return <p className="pf-hint">Complete seu perfil pra usar esta calculadora.</p>;
 
   const est = r ? ESTILO[r.veredicto] : null;
 
@@ -106,7 +106,7 @@ export function CalcNovaDivida() {
             )}
 
             <div className="pf-divida-grid">
-              <Item rot="Sobra pra aportar" val={formatBRL(Math.max(0, r.aporteDurante))} sub={`hoje são ${formatBRL(doc.aporteMensal)}`} />
+              <Item rot="Sobra pra aportar" val={formatBRL(Math.max(0, r.aporteDurante))} sub={`hoje são ${formatBRL(vigente.aporte.valor)}`} />
               <Item rot="Comprometimento da renda" val={formatPct(r.comprometimento)} sub={r.comprometimento > 0.3 ? 'acima dos 30% que os bancos usam de limite' : 'dentro do limite usual de 30%'} />
               <Item rot="Custo total das parcelas" val={formatBRL(r.custoTotal)} sub={`${meses} × ${formatBRL(parcela)}`} />
             </div>
