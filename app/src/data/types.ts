@@ -1,4 +1,5 @@
 import type { Timestamp } from 'firebase/firestore';
+import type { LinhaDePartida } from '@pontofire/engine';
 
 /** Documento users/{uid} — §5 + humanização + consentimento LGPD. */
 export interface UserDoc {
@@ -15,8 +16,21 @@ export interface UserDoc {
   aporteMensal: number; // A — quanto consegue investir por mês
   patrimonioInicial: number; // P informado no onboarding
   retornoRealEsperado: number; // ex. 0,05
-  metaFire: number; // M
+  /**
+   * M — o valor GRAVADO. Só vale como meta quando `metaTravada`.
+   *
+   * NÃO LEIA ESTE CAMPO DIRETO pra calcular nada: use `metaVigente(doc)`. Por
+   * padrão a meta é derivada do custo (25× o ano), e ler o gravado faz a meta
+   * congelar enquanto o custo anda — que é como a data melhorava quando o gasto
+   * piorava. Há um teste que reprova leitura direta fora dos pontos de escrita.
+   */
+  metaFire: number;
+  /** o usuário fixou a meta num número e não quer que ela acompanhe o custo */
+  metaTravada?: boolean;
   taxaSaqueSegura: number; // TSS, default 0,04
+
+  /** de onde ele partiu — congelada no onboarding, nunca reescrita */
+  linhaDePartida?: LinhaDePartida;
 
   // humanização (N2) — âncoras emocionais, viram gatilho do assistente (§7)
   porQues?: string[]; // motivações escolhidas (chips)
@@ -44,8 +58,12 @@ export interface OnboardingN1 {
   aporteMensal: number;
   patrimonioInicial: number;
   metaFire: number;
+  /** o usuário editou a meta em vez de aceitar a sugestão de 25× */
+  metaTravada?: boolean;
   retornoRealEsperado: number;
   taxaSaqueSegura: number;
+  /** montada na conclusão, a partir do que ele acabou de responder */
+  linhaDePartida?: LinhaDePartida;
 }
 
 /**

@@ -100,8 +100,11 @@ export async function salvarOnboarding(uid: string, dados: OnboardingCompleto): 
     aporteMensal: dados.aporteMensal,
     patrimonioInicial: dados.patrimonioInicial,
     metaFire: dados.metaFire,
+    metaTravada: dados.metaTravada ?? false,
     retornoRealEsperado: dados.retornoRealEsperado,
     taxaSaqueSegura: dados.taxaSaqueSegura,
+    // congelada aqui e nunca mais reescrita: é o "de onde você saiu"
+    linhaDePartida: dados.linhaDePartida,
     plano: 'free',
     onboardingNivel: 2,
     onboardingCompleto: true,

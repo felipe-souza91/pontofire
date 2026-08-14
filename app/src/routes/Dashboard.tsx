@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { coberturaPassiva, valorFuturo } from '@pontofire/engine';
+import { coberturaPassiva, metaVigente, valorFuturo } from '@pontofire/engine';
 import { useAuth } from '../auth/useAuth';
 import { usePainel, idadeDe } from '../hooks/usePainel';
 import { useConquistas } from '../hooks/useConquistas';
@@ -38,6 +38,7 @@ export function Dashboard() {
   if (carregando) return <Centro>Carregando…</Centro>;
   if (!doc || !plano || !ctx) return <Centro>Sem dados ainda.</Centro>;
 
+  const meta = metaVigente(doc);
   const saudacao = doc.apelido || doc.nome?.split(' ')[0] || 'você';
   const progressoPct = Math.min(100, Math.max(0, plano.progresso * 100));
 
@@ -61,7 +62,7 @@ export function Dashboard() {
   const daSemana = cardDaSemana(ctx, fmt, { semente: user?.uid });
 
   const stats: { rot: string; val: string; tom?: 'mint' | 'ember' }[] = [
-    { rot: 'Número FIRE', val: formatBRLcompact(doc.metaFire) },
+    { rot: 'Número FIRE', val: formatBRLcompact(meta) },
     { rot: 'Renda ao atingir', val: `${formatBRLcompact(plano.saqueMensalSustentavel)}/mês`, tom: 'mint' },
   ];
   if (bens.length > 0) {
@@ -142,7 +143,7 @@ export function Dashboard() {
         <div className="pf-bar-row">
           <span>{formatBRLcompact(P)}</span>
           <span>
-            meta {formatBRLcompact(doc.metaFire)} · {progressoPct.toFixed(0)}%
+            meta {formatBRLcompact(meta)} · {progressoPct.toFixed(0)}%
           </span>
         </div>
         <Link className="pf-como-calculo" to="/metodologia#data">como calculo isso →</Link>
@@ -167,8 +168,8 @@ export function Dashboard() {
               <GraficoLinha
                 pontos={pontosProjecao(P, doc.aporteMensal, plano.iMensal, plano.meses!)}
                 cor="#FF7A45"
-                meta={doc.metaFire}
-                rotuloMeta={`meta ${formatBRLcompact(doc.metaFire)}`}
+                meta={meta}
+                rotuloMeta={`meta ${formatBRLcompact(meta)}`}
                 marcasX={marcasProjecao(plano.meses!, plano.dataLiberdade!)}
                 formatValor={formatBRLcompact}
                 desdeZero

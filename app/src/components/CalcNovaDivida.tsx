@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { cabeNoOrcamento, taxaEmbutida, type VeredictoOrcamento } from '@pontofire/engine';
+import { cabeNoOrcamento, metaVigente, taxaEmbutida, type VeredictoOrcamento } from '@pontofire/engine';
 import { useAuth } from '../auth/useAuth';
 import { usePainel } from '../hooks/usePainel';
 import { MoedaInput } from '../components/MoedaInput';
@@ -38,7 +38,7 @@ export function CalcNovaDivida() {
       patrimonio: P,
       aporteMensal: doc.aporteMensal,
       custoVidaMensal: doc.custoVidaMensal,
-      metaFire: doc.metaFire,
+      metaFire: metaVigente(doc),
       iMensal: plano.iMensal,
     });
   }, [doc, plano, P, parcela, meses]);

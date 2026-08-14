@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './auth/useAuth';
 import { useUserDoc } from './hooks/useUserDoc';
+import { useMigracoes } from './hooks/useMigracoes';
 import { Entrar } from './routes/Entrar';
 import { Onboarding } from './routes/Onboarding';
 import { Dashboard } from './routes/Dashboard';
@@ -51,6 +52,8 @@ export function App() {
 function RotasLogado({ uid }: { uid: string }) {
   const { doc, carregando, erro } = useUserDoc(uid);
   const { sair } = useAuth();
+  // reconstrói a linha de partida de quem entrou antes dela existir
+  useMigracoes(uid, doc);
 
   if (carregando) return <Splash />;
 

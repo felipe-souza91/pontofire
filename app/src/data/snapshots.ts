@@ -27,6 +27,14 @@ export interface Snapshot {
   rendaPassiva?: number; // soma das transações do tipo passiva (modo detalhado) → R
   /** presente só enquanto os totais vêm dos itens; é o caminho de volta */
   declarado?: TrioDeclarado;
+  /**
+   * A data FIRE como estava quando ESTE mês foi lançado. null = inalcançável.
+   *
+   * Gravada no momento do lançamento e nunca recalculada: é registro histórico,
+   * não valor derivado. Recalcular retroativamente quando o perfil muda
+   * apagaria justamente a trajetória que o gráfico existe pra mostrar.
+   */
+  mesesAteFire?: number | null;
 }
 
 

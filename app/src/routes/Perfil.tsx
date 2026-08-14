@@ -1,5 +1,6 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { metaPeloCusto } from '@pontofire/engine';
 import { useAuth } from '../auth/useAuth';
 import { useUserDoc } from '../hooks/useUserDoc';
 import { atualizarPerfil, marcarTourVisto } from '../data/users';
@@ -8,6 +9,7 @@ import { MoedaInput } from '../components/MoedaInput';
 import { Campo } from '../components/Campo';
 import { ZonaDePerigo } from '../components/ZonaDePerigo';
 import { Flame } from '../theme/Flame';
+import { formatBRL } from '../utils/format';
 
 export function Perfil() {
   const { user } = useAuth();
@@ -28,6 +30,7 @@ export function Perfil() {
   const [aporte, setAporte] = useState(0);
   const [patrimonio, setPatrimonio] = useState(0);
   const [meta, setMeta] = useState(0);
+  const [metaTravada, setMetaTravada] = useState(false);
   const [retornoPct, setRetornoPct] = useState(5);
   // INSS
   const [dataNascimento, setDataNascimento] = useState('');
@@ -46,6 +49,7 @@ export function Perfil() {
     setAporte(doc.aporteMensal ?? 0);
     setPatrimonio(doc.patrimonioInicial ?? 0);
     setMeta(doc.metaFire ?? 0);
+    setMetaTravada(doc.metaTravada ?? false);
     setRetornoPct(Math.round((doc.retornoRealEsperado ?? 0.05) * 1000) / 10);
     setDataNascimento(doc.dataNascimento ?? '');
     setInicioContribuicao(doc.inicioContribuicao ?? '');
@@ -53,6 +57,12 @@ export function Perfil() {
     setSexoINSS(doc.sexoINSS);
     setPronto(true);
   }, [doc, pronto]);
+
+  /** A meta pela regra dos 25×, acompanhando o custo digitado na hora. */
+  const metaDerivada = useMemo(
+    () => Math.round(metaPeloCusto(custo, doc?.taxaSaqueSegura ?? 0.04)),
+    [custo, doc?.taxaSaqueSegura],
+  );
 
   function toggle(p: string) {
     setPorQues((prev) => (prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]));
@@ -71,7 +81,10 @@ export function Perfil() {
         custoVidaMensal: custo,
         aporteMensal: aporte,
         patrimonioInicial: patrimonio,
-        metaFire: meta,
+        // sem travar, o valor gravado é só o retrato de hoje: quem manda é
+        // `metaVigente`, que deriva do custo
+        metaFire: metaTravada ? meta : metaDerivada,
+        metaTravada,
         retornoRealEsperado: retornoPct / 100,
         dataNascimento: dataNascimento || undefined,
         inicioContribuicao: inicioContribuicao || undefined,
@@ -140,8 +153,44 @@ export function Perfil() {
         <Campo rotulo="Patrimônio investido hoje">
           <MoedaInput value={patrimonio} onChange={setPatrimonio} />
         </Campo>
-        <Campo rotulo="Meta (número FIRE)">
-          <MoedaInput value={meta} onChange={setMeta} />
+        {/*
+          A meta acompanha o custo por padrão. Aqui morava o bug: o campo
+          carregava `doc.metaFire` e salvava o que estivesse na caixa, sem nunca
+          recalcular. Mudar o custo de 8 pra 12 mil deixava a meta nos 25× do
+          número velho — e todo o resto (progresso, data, idade na liberdade)
+          seguia ancorado nela.
+        */}
+        <Campo
+          rotulo="Meta (número FIRE)"
+          dica="Por padrão é 25× seu custo anual e acompanha o custo sozinha. Travar fixa um número que não se mexe mais."
+        >
+          {metaTravada ? (
+            <MoedaInput value={meta} onChange={setMeta} ariaLabel="Meta em reais" />
+          ) : (
+            <div className="pf-input" style={{ color: 'var(--muted)', fontFamily: 'var(--font-mono)' }}>
+              {formatBRL(metaDerivada)}
+            </div>
+          )}
+          <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginTop: 'var(--space-2)' }}>
+            <input
+              type="checkbox"
+              className="pf-check"
+              checked={metaTravada}
+              onChange={(e) => {
+                setMetaTravada(e.target.checked);
+                if (e.target.checked && meta <= 0) setMeta(metaDerivada);
+              }}
+            />
+            <span className="pf-hint" style={{ margin: 0 }}>Travar num valor meu</span>
+          </label>
+          {metaTravada && Math.abs(meta - metaDerivada) > 1 && (
+            <p className="pf-hint">
+              Pelo seu custo de {formatBRL(custo)}/mês, a regra daria{' '}
+              <strong>{formatBRL(metaDerivada)}</strong>. Sua meta travada está{' '}
+              {meta > metaDerivada ? 'acima' : 'abaixo'} disso — o que é uma escolha válida, só não
+              deixa de ser uma escolha.
+            </p>
+          )}
         </Campo>
         <Campo rotulo="Retorno real esperado (% a.a.)">
           <input

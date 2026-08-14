@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { rendimentoMes, taxaPoupanca } from '@pontofire/engine';
+import { calcularPlanoFire, metaVigente, rendimentoMes, taxaPoupanca } from '@pontofire/engine';
 import { useAuth } from '../auth/useAuth';
 import { useSnapshots } from '../hooks/useSnapshots';
+import { useUserDoc } from '../hooks/useUserDoc';
 import { salvarSnapshot } from '../data/snapshots';
 import { MoedaInput } from '../components/MoedaInput';
 import { Campo } from '../components/Campo';
@@ -17,6 +18,7 @@ export function Lancar() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { lista } = useSnapshots(user?.uid ?? null);
+  const { doc } = useUserDoc(user?.uid ?? null);
 
   const [mes, setMes] = useState(mesCorrente());
   const [patrimonio, setPatrimonio] = useState(0);
@@ -49,6 +51,26 @@ export function Lancar() {
   const taxa = taxaPoupanca(receita, despesa);
   const rendimento = anterior ? rendimentoMes(patrimonio, anterior.patrimonioTotal, aporte) : null;
 
+  /**
+   * A data como está no momento em que este mês é lançado.
+   *
+   * Gravada junto com o snapshot pra virar histórico: é o que vai permitir
+   * dizer "há um ano sua data era 2051" e desenhar a trajetória. Calculada aqui
+   * e nunca mais recalculada.
+   */
+  const mesesAteFireAgora = useMemo(() => {
+    if (!doc || patrimonio <= 0) return null;
+    return calcularPlanoFire({
+      patrimonioInvestivel: patrimonio,
+      aporteMensal: doc.aporteMensal,
+      custoVidaMensal: doc.custoVidaMensal,
+      retornoRealAnual: doc.retornoRealEsperado,
+      metaFire: metaVigente(doc),
+      tss: doc.taxaSaqueSegura,
+      hoje: new Date(),
+    }).meses;
+  }, [doc, patrimonio]);
+
   const valido = patrimonio > 0 && receita > 0;
 
   async function salvar() {
@@ -64,6 +86,7 @@ export function Lancar() {
         aportesMes: aporte,
         rendimentosMes: rendimento ?? 0,
         taxaPoupanca: taxa,
+        mesesAteFire: mesesAteFireAgora,
       });
       navigate('/', { replace: true });
     } catch {

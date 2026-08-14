@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { calcularPlanoFire, resumoPatrimonio, type PlanoFire } from '@pontofire/engine';
+import { calcularPlanoFire, metaVigente, resumoPatrimonio, type PlanoFire } from '@pontofire/engine';
 import type { ContextoInsights } from '@pontofire/insights';
 import { useUserDoc } from './useUserDoc';
 import { useSnapshots } from './useSnapshots';
@@ -58,7 +58,7 @@ export function usePainel(uid: string | null): Painel {
       aporteMensal: doc.aporteMensal,
       custoVidaMensal: doc.custoVidaMensal,
       retornoRealAnual: doc.retornoRealEsperado,
-      metaFire: doc.metaFire,
+      metaFire: metaVigente(doc),
       tss: doc.taxaSaqueSegura,
       idadeAtual: idadeDe(doc.dataNascimento),
       hoje: new Date(),
@@ -72,7 +72,7 @@ export function usePainel(uid: string | null): Painel {
       nomeSonho: doc.nomeSonho,
       porQues: doc.porQues,
       custoVidaMensal: doc.custoVidaMensal,
-      metaFire: doc.metaFire,
+      metaFire: metaVigente(doc),
       aporteMensal: doc.aporteMensal,
       iMensal: plano.iMensal,
       patrimonioAtual: P,

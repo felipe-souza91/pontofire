@@ -387,8 +387,24 @@ export function Onboarding({ jaCompleto = false }: { jaCompleto?: boolean }) {
         aporteMensal: aporte,
         patrimonioInicial: patrimonio,
         metaFire: metaEfetiva,
+        // quem editou a meta escolheu aquele número: ela não passa a
+        // acompanhar o custo sem ele mandar
+        metaTravada: metaEditada && meta > 0,
         retornoRealEsperado: retornoPct / 100,
         taxaSaqueSegura: TSS,
+        // A linha de partida guarda as PREMISSAS junto com a data. Sem elas,
+        // "sua data melhorou 4 anos" não distingue mérito de mudança de alvo.
+        linhaDePartida: {
+          em: new Date().toISOString().slice(0, 10),
+          custoVidaMensal: custo,
+          aporteMensal: aporte,
+          patrimonioInicial: patrimonio,
+          retornoRealEsperado: retornoPct / 100,
+          metaFire: metaEfetiva,
+          taxaSaqueSegura: TSS,
+          mesesAteFire: plano?.meses ?? null,
+          origem: 'onboarding',
+        },
         apelido: apelido.trim() || undefined,
         dataNascimento: dataNascimento || undefined,
         porQues: porQues.length ? porQues : undefined,

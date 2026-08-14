@@ -4,6 +4,7 @@ import {
   alavancasParaAlvo,
   jaEhCoastFire,
   metaComCusto,
+  metaVigente,
   patrimonioCoast,
   type Alavanca,
   type PlanoFire,
@@ -26,6 +27,8 @@ import { formatBRL, formatBRLcompact, formatDuracao, formatPct } from '../utils/
 export function CardMetaIdade({ doc, plano, P }: { doc: UserDoc; plano: PlanoFire; P: number }) {
   const idadeAtual = idadeDe(doc.dataNascimento);
 
+  const meta = metaVigente(doc);
+
   const dados = useMemo(() => {
     if (
       !doc.idadeAlvo ||
@@ -44,12 +47,12 @@ export function CardMetaIdade({ doc, plano, P }: { doc: UserDoc; plano: PlanoFir
         patrimonio: P,
         aporteMensal: doc.aporteMensal,
         custoVidaMensal: doc.custoVidaMensal,
-        metaFire: doc.metaFire,
+        metaFire: meta,
         iMensal: plano.iMensal,
         mesesAlvo,
       }),
     };
-  }, [doc, plano, P, idadeAtual]);
+  }, [doc, plano, P, idadeAtual, meta]);
 
   if (!dados || idadeAtual === undefined || !doc.idadeAlvo) return null;
 
@@ -58,8 +61,8 @@ export function CardMetaIdade({ doc, plano, P }: { doc: UserDoc; plano: PlanoFir
 
   // ---------------------------------------------------- já chega antes da meta
   if (atrasoAnos <= 0) {
-    const coast = patrimonioCoast(doc.metaFire, plano.iMensal, mesesAlvo);
-    const jaCoast = jaEhCoastFire(P, doc.metaFire, plano.iMensal, mesesAlvo);
+    const coast = patrimonioCoast(meta, plano.iMensal, mesesAlvo);
+    const jaCoast = jaEhCoastFire(P, meta, plano.iMensal, mesesAlvo);
     const antes = doc.idadeAlvo - idadeLib;
     return (
       <div className="pf-stat" style={{ borderColor: 'rgba(63,214,155,0.3)' }}>
@@ -92,7 +95,7 @@ export function CardMetaIdade({ doc, plano, P }: { doc: UserDoc; plano: PlanoFir
   // ---------------------------------------------------- chega depois: alavancas
   const novaMeta =
     alavancas.gasto.status === 'possivel' || alavancas.gasto.status === 'drastica'
-      ? metaComCusto(doc.metaFire, doc.custoVidaMensal, alavancas.gasto.alvo)
+      ? metaComCusto(meta, doc.custoVidaMensal, alavancas.gasto.alvo)
       : null;
 
   const idadeComMetade =

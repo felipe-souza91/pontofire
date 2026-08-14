@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { estimarINSS, type PlanoFire } from '@pontofire/engine';
+import { estimarINSS, metaVigente, type PlanoFire } from '@pontofire/engine';
 import type { UserDoc } from '../data/types';
 import { formatBRL, formatBRLcompact, formatMesAno } from '../utils/format';
 
@@ -75,7 +75,7 @@ export function CardINSS({ doc, plano }: { doc: UserDoc; plano: PlanoFire }) {
                 : ', quando a meta fechar'}
           </div>
           <div className="pf-patrim" style={{ color: 'var(--mint)' }}>
-            com <strong className="mono">{formatBRLcompact(doc.metaFire)}</strong> de patrimônio
+            com <strong className="mono">{formatBRLcompact(metaVigente(doc))}</strong> de patrimônio
           </div>
           {plano.status === 'ok' && plano.dataLiberdade && (
             <div className="pf-hint" style={{ margin: '2px 0 0' }}>({formatMesAno(plano.dataLiberdade)})</div>

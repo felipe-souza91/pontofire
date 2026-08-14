@@ -4,6 +4,7 @@
  */
 
 export * from './categorias';
+export * from './partida';
 export * from './rates';
 export * from './fire';
 export * from './patrimonio';

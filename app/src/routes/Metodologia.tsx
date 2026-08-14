@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { numeroFire, patrimonioCoast, INSS_2026 } from '@pontofire/engine';
+import { metaVigente, numeroFire, patrimonioCoast, INSS_2026 } from '@pontofire/engine';
 import { useAuth } from '../auth/useAuth';
 import { usePainel, idadeDe } from '../hooks/usePainel';
 import { useIndicadores } from '../hooks/useIndicadores';
@@ -43,7 +43,7 @@ export function Metodologia() {
   const tss = doc.taxaSaqueSegura;
   const C = doc.custoVidaMensal;
   const A = doc.aporteMensal;
-  const M = doc.metaFire;
+  const M = metaVigente(doc);
   const i = plano.iMensal;
   const rAnual = doc.retornoRealEsperado;
   const idadeAtual = idadeDe(doc.dataNascimento);
