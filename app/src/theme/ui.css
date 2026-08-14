@@ -1479,3 +1479,29 @@
 .pf-combo-op.atual::after {
   content: ' ✓';
 }
+
+/* --- Efeito do mês (depois de lançar) ------------------------------------- */
+.pf-efeito-causas {
+  list-style: none;
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+  text-align: left;
+}
+.pf-efeito-causas li {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: 0.6rem 0.8rem;
+  background: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+.pf-efeito-causas .mono {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  white-space: nowrap;
+  min-width: 5.5rem;
+}

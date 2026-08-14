@@ -4,6 +4,7 @@
  */
 
 export * from './categorias';
+export * from './decomposicao';
 export * from './partida';
 export * from './vigente';
 export * from './rates';

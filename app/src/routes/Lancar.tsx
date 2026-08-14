@@ -2,16 +2,24 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   calcularPlanoFire,
+  dataFire,
+  decomporVariacao,
   estadoVigente,
+  mesesAteFire,
+  realMensalDeAnual,
   rendimentoMes,
   residualDoMes,
   taxaInvestimento,
   taxaPoupanca,
+  variacaoDaData,
+  type Decomposicao,
+  type MesLancado,
 } from '@pontofire/engine';
 import { useAuth } from '../auth/useAuth';
 import { useSnapshots } from '../hooks/useSnapshots';
 import { useUserDoc } from '../hooks/useUserDoc';
 import { salvarSnapshot } from '../data/snapshots';
+import { EfeitoDoMes } from '../components/EfeitoDoMes';
 import { MoedaInput } from '../components/MoedaInput';
 import { Campo } from '../components/Campo';
 import { formatBRL, formatBRLcompact, formatMesAno, formatPct } from '../utils/format';
@@ -29,6 +37,13 @@ const ROTULO_CAMPO: Record<Campo, string> = {
   despesa: 'despesa',
   aporte: 'aporte',
 };
+interface EfeitoSalvo {
+  decomposicao: Decomposicao;
+  dataAntes: Date | null;
+  dataDepois: Date | null;
+  desdeAPartida: number | null;
+}
+
 const NENHUM_TOCADO = { patrimonio: false, receita: false, despesa: false, aporte: false };
 const TODOS_TOCADOS = { patrimonio: true, receita: true, despesa: true, aporte: true };
 
@@ -47,6 +62,7 @@ export function Lancar() {
   const [atipico, setAtipico] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [efeito, setEfeito] = useState<EfeitoSalvo | null>(null);
 
   /**
    * Quais campos o usuário já respondeu.
@@ -120,6 +136,43 @@ export function Lancar() {
   const faltando = CAMPOS.filter((c) => !tocados[c]);
   const valido = faltando.length === 0;
 
+  /**
+   * O que ESTE lançamento fez com a data.
+   *
+   * As duas pontas saem do mesmo lugar, mudando só o conjunto de meses: sem o
+   * mês novo e com ele. Comparar contra um valor guardado antes seria comparar
+   * contas com premissas diferentes — e o sinal poderia sair trocado.
+   */
+  function medirEfeito(): EfeitoSalvo | null {
+    if (!doc) return null;
+    const i = realMensalDeAnual(doc.retornoRealEsperado);
+    const semEste = lista.filter((s) => s.mes !== mes);
+    const comEste: MesLancado[] = [...semEste, { mes, gastoTotal: despesa, aportesMes: aporte, aporteObservado: true, atipico }]
+      .sort((a, b) => a.mes.localeCompare(b.mes));
+
+    const vAntes = estadoVigente(doc, semEste);
+    const vDepois = estadoVigente(doc, comEste);
+    const pAnterior = anterior?.patrimonioTotal ?? patrimonio;
+
+    const antes = { patrimonio: pAnterior, aporte: vAntes.aporte.valor, iMensal: i, meta: vAntes.meta };
+    const depois = { patrimonio, aporte: vDepois.aporte.valor, iMensal: i, meta: vDepois.meta };
+
+    const mAntes = mesesAteFire(antes.patrimonio, antes.aporte, i, antes.meta);
+    const hoje = new Date();
+
+    return {
+      decomposicao: decomporVariacao(antes, depois),
+      dataAntes: mAntes.status === 'ok' ? dataFire(hoje, mAntes.meses) : null,
+      dataDepois: mesesAteFireAgora !== null ? dataFire(hoje, mesesAteFireAgora) : null,
+      desdeAPartida: doc.linhaDePartida
+        ? variacaoDaData(
+            { em: new Date(`${doc.linhaDePartida.em}T00:00:00`), mesesAteFire: doc.linhaDePartida.mesesAteFire },
+            { em: hoje, mesesAteFire: mesesAteFireAgora },
+          )
+        : null,
+    };
+  }
+
   async function salvar() {
     if (!user || !valido) return;
     setErro(null);
@@ -139,11 +192,30 @@ export function Lancar() {
         atipico,
         ...(observacao.trim() ? { observacao: observacao.trim() } : {}),
       });
-      navigate('/', { replace: true });
+      const e = medirEfeito();
+      // sem doc não há como medir o efeito; salvar funcionou, então segue
+      if (e) setEfeito(e);
+      else navigate('/', { replace: true });
     } catch {
       setErro('Não consegui salvar. Tente de novo.');
+    } finally {
       setSalvando(false);
     }
+  }
+
+  if (efeito) {
+    return (
+      <main className="pf-container" style={{ maxWidth: '32rem', paddingTop: 'var(--space-8)', paddingBottom: 'var(--space-12)' }}>
+        <EfeitoDoMes
+          mes={mes}
+          dataAntes={efeito.dataAntes}
+          dataDepois={efeito.dataDepois}
+          decomposicao={efeito.decomposicao}
+          desdeAPartida={efeito.desdeAPartida}
+          onContinuar={() => navigate('/', { replace: true })}
+        />
+      </main>
+    );
   }
 
   return (

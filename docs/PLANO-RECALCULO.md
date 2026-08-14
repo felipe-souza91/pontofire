@@ -1,7 +1,7 @@
 # Plano — a data viva
 
-> Status: Fases 0, 1, 2 e 3 implementadas. Falta a Fase 4 (decomposição,
-> card pós-lançamento, gráfico da data).
+> Status: **implementado** (Fases 0 a 4).
+> Segue valendo como registro das decisões e das perguntas em aberto.
 > Origem: feedback dos primeiros usuários do beta (ago/2026).
 
 ## O problema

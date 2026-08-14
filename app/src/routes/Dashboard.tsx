@@ -4,6 +4,7 @@ import {
   coberturaPassiva,
   proporcaoAtipica,
   valorFuturo,
+  variacaoDaData,
   type EstadoVigente,
 } from '@pontofire/engine';
 import { useAuth } from '../auth/useAuth';
@@ -44,6 +45,22 @@ export function Dashboard() {
   if (!doc || !plano || !ctx) return <Centro>Sem dados ainda.</Centro>;
 
   const meta = vigente?.meta ?? 0;
+
+  /**
+   * Quanto a DATA andou desde o onboarding — não quanto o prazo encurtou.
+   *
+   * Se há um ano faltavam 300 meses e hoje faltam 288, nada melhorou: passou um
+   * ano. O que conta é a data de chegada se mover no calendário.
+   */
+  const desdeAPartida = doc.linhaDePartida
+    ? variacaoDaData(
+        {
+          em: new Date(`${doc.linhaDePartida.em}T00:00:00`),
+          mesesAteFire: doc.linhaDePartida.mesesAteFire,
+        },
+        { em: new Date(), mesesAteFire: plano.meses },
+      )
+    : null;
   const saudacao = doc.apelido || doc.nome?.split(' ')[0] || 'você';
   const progressoPct = Math.min(100, Math.max(0, plano.progresso * 100));
 
@@ -142,6 +159,17 @@ export function Dashboard() {
           </p>
         )}
 
+        {desdeAPartida !== null && Math.abs(desdeAPartida) >= 1 && (
+          <p
+            className="pf-hc-sub"
+            style={{ marginTop: '-14px', color: desdeAPartida < 0 ? 'var(--mint)' : 'var(--muted)' }}
+          >
+            {formatDuracao(Math.abs(desdeAPartida))} {desdeAPartida < 0 ? 'mais cedo' : 'mais tarde'} do
+            que quando você começou
+            {doc.linhaDePartida?.origem === 'reconstruida' && ' (partida aproximada)'}
+          </p>
+        )}
+
         {vigente && <Vigencia vigente={vigente} snapshots={lista} />}
 
         <div className="pf-bar">
@@ -183,6 +211,37 @@ export function Dashboard() {
               />
             </section>
           )}
+
+          {(() => {
+            /*
+             * A trajetória da DATA — o gráfico que só existe porque a Fase 1
+             * passou a gravar `mesesAteFire` em cada lançamento. Mostra
+             * movimento, não posição: é o retrato de o app estar funcionando.
+             */
+            const pontos = trajetoriaDaData(lista);
+            if (pontos.length < 2) return null;
+            const primeiro = pontos[0]!.v;
+            const ultimoPonto = pontos[pontos.length - 1]!.v;
+            const ganho = primeiro - ultimoPonto;
+            return (
+              <section className="pf-hero-card pf-card-graf">
+                <span className="pf-eyebrow">Sua data ao longo do tempo</span>
+                <p className="pf-hc-sub" style={{ marginTop: 'var(--space-2)', marginBottom: 0 }}>
+                  {Math.abs(ganho) < 0.08
+                    ? 'estável desde o primeiro lançamento'
+                    : ganho > 0
+                      ? `veio ${formatDuracao(ganho * 12)} pra trás desde o 1º lançamento`
+                      : `foi ${formatDuracao(-ganho * 12)} pra frente desde o 1º lançamento`}
+                </p>
+                <GraficoLinha
+                  pontos={pontos}
+                  cor="#FF9E6B"
+                  marcasX={marcasEvolucao(lista.filter((sn) => typeof sn.mesesAteFire === 'number'))}
+                  formatValor={anoDecimalCurto}
+                />
+              </section>
+            );
+          })()}
 
           {lista.length >= 2 ? (
             <section className="pf-hero-card pf-card-graf">
@@ -327,4 +386,31 @@ function Vigencia({ vigente, snapshots }: { vigente: EstadoVigente; snapshots: S
       {vigente.custo.mesesUsados} meses.
     </p>
   );
+}
+
+/**
+ * A data prevista em cada mês lançado, como ano decimal.
+ *
+ * `mesesAteFire` guardado é PRAZO, e prazo encurta sozinho com o tempo passando.
+ * Somá-lo ao mês do lançamento converte pra DATA DE CHEGADA — que só se move
+ * quando algo de fato muda. É a diferença entre um gráfico que sempre desce
+ * (inútil) e um que mostra se você está ganhando terreno.
+ */
+function trajetoriaDaData(snapshots: readonly Snapshot[]): PontoGrafico[] {
+  const comData = snapshots.filter((s) => typeof s.mesesAteFire === 'number');
+  if (comData.length < 2) return [];
+  return comData.map((s, i) => {
+    const [ano, mes] = s.mes.split('-').map(Number);
+    const totalMeses = (ano ?? 2026) * 12 + (mes ?? 1) - 1 + (s.mesesAteFire as number);
+    return { t: i / (comData.length - 1), v: totalMeses / 12 };
+  });
+}
+
+const MESES_ABREV_CURTO = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+
+/** 2051.25 → "abr/51" */
+function anoDecimalCurto(v: number): string {
+  const ano = Math.floor(v);
+  const mes = Math.min(11, Math.max(0, Math.round((v - ano) * 12)));
+  return `${MESES_ABREV_CURTO[mes]}/${String(ano).slice(2)}`;
 }

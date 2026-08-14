@@ -55,6 +55,7 @@ export function Metodologia() {
     ['numero-fire', 'Seu número FIRE'],
     ['data', 'A data da liberdade'],
     ['vigente', 'De onde saem o custo e o aporte'],
+    ['movimento', 'Por que a data se moveu'],
     ['juro-real', 'Juro real (e por que tudo aqui é real)'],
     ['patrimonio', 'O que conta como patrimônio'],
     ['coast', 'CoastFIRE'],
@@ -198,6 +199,37 @@ export function Metodologia() {
           Nos primeiros meses a data oscila mais, e isso não é defeito: com 3 pontos, um mês estranho
           pesa um terço. A partir de uns 6 ela assenta. O que a mediana <strong>não</strong> faz é
           prever mudança de vida — ela descreve o passado recente e assume que ele continua.
+        </Limite>
+      </Secao>
+
+      {/* ------------------------------------------------------------------ */}
+      <Secao
+        id="movimento"
+        titulo="Por que a data se moveu"
+        pergunta="Como o app separa o que empurrou de o que puxou?"
+      >
+        <p>
+          Quatro coisas mexem na data: <strong>patrimônio</strong>, <strong>aporte</strong>,{' '}
+          <strong>retorno</strong> e <strong>meta</strong> (que, sem travar, é o seu custo). Quando
+          ela anda, o app precisa dizer quanto cada uma pesou — e a conta óbvia não serve.
+        </p>
+        <p className="pf-metodo-nota">
+          Trocar uma variável de cada vez e ir acumulando <strong>depende da ordem</strong>: trocar
+          o custo antes ou depois do aporte dá números diferentes pro mesmo par de estados, e ainda
+          sobra resíduo. O app usa o <strong>valor de Shapley</strong>, que faz a média de todas as
+          ordens possíveis — 16 avaliações da fórmula da data, com 4 fatores. É independente de
+          ordem e <strong>soma exatamente</strong> a variação total, sem sobra.
+        </p>
+        <p className="pf-metodo-nota">
+          <strong>Data ≠ prazo.</strong> Se há um ano faltavam 300 meses e hoje faltam 288, nada
+          melhorou: passou um ano. Toda comparação aqui — inclusive o "desde que você começou" —
+          converte prazo em <strong>data de chegada</strong> antes de comparar. É o que separa
+          progresso de tempo passando.
+        </p>
+        <Limite>
+          Quando alguma combinação de fatores não fecha (meta inalcançável naquele cenário), a
+          atribuição simplesmente não existe: os pesos não somam o total. Nesse caso o app diz que{' '}
+          <strong>não consegue separar</strong> em vez de mostrar uma divisão inventada.
         </Limite>
       </Secao>
 
