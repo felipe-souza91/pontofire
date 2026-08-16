@@ -126,10 +126,25 @@ describe('taxa de poupança', () => {
 
 describe('fatos do mês', () => {
   it('mês negativo é fato sem julgamento', () => {
-    const r = mesNegativo(ctxBase({ snapshots: [snap('2026-09', 300_000, { aportesMes: -500 })] }), fmt);
+    // vermelho é receita abaixo da despesa — NÃO aporte negativo, que desde a
+    // Fase 2 não existe mais (ninguém digita aporte negativo)
+    const vermelho = snap('2026-09', 300_000, { receitaLiquida: 8_000, gastoTotal: 8_500 });
+    const r = mesNegativo(ctxBase({ snapshots: [vermelho] }), fmt);
     const t = textoDoInsight(r!);
     expect(t).toContain('a mais do que entrou');
     expect(t.toLowerCase()).not.toMatch(/culpa|errado|deveria|irresponsáve/);
+  });
+
+  it('mês vermelho é detectado mesmo com aporte positivo', () => {
+    // gastou mais do que ganhou E ainda aportou, tirando de saldo antigo: as
+    // duas coisas são verdade, e a regra antiga (aportesMes < 0) perdia esta
+    const r = mesNegativo(
+      ctxBase({
+        snapshots: [snap('2026-09', 300_000, { receitaLiquida: 8_000, gastoTotal: 9_000, aportesMes: 2_000 })],
+      }),
+      fmt,
+    );
+    expect(textoDoInsight(r!)).toContain('R$ 1000');
   });
 
   it('rendimento maior que o aporte tem destaque especial', () => {
@@ -287,5 +302,66 @@ describe('custo do perfil defasado', () => {
 
   it('sem declarado no contexto, não opina', () => {
     expect(custoDoPerfilDefasado(ctxBase({ custoVidaMensal: 16_000 }), fmt)).toBeNull();
+  });
+});
+
+describe('regras que o aporte digitado tornou obsoletas', () => {
+  /*
+   * Até a Fase 2, `aportesMes` ERA `receita − despesa`. Depois dela virou valor
+   * digitado, e três regras que liam esse campo passaram a significar outra
+   * coisa sem ninguém perceber. Estes testes fixam o significado pretendido.
+   */
+
+  it('a variação da taxa NÃO projeta o mês como se fosse permanente', () => {
+    // caso real: −8% → 24% anunciava "sua data anda 23 anos e 8 meses",
+    // projetando um aporte negativo pra sempre. A data sai da mediana.
+    const i = taxaPoupancaVariou(
+      ctxBase({
+        aporteMensal: 2_000,
+        snapshots: [
+          snap('2026-08', 300_000, { receitaLiquida: 10_000, gastoTotal: 10_800, taxaPoupanca: -0.08 }),
+          snap('2026-09', 302_000, { receitaLiquida: 10_000, gastoTotal: 7_600, taxaPoupanca: 0.24, aportesMes: 2_400 }),
+        ],
+      }),
+      fmt,
+    );
+    const texto = textoDoInsight(i!);
+    expect(texto).toContain('-8%');
+    expect(texto).toContain('24%');
+    // nada de década projetada a partir de um mês
+    expect(texto).not.toMatch(/\b(1[0-9]|[2-9][0-9]) meses\b/);
+    expect(texto).toMatch(/mediana/);
+  });
+
+  it('a variação cala sobre a data quando o mês bate com a mediana', () => {
+    const i = taxaPoupancaVariou(
+      ctxBase({
+        aporteMensal: 2_000,
+        snapshots: [
+          snap('2026-08', 300_000, { taxaPoupanca: 0.1 }),
+          snap('2026-09', 302_000, { taxaPoupanca: 0.24, aportesMes: 2_000 }),
+        ],
+      }),
+      fmt,
+    );
+    expect(textoDoInsight(i!)).not.toMatch(/mediana/);
+  });
+
+  it('mês vermelho não depende mais de aporte negativo', () => {
+    const semVermelho = mesNegativo(
+      ctxBase({ snapshots: [snap('2026-09', 300_000, { receitaLiquida: 10_000, gastoTotal: 8_000 })] }),
+      fmt,
+    );
+    expect(semVermelho).toBeNull();
+  });
+
+  it('streak no azul olha receita × despesa, não o aporte', () => {
+    // mês em que ele aportou mas gastou mais do que ganhou NÃO é azul
+    const l = [
+      snap('2026-07', 1, { receitaLiquida: 10_000, gastoTotal: 8_000 }),
+      snap('2026-08', 2, { receitaLiquida: 10_000, gastoTotal: 11_000, aportesMes: 3_000 }),
+      snap('2026-09', 3, { receitaLiquida: 10_000, gastoTotal: 8_000 }),
+    ];
+    expect(streakAzul(ctxBase({ snapshots: l }), fmt)).toBeNull();
   });
 });

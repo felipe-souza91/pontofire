@@ -2,8 +2,8 @@ import {
   ehCategoriaNeutra,
   impactoAporteExtra,
   jaEhCoastFire,
-  mesesAteFire,
 } from '@pontofire/engine';
+import { streakAtual } from './conquistas';
 import { hl, type Insight, type Regra } from './tipos';
 
 const MARCOS_PROGRESSO = [0.1, 0.25, 0.5, 0.75, 0.9];
@@ -87,13 +87,6 @@ export const taxaPoupancaVariou: Regra = (ctx, fmt) => {
   if (Math.abs(delta) < 0.03) return null; // < 3 p.p. não é notícia
 
   const subiu = delta > 0;
-  // impacto: manter o aporte do mês novo vs. o do mês anterior
-  const base = { P: ctx.patrimonioAtual, A: a.aportesMes, i: ctx.iMensal, M: ctx.metaFire };
-  const antes = mesesAteFire(base.P, a.aportesMes, base.i, base.M);
-  const depois = mesesAteFire(base.P, b.aportesMes, base.i, base.M);
-  const ganho =
-    antes.status === 'ok' && depois.status === 'ok' ? antes.meses - depois.meses : null;
-
   const partes = [
     `Sua taxa de poupança ${subiu ? 'subiu' : 'caiu'} de `,
     hl(fmt.pct(a.taxaPoupanca)),
@@ -101,13 +94,33 @@ export const taxaPoupancaVariou: Regra = (ctx, fmt) => {
     hl(fmt.pct(b.taxaPoupanca)),
     '.',
   ];
-  if (ganho !== null && Math.abs(ganho) >= 0.5) {
+
+  /*
+   * O QUE ESTA REGRA NÃO FAZ MAIS
+   *
+   * Ela projetava o aporte DESTE mês como se fosse permanente e anunciava o
+   * efeito na data. Duas coisas quebravam isso:
+   *
+   * 1. A data sai da MEDIANA dos últimos meses, não do último. O número
+   *    projetado não correspondia a nada que o usuário via na tela.
+   * 2. Com aporte negativo num dos lados, a projeção explodia — chegou a
+   *    anunciar "sua data anda 23 anos e 8 meses" pra uma variação de um mês.
+   *
+   * O efeito real na data já tem lugar próprio e correto: o card depois de
+   * lançar, decomposto por Shapley. Aqui fica o fato e a expectativa certa.
+   */
+  const mediana = ctx.aporteMensal;
+  if (mediana > 0 && Math.abs(b.aportesMes - mediana) / mediana > 0.15) {
     partes.push(
-      ganho > 0 ? ' Nesse ritmo, sua data anda ' : ' Nesse ritmo, sua data recua ',
-      hl(fmt.duracao(Math.abs(ganho))),
-      '.',
+      ' Você aportou ',
+      hl(fmt.moeda(b.aportesMes)),
+      ' contra os ',
+      hl(fmt.moeda(mediana)),
+      ' da sua mediana. Um mês sozinho move pouco a data — ela olha os últimos ',
+      'seis. Se virar padrão, aí ela anda de verdade.',
     );
   }
+
   return {
     id: 'taxa-poupanca-variou',
     tom: subiu ? 'celebracao' : 'atencao',
@@ -116,7 +129,6 @@ export const taxaPoupancaVariou: Regra = (ctx, fmt) => {
   };
 };
 
-/** O patrimônio rendeu sozinho neste mês. */
 export const rendimentoDoMes: Regra = (ctx, fmt) => {
   const s = ultimo(ctx.snapshots);
   if (!s || s.rendimentosMes <= 0) return null;
@@ -178,30 +190,35 @@ export const custoDoPerfilDefasado: Regra = (ctx, fmt) => {
   };
 };
 
-/** Mês no vermelho — fato, sem culpa (§14). */
+/**
+ * Mês no vermelho — fato, sem culpa (§14).
+ *
+ * Olha `receita − despesa`, não `aportesMes`. Até a Fase 2 os dois eram a mesma
+ * coisa (o aporte era a subtração); depois dela o aporte passou a ser digitado,
+ * e ninguém digita aporte negativo — a regra tinha virado código morto, nunca
+ * mais dispararia. Isto restaura o significado original.
+ */
 export const mesNegativo: Regra = (ctx, fmt) => {
   const s = ultimo(ctx.snapshots);
-  if (!s || s.aportesMes >= 0) return null;
+  if (!s) return null;
+  const sobra = s.receitaLiquida - s.gastoTotal;
+  if (sobra >= 0) return null;
   return {
     id: 'mes-negativo',
     tom: 'atencao',
     prioridade: 88,
     partes: [
       'Neste mês saiu ',
-      hl(fmt.moeda(Math.abs(s.aportesMes))),
+      hl(fmt.moeda(Math.abs(sobra))),
       ' a mais do que entrou. Acontece — o motor só registra o que é. ',
       'Se for pontual, sua data mal sente.',
     ],
   };
 };
 
-/** Sequência de meses no azul. */
+/** Sequência de meses no azul — receita acima da despesa, como diz o nome. */
 export const streakAzul: Regra = (ctx) => {
-  let n = 0;
-  for (let i = ctx.snapshots.length - 1; i >= 0; i--) {
-    if (ctx.snapshots[i]!.aportesMes > 0) n++;
-    else break;
-  }
+  const n = streakAtual(ctx);
   if (n < 3) return null;
   return {
     id: 'streak-azul',

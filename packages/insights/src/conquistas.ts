@@ -17,11 +17,19 @@ export interface Conquista {
   atingida: (ctx: ContextoInsights) => boolean;
 }
 
-/** meses seguidos, do mais recente pra trás, com aporte positivo */
+/**
+ * Meses seguidos no azul, do mais recente pra trás.
+ *
+ * "No azul" é receita acima da despesa. Antes da Fase 2 isso era o mesmo que
+ * `aportesMes > 0`, porque o aporte ERA a subtração — hoje ele é digitado, e um
+ * mês em que a pessoa gastou mais do que ganhou mas ainda aportou contaria como
+ * azul. Voltar à subtração preserva o sentido que o nome sempre teve.
+ */
 export function streakAtual(ctx: ContextoInsights): number {
   let n = 0;
   for (let i = ctx.snapshots.length - 1; i >= 0; i--) {
-    if (ctx.snapshots[i]!.aportesMes > 0) n++;
+    const s = ctx.snapshots[i]!;
+    if (s.receitaLiquida - s.gastoTotal > 0) n++;
     else break;
   }
   return n;

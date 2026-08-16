@@ -99,8 +99,8 @@ describe('divergência', () => {
   });
 });
 
-describe('reversibilidade — os 3 números voltam', () => {
-  it('a primeira adoção guarda o números digitados', () => {
+describe('reversibilidade — os números declarados voltam', () => {
+  it('a primeira adoção guarda os números digitados', () => {
     const snap = snapshot();
     expect(totaisAPreservar(snap)).toEqual({
       receitaLiquida: 10_500,
@@ -183,7 +183,7 @@ describe('aporte observado × derivado', () => {
 });
 
 describe('guarda contra adotar um mês vazio', () => {
-  it('não adota sem lançamento — gravaria zeros e arquivaria o números digitados', () => {
+  it('não adota sem lançamento — gravaria zeros e arquivaria os números digitados', () => {
     expect(podeAdotarItens(0, false)).toBe(false);
   });
 

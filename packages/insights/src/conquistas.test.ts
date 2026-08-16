@@ -38,7 +38,8 @@ describe('streak', () => {
   });
 
   it('zera ao encontrar um mês negativo', () => {
-    const l = [snap('2026-07'), snap('2026-08', { aportesMes: -100 }), snap('2026-09')];
+    // vermelho = receita abaixo da despesa; aporte digitado nunca é negativo
+    const l = [snap('2026-07'), snap('2026-08', { receitaLiquida: 8_000, gastoTotal: 8_100 }), snap('2026-09')];
     expect(streakAtual(ctx({ snapshots: l }))).toBe(1);
   });
 
