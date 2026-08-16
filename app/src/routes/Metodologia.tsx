@@ -63,7 +63,7 @@ export function Metodologia() {
     ['cobertura', 'Cobertura passiva e taxa de poupança'],
     ['inss', 'A estimativa do INSS'],
     ['economico', 'Os indicadores do Banco Central'],
-    ['divida', 'Dívida: cabe? e amortizar ou investir?'],
+    ['divida', 'Dívida: cabe? amortizar ou investir? quando parar?'],
     ['importador', 'Como leio extratos e faturas'],
     ['verificacao', 'Como isso é verificado'],
     ['dados', 'Onde ficam os seus dados'],
@@ -417,7 +417,7 @@ export function Metodologia() {
       </Secao>
 
       {/* ------------------------------------------------------------------ */}
-      <Secao id="divida" titulo="Dívida: cabe? e amortizar ou investir?" pergunta="Como uma parcela vira atraso na minha data?">
+      <Secao id="divida" titulo="Dívida: cabe? amortizar ou investir? quando parar?" pergunta="Como uma parcela vira atraso na minha data?">
         <p>
           A premissa é uma só, e está à mostra: a parcela sai primeiro do{' '}
           <strong>aporte</strong>, que é o que sobra do seu mês. Enquanto a dívida durar o aporte
@@ -440,6 +440,26 @@ export function Metodologia() {
           Na <strong>amortização</strong>, a tabela é a padrão do mercado — Price com parcela fixa
           (<Mono>PMT = PV·i ÷ (1 − (1+i)⁻ⁿ)</Mono>) ou SAC com amortização constante. O que muda é a
           pergunta final: <strong>amortizar ou investir a diferença?</strong>
+        </p>
+        <p className="pf-metodo-nota">
+          <strong>"Quando eu paro de amortizar?"</strong> A resposta não é um quando. Amortizar R$ 1
+          rende exatamente a taxa do contrato — os juros que você deixa de pagar —, garantido e sem
+          imposto. Investir R$ 1 rende a sua carteira, menos IR. É taxa contra taxa, e{' '}
+          <strong>não depende de quanto você já tem acumulado</strong>: se uma ganha, ela já ganhava
+          desde o primeiro real.
+        </p>
+        <p className="pf-metodo-nota">
+          Duas coisas precisam ser corrigidas antes de comparar, e as duas puxam pro mesmo lado.{' '}
+          <strong>A taxa do contrato é nominal</strong> e o seu retorno é real — trazer o contrato
+          pra termos reais com o IPCA é o que impede a conta de sempre concluir "amortize". E{' '}
+          <strong>o IR incide sobre o ganho nominal</strong>, ou seja, a inflação é tributada junto:
+          com IPCA alto, 15% de imposto comem bem mais que 15% do seu retorno real. Amortização não
+          paga imposto nenhum, e é isso que a mantém competitiva.
+        </p>
+        <p className="pf-metodo-nota">
+          O que <strong>de fato muda com o tempo</strong> é outro marco: o mês em que seu patrimônio
+          investido passa o saldo devedor. Dali em diante a dívida deixa de ser risco e vira escolha
+          — você pode quitar quando quiser. Esse depende do montante, e é uma data.
         </p>
         <Limite>
           Aqui mora a armadilha que mais engana: a taxa do contrato é <strong>nominal</strong> e o

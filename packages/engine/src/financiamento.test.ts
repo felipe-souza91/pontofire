@@ -4,9 +4,11 @@ import {
   cabeNoOrcamento,
   ganhoDeAmortizar,
   mesesAteFireComAporteVariavel,
+  pontoDeVirada,
   prestacaoPrice,
   simularFinanciamento,
   type EntradaFinanciamento,
+  type EntradaVirada,
 } from './financiamento';
 import { numeroFire } from './fire';
 import { realMensalDeAnual } from './rates';
@@ -229,5 +231,88 @@ describe('cabeNoOrcamento — quanto essa dívida custa em tempo de vida', () =>
     const r = cabeNoOrcamento({ ...situacao, patrimonio: 5_000_000, parcela: 1_000, mesesDaDivida: 24 });
     expect(r.mesesSemDivida).toBe(0);
     expect(r.atrasoMeses).toBe(0);
+  });
+});
+
+describe('ponto de virada — amortizar ou aportar', () => {
+  const contrato = (anualPct: number, meses = 240, valor = 300_000): EntradaFinanciamento => ({
+    valor,
+    taxaMensal: Math.pow(1 + anualPct / 100, 1 / 12) - 1,
+    meses,
+    sistema: 'price',
+  });
+
+  const entrada = (over: Partial<EntradaVirada> = {}): EntradaVirada => ({
+    financiamento: contrato(11.5),
+    patrimonioHoje: 200_000,
+    aporteMensal: 2_000,
+    amortizacaoMensal: 1_000,
+    retornoRealAnual: 0.05,
+    ipcaAnual: 0.045,
+    ...over,
+  });
+
+  it('a decisão NÃO depende de quanto já se tem — é taxa contra taxa', () => {
+    // é a resposta contraintuitiva: não existe montante a partir do qual vira
+    const pobre = pontoDeVirada(entrada({ patrimonioHoje: 1_000 }));
+    const rico = pontoDeVirada(entrada({ patrimonioHoje: 5_000_000 }));
+    expect(pobre.vence).toBe(rico.vence);
+    expect(pobre.margem).toBeCloseTo(rico.margem, 12);
+  });
+
+  it('nem do tamanho da dívida', () => {
+    const pequena = pontoDeVirada(entrada({ financiamento: contrato(11.5, 240, 50_000) }));
+    const grande = pontoDeVirada(entrada({ financiamento: contrato(11.5, 240, 900_000) }));
+    expect(pequena.margem).toBeCloseTo(grande.margem, 12);
+  });
+
+  it('traz o contrato pra termos REAIS antes de comparar', () => {
+    // 11,5% nominal com IPCA 4,5% é 6,7% real. Comparar o nominal cru com um
+    // retorno real é a armadilha que decide a conta errada.
+    const v = pontoDeVirada(entrada());
+    expect(v.taxaRealContrato).toBeCloseTo(0.067, 3);
+  });
+
+  it('o IR tributa a INFLAÇÃO junto com o ganho', () => {
+    // mesma carteira, IPCA maior: o imposto come mais do retorno REAL
+    const calmo = pontoDeVirada(entrada({ ipcaAnual: 0.02 }));
+    const inflacionario = pontoDeVirada(entrada({ ipcaAnual: 0.09 }));
+    expect(inflacionario.custoDoIR).toBeGreaterThan(calmo.custoDoIR);
+  });
+
+  it('sem IR, o retorno líquido é o bruto', () => {
+    const v = pontoDeVirada(entrada({ ir: 0 }));
+    expect(v.retornoRealLiquido).toBeCloseTo(0.05, 10);
+    expect(v.custoDoIR).toBeCloseTo(0, 10);
+  });
+
+  it('o retorno de empate realmente empata', () => {
+    const v = pontoDeVirada(entrada());
+    const noEmpate = pontoDeVirada(entrada({ retornoRealAnual: v.retornoDeEmpate }));
+    expect(noEmpate.vence).toBe('empate');
+    expect(noEmpate.margem).toBeCloseTo(0, 10);
+  });
+
+  it('contrato barato inverte a decisão', () => {
+    const caro = pontoDeVirada(entrada({ financiamento: contrato(14) }));
+    const barato = pontoDeVirada(entrada({ financiamento: contrato(4), retornoRealAnual: 0.07 }));
+    expect(caro.vence).toBe('amortizar');
+    expect(barato.vence).toBe('investir');
+  });
+
+  it('acha o mês em que o investido passa o saldo devedor', () => {
+    const v = pontoDeVirada(entrada());
+    expect(v.mesDeIndependencia).toBeGreaterThan(0);
+    expect(v.patrimonioNaVirada).toBeGreaterThanOrEqual(v.saldoNaVirada);
+  });
+
+  it('quem já tem mais que a dívida é independente no primeiro mês', () => {
+    const v = pontoDeVirada(entrada({ patrimonioHoje: 400_000 }));
+    expect(v.mesDeIndependencia).toBe(1);
+  });
+
+  it('sem aporte e sem patrimônio, a independência não chega antes da quitação', () => {
+    const v = pontoDeVirada(entrada({ patrimonioHoje: 0, aporteMensal: 0 }));
+    expect(v.mesDeIndependencia).toBeNull();
   });
 });

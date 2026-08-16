@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   amortizarOuInvestir,
   ganhoDeAmortizar,
+  pontoDeVirada,
   type SistemaAmortizacao,
 } from '@pontofire/engine';
 import { useAuth } from '../auth/useAuth';
@@ -26,7 +27,7 @@ const IPCA_PADRAO = 0.045;
  */
 export function CalcAmortizacao() {
   const { user } = useAuth();
-  const { doc, carregando } = usePainel(user?.uid ?? null);
+  const { doc, vigente, P, carregando } = usePainel(user?.uid ?? null);
   const ind = useIndicadores();
 
   const [valor, setValor] = useState(0);
@@ -44,6 +45,25 @@ export function CalcAmortizacao() {
   const ganho = useMemo(
     () => (valor > 0 && meses > 0 ? ganhoDeAmortizar(financiamento, { mensal: extra, modo }) : null),
     [valor, taxaMensal, meses, sistema, extra, modo],
+  );
+
+  /**
+   * O "quando parar de amortizar" — que não é um quando, e é aí que está o
+   * valor. Roda com o patrimônio e o aporte REAIS do usuário.
+   */
+  const virada = useMemo(
+    () =>
+      valor > 0 && meses > 0 && doc && vigente
+        ? pontoDeVirada({
+            financiamento,
+            patrimonioHoje: P,
+            aporteMensal: vigente.aporte.valor,
+            amortizacaoMensal: extra,
+            retornoRealAnual: doc.retornoRealEsperado,
+            ipcaAnual,
+          })
+        : null,
+    [valor, taxaMensal, meses, sistema, extra, doc, vigente, P, ipcaAnual],
   );
 
   const decisao = useMemo(
@@ -64,8 +84,8 @@ export function CalcAmortizacao() {
   return (
     <div>
       <p className="pf-hint" style={{ marginTop: 0 }}>
-        Simule o financiamento, veja quanto uma amortização extra economiza — e descubra se vale
-        mais amortizar ou investir esse mesmo dinheiro.
+        Simule o financiamento, veja quanto uma amortização extra economiza, descubra se vale mais
+        amortizar ou investir esse dinheiro — e, no fim, quando faz sentido parar de amortizar.
       </p>
 
       <Campo rotulo="Valor financiado" dica="Já descontada a entrada.">
@@ -227,6 +247,80 @@ export function CalcAmortizacao() {
               : `estimado em ${formatPct(ipcaAnual)}`}
             . Investir também traz risco que amortizar não tem: a dívida é certa, o retorno não.
           </p>
+          <Link className="pf-como-calculo" to="/metodologia#divida">como calculo isso →</Link>
+        </section>
+      )}
+
+      {virada && (
+        <section className="pf-hero-card" style={{ marginTop: 'var(--space-4)' }}>
+          <span className="pf-eyebrow">quando eu paro de amortizar?</span>
+
+          <p style={{ lineHeight: 1.6, marginTop: 'var(--space-3)' }}>
+            <strong>Nunca por causa do quanto você já tem.</strong> Amortizar R$ 1 rende exatamente a
+            taxa do contrato — os juros que você deixa de pagar —, garantido e sem imposto. Investir
+            R$ 1 rende a sua carteira, menos IR. É <strong>taxa contra taxa</strong>: se uma ganha,
+            ela já ganhava desde o primeiro real, e vai ganhando até o último.
+          </p>
+
+          <div className="pf-eco-comparacao" style={{ borderTop: 0, paddingTop: 0 }}>
+            <div className="pf-eco-linha">
+              <span>Contrato, em juros reais</span>
+              <strong className="mono">{formatPct(virada.taxaRealContrato)} a.a.</strong>
+            </div>
+            <div className="pf-eco-linha">
+              <span>Sua carteira, real e já sem IR</span>
+              <strong className="mono" style={{ color: virada.vence === 'investir' ? 'var(--mint)' : 'var(--muted)' }}>
+                {formatPct(virada.retornoRealLiquido)} a.a.
+              </strong>
+            </div>
+          </div>
+
+          <p style={{ lineHeight: 1.6 }}>
+            {virada.vence === 'empate' ? (
+              <>
+                As duas estão <strong>empatadas</strong>. Aí não é conta, é preferência: amortizar dá
+                sossego, investir dá liquidez.
+              </>
+            ) : virada.vence === 'amortizar' ? (
+              <>
+                Hoje <strong style={{ color: 'var(--mint)' }}>amortizar ganha</strong> por{' '}
+                {formatPct(Math.abs(virada.margem))} ao ano. Pra virar o jogo, sua carteira precisaria
+                render <strong className="mono">{formatPct(virada.retornoDeEmpate)} real ao ano</strong>{' '}
+                — antes do imposto.
+              </>
+            ) : (
+              <>
+                Hoje <strong style={{ color: 'var(--mint)' }}>aportar ganha</strong> por{' '}
+                {formatPct(virada.margem)} ao ano, mesmo depois do IR. O empate só voltaria se sua
+                carteira caísse pra <strong className="mono">{formatPct(virada.retornoDeEmpate)} real</strong>.
+              </>
+            )}
+          </p>
+
+          <p className="pf-hint">
+            ⓘ O IR come <strong>{formatPct(virada.custoDoIR)} do seu retorno real</strong> — mais do
+            que os 15% parecem, porque ele incide sobre o ganho <strong>nominal</strong>: a inflação
+            é tributada junto. Amortização não paga imposto nenhum, e é isso que a coloca no páreo.
+          </p>
+
+          {virada.mesDeIndependencia !== null ? (
+            <div className="pf-card-alerta" style={{ marginTop: 'var(--space-4)' }}>
+              <strong>O que MUDA com o tempo é outra coisa.</strong>
+              <p style={{ margin: 'var(--space-2) 0 0' }}>
+                Em <strong>{formatDuracao(virada.mesDeIndependencia)}</strong> o seu investido passa o
+                saldo devedor ({formatBRLcompact(virada.patrimonioNaVirada)} contra{' '}
+                {formatBRLcompact(virada.saldoNaVirada)}). Dali em diante a dívida deixa de ser risco
+                e vira <strong>escolha</strong>: você pode quitar quando quiser. É provavelmente esse
+                o marco que a pergunta procurava.
+              </p>
+            </div>
+          ) : (
+            <p className="pf-hint">
+              No ritmo atual seu investido não alcança o saldo devedor antes de a dívida acabar
+              ({formatDuracao(virada.mesesAteQuitar)}). Aumentar o aporte antecipa esse encontro.
+            </p>
+          )}
+
           <Link className="pf-como-calculo" to="/metodologia#divida">como calculo isso →</Link>
         </section>
       )}

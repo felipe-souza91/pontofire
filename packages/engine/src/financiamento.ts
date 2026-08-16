@@ -353,3 +353,128 @@ export function cabeNoOrcamento(e: EntradaCabeNoOrcamento): CabeNoOrcamento {
     custoTotal: e.parcela * e.mesesDaDivida,
   };
 }
+
+// ---------------------------------------------------------------------------
+// "quando eu paro de amortizar?"
+
+/**
+ * IR sobre o rendimento no prazo mais longo da tabela regressiva (720+ dias).
+ * Quem investe pra FIRE está sempre nessa faixa.
+ */
+export const IR_LONGO_PRAZO = 0.15;
+
+export interface EntradaVirada {
+  financiamento: EntradaFinanciamento;
+  /** quanto ela já tem investido hoje */
+  patrimonioHoje: number;
+  /** quanto entra na carteira por mês */
+  aporteMensal: number;
+  /** quanto vai a mais pro financiamento por mês */
+  amortizacaoMensal: number;
+  /** retorno REAL anual esperado (o número do perfil) */
+  retornoRealAnual: number;
+  ipcaAnual: number;
+  /** alíquota sobre o rendimento; default: tabela longa */
+  ir?: number;
+}
+
+export interface Virada {
+  /** taxa do contrato em termos REAIS ao ano */
+  taxaRealContrato: number;
+  /** retorno real ao ano DEPOIS do IR — o que de fato compete com o contrato */
+  retornoRealLiquido: number;
+  /** quanto o IR come do retorno real, em pontos percentuais */
+  custoDoIR: number;
+  vence: 'amortizar' | 'investir' | 'empate';
+  /** distância entre as duas taxas, em pontos percentuais ao ano */
+  margem: number;
+  /** o retorno real BRUTO que empataria com o contrato */
+  retornoDeEmpate: number;
+  /**
+   * Mês em que o patrimônio passa o saldo devedor. Deste ponto em diante a
+   * dívida deixa de ser risco e vira escolha: dá pra quitar quando quiser.
+   */
+  mesDeIndependencia: number | null;
+  patrimonioNaVirada: number;
+  saldoNaVirada: number;
+  /** meses até quitar, no ritmo atual de amortização */
+  mesesAteQuitar: number;
+}
+
+/**
+ * "Quando devo parar de amortizar e passar a aportar?"
+ *
+ * A resposta que a pergunta não espera: **nunca depende de quanto você já tem**.
+ * Amortizar R$ 1 rende exatamente a taxa do contrato — os juros que você deixa
+ * de pagar —, garantido e sem IR. Investir R$ 1 rende o retorno da carteira,
+ * menos IR. É taxa contra taxa, e se uma ganha, ela já ganhava desde o primeiro
+ * real. Não existe um montante a partir do qual vira.
+ *
+ * O que a comparação exige pra não mentir:
+ *
+ * 1. TERMOS IGUAIS. A taxa do contrato é NOMINAL; o retorno que o usuário
+ *    declara aqui é REAL. Comparar "financiamento a 11,5%" com "eu rendo 6%"
+ *    é a armadilha que sempre conclui "amortize" — e está errada.
+ * 2. IR SOBRE O GANHO NOMINAL. A inflação é tributada junto com o rendimento.
+ *    Quanto maior o IPCA, mais o IR come do retorno REAL — e ninguém desconta
+ *    isso antes de comparar com uma amortização, que é líquida de imposto.
+ *
+ * O que DEPENDE do montante é outra coisa, e é provavelmente o que a pergunta
+ * queria: o mês em que o investido passa o saldo devedor.
+ */
+export function pontoDeVirada(e: EntradaVirada): Virada {
+  const ir = e.ir ?? IR_LONGO_PRAZO;
+
+  const taxaAnualContrato = Math.pow(1 + e.financiamento.taxaMensal, 12) - 1;
+  const taxaRealContrato = (1 + taxaAnualContrato) / (1 + e.ipcaAnual) - 1;
+
+  // real → nominal → tira o IR do ganho → volta pra real
+  const nominalBruto = (1 + e.retornoRealAnual) * (1 + e.ipcaAnual) - 1;
+  const nominalLiquido = nominalBruto * (1 - ir);
+  const retornoRealLiquido = (1 + nominalLiquido) / (1 + e.ipcaAnual) - 1;
+
+  // o retorno real BRUTO que empataria com o contrato, já contando o IR
+  const nominalDeEmpate = ((1 + taxaRealContrato) * (1 + e.ipcaAnual) - 1) / (1 - ir);
+  const retornoDeEmpate = (1 + nominalDeEmpate) / (1 + e.ipcaAnual) - 1;
+
+  const margem = retornoRealLiquido - taxaRealContrato;
+  const EMPATE = 0.005; // meio ponto percentual não decide nada
+
+  // --- o marco que depende do montante
+  const comExtra = simularFinanciamento(e.financiamento, {
+    mensal: e.amortizacaoMensal,
+    modo: 'prazo',
+  });
+  const nominalMensalLiquido = Math.pow(1 + nominalLiquido, 1 / 12) - 1;
+
+  let patrimonio = e.patrimonioHoje;
+  let mesDeIndependencia: number | null = null;
+  let patrimonioNaVirada = e.patrimonioHoje;
+  let saldoNaVirada = e.financiamento.valor;
+
+  for (let mes = 1; mes <= comExtra.mesesAteQuitar; mes++) {
+    patrimonio = patrimonio * (1 + nominalMensalLiquido) + e.aporteMensal;
+    const saldo = comExtra.parcelas[mes - 1]?.saldo ?? 0;
+    // `saldo > 0` importa: no último mês a dívida zera e `0 >= 0` marcaria
+    // "independência" pra quem chegou lá pagando, não por ter o dinheiro. O
+    // marco é poder QUITAR ANTES — dívida quitada não é marco, é o fim.
+    if (mesDeIndependencia === null && saldo > 0 && patrimonio >= saldo) {
+      mesDeIndependencia = mes;
+      patrimonioNaVirada = patrimonio;
+      saldoNaVirada = saldo;
+    }
+  }
+
+  return {
+    taxaRealContrato,
+    retornoRealLiquido,
+    custoDoIR: e.retornoRealAnual - retornoRealLiquido,
+    vence: Math.abs(margem) < EMPATE ? 'empate' : margem > 0 ? 'investir' : 'amortizar',
+    margem,
+    retornoDeEmpate,
+    mesDeIndependencia,
+    patrimonioNaVirada,
+    saldoNaVirada,
+    mesesAteQuitar: comExtra.mesesAteQuitar,
+  };
+}
