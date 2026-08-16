@@ -141,7 +141,7 @@ export function Dashboard() {
           </>
         ) : plano.status === 'atingido' ? (
           <>
-            <div className="pf-hc-date">Livre 🔥</div>
+            <div className="pf-hc-date">Livre</div>
             <p className="pf-hc-sub">seu patrimônio já cobre sua meta</p>
           </>
         ) : (

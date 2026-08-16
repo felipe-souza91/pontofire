@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Flame } from '../theme/Flame';
+import { Icone, type NomeIcone } from '../theme/Icone';
 
-const ITENS: { para: string; rotulo: string; icone: string }[] = [
-  { para: '/lancar', rotulo: 'Lançar', icone: '✍️' },
-  { para: '/importar', rotulo: 'Importar', icone: '📄' },
-  { para: '/bens', rotulo: 'Bens', icone: '🏠' },
-  { para: '/conquistas', rotulo: 'Conquistas', icone: '🏆' },
-  { para: '/ferramentas', rotulo: 'Ferramentas', icone: '🧮' },
-  { para: '/perfil', rotulo: 'Perfil', icone: '⚙️' },
+const ITENS: { para: string; rotulo: string; icone: NomeIcone }[] = [
+  { para: '/lancar', rotulo: 'Lançar', icone: 'lancar' },
+  { para: '/importar', rotulo: 'Importar', icone: 'importar' },
+  { para: '/bens', rotulo: 'Bens', icone: 'casa' },
+  { para: '/conquistas', rotulo: 'Conquistas', icone: 'trofeu' },
+  { para: '/ferramentas', rotulo: 'Ferramentas', icone: 'calculadora' },
+  { para: '/perfil', rotulo: 'Perfil', icone: 'engrenagem' },
 ];
 
 /**
@@ -75,12 +76,12 @@ export function MenuTopo({ onSair }: { onSair: () => void }) {
         <div className="pf-menu-painel" id="pf-menu-painel">
           {ITENS.map((i) => (
             <Link key={i.para} to={i.para}>
-              <span aria-hidden>{i.icone}</span>
+              <span aria-hidden><Icone nome={i.icone} size={16} /></span>
               {i.rotulo}
             </Link>
           ))}
           <button type="button" onClick={onSair}>
-            <span aria-hidden>🚪</span>
+            <span aria-hidden><Icone nome="sair" size={16} /></span>
             Sair
           </button>
           <span className="pf-menu-selo">beta fechado</span>

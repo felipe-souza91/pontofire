@@ -12,7 +12,7 @@ export interface Conquista {
   /** o que ela significa (mostrado sempre) */
   descricao: string;
   icone: string;
-  /** ordem de exibição / dificuldade */
+  /** nome do ícone (`Icone`), ou família paramétrica: `anel:3/3`, `arco:0.25`, `pilha:2` */
   ordem: number;
   atingida: (ctx: ContextoInsights) => boolean;
 }
@@ -67,10 +67,10 @@ function brl(v: number): string {
 }
 
 const MARCOS_PATRIMONIO: { valor: number; titulo: string; icone: string }[] = [
-  { valor: 100_000, titulo: 'Primeiros cem mil', icone: '🌰' },
-  { valor: 500_000, titulo: 'Meio milhão', icone: '🌳' },
-  { valor: 1_000_000, titulo: 'Primeiro milhão', icone: '💎' },
-  { valor: 5_000_000, titulo: 'Cinco milhões', icone: '🏔️' },
+  { valor: 100_000, titulo: 'Primeiros cem mil', icone: 'pilha:1' },
+  { valor: 500_000, titulo: 'Meio milhão', icone: 'pilha:2' },
+  { valor: 1_000_000, titulo: 'Primeiro milhão', icone: 'pilha:3' },
+  { valor: 5_000_000, titulo: 'Cinco milhões', icone: 'pilha:4' },
 ];
 
 const marcosPatrimonio: Conquista[] = MARCOS_PATRIMONIO.map((m, k) => ({
@@ -88,7 +88,7 @@ export const CONQUISTAS: Conquista[] = [
     id: 'primeiro-passo',
     titulo: 'Primeiro passo',
     descricao: 'Registrou seu primeiro mês.',
-    icone: '🌱',
+    icone: 'broto',
     ordem: 10,
     atingida: (c) => c.snapshots.length >= 1,
   },
@@ -96,7 +96,7 @@ export const CONQUISTAS: Conquista[] = [
     id: 'tres-meses',
     titulo: 'Pegando o ritmo',
     descricao: 'Três meses registrados.',
-    icone: '📈',
+    icone: 'grafico',
     ordem: 20,
     atingida: (c) => c.snapshots.length >= 3,
   },
@@ -104,7 +104,7 @@ export const CONQUISTAS: Conquista[] = [
     id: 'um-ano',
     titulo: 'Um ano de história',
     descricao: 'Doze meses registrados — dá pra ver tendência de verdade.',
-    icone: '📅',
+    icone: 'calendario',
     ordem: 30,
     atingida: (c) => c.snapshots.length >= 12,
   },
@@ -112,7 +112,7 @@ export const CONQUISTAS: Conquista[] = [
     id: 'streak-3',
     titulo: 'Três no azul',
     descricao: 'Três meses seguidos guardando dinheiro.',
-    icone: '🔵',
+    icone: 'anel:3/3',
     ordem: 40,
     atingida: (c) => streakAtual(c) >= 3,
   },
@@ -120,7 +120,7 @@ export const CONQUISTAS: Conquista[] = [
     id: 'streak-6',
     titulo: 'Meio ano firme',
     descricao: 'Seis meses seguidos no azul.',
-    icone: '💠',
+    icone: 'anel:6/6',
     ordem: 50,
     atingida: (c) => streakAtual(c) >= 6,
   },
@@ -128,7 +128,7 @@ export const CONQUISTAS: Conquista[] = [
     id: 'streak-12',
     titulo: 'Doze no azul',
     descricao: 'Um ano inteiro sem ficar no vermelho.',
-    icone: '🏅',
+    icone: 'anel:12/12',
     ordem: 60,
     atingida: (c) => streakAtual(c) >= 12,
   },
@@ -136,7 +136,7 @@ export const CONQUISTAS: Conquista[] = [
     id: 'poupador-30',
     titulo: 'Poupa 30',
     descricao: 'Guardou 30% da renda em algum mês.',
-    icone: '⚡',
+    icone: 'raio',
     ordem: 70,
     atingida: (c) => melhorTaxa(c) >= 0.3,
   },
@@ -144,7 +144,7 @@ export const CONQUISTAS: Conquista[] = [
     id: 'poupador-50',
     titulo: 'Poupa 50',
     descricao: 'Guardou metade da renda em algum mês.',
-    icone: '🔥',
+    icone: 'chama',
     ordem: 80,
     atingida: (c) => melhorTaxa(c) >= 0.5,
   },
@@ -152,7 +152,7 @@ export const CONQUISTAS: Conquista[] = [
     id: 'progresso-10',
     titulo: '10% do caminho',
     descricao: 'Um décimo da meta conquistado.',
-    icone: '🚩',
+    icone: 'arco:0.10',
     ordem: 90,
     atingida: (c) => c.progresso >= 0.1,
   },
@@ -160,7 +160,7 @@ export const CONQUISTAS: Conquista[] = [
     id: 'progresso-25',
     titulo: 'Um quarto',
     descricao: '25% do seu número FIRE.',
-    icone: '⛺',
+    icone: 'arco:0.25',
     ordem: 100,
     atingida: (c) => c.progresso >= 0.25,
   },
@@ -168,7 +168,7 @@ export const CONQUISTAS: Conquista[] = [
     id: 'progresso-50',
     titulo: 'Metade do caminho',
     descricao: 'Metade da meta — daqui os juros pesam mais que o aporte.',
-    icone: '⛰️',
+    icone: 'arco:0.50',
     ordem: 110,
     atingida: (c) => c.progresso >= 0.5,
   },
@@ -176,7 +176,7 @@ export const CONQUISTAS: Conquista[] = [
     id: 'progresso-75',
     titulo: 'Três quartos',
     descricao: '75% da meta.',
-    icone: '🌄',
+    icone: 'arco:0.75',
     ordem: 120,
     atingida: (c) => c.progresso >= 0.75,
   },
@@ -184,7 +184,7 @@ export const CONQUISTAS: Conquista[] = [
     id: 'renda-passiva',
     titulo: 'Primeira renda passiva',
     descricao: 'Registrou dinheiro entrando sem você trabalhar por ele.',
-    icone: '🌾',
+    icone: 'trigo',
     ordem: 130,
     atingida: (c) => c.coberturaPassiva > 0,
   },
@@ -192,7 +192,7 @@ export const CONQUISTAS: Conquista[] = [
     id: 'cobertura-25',
     titulo: 'Um quarto da vida paga',
     descricao: 'Sua renda passiva cobre 25% do seu custo de vida.',
-    icone: '🏠',
+    icone: 'casa',
     ordem: 140,
     atingida: (c) => c.coberturaPassiva >= 0.25,
   },
@@ -200,7 +200,7 @@ export const CONQUISTAS: Conquista[] = [
     id: 'cobertura-100',
     titulo: 'Vida paga',
     descricao: 'Sua renda passiva cobre 100% do seu custo. Trabalhar virou opcional.',
-    icone: '👑',
+    icone: 'coroa',
     ordem: 150,
     atingida: (c) => c.coberturaPassiva >= 1,
   },
@@ -208,7 +208,7 @@ export const CONQUISTAS: Conquista[] = [
     id: 'coast-fire',
     titulo: 'CoastFIRE',
     descricao: 'Pode parar de aportar hoje e ainda chega à meta só com juros.',
-    icone: '⛵',
+    icone: 'barco',
     ordem: 160,
     atingida: (c) => {
       if (c.idadeAlvo === undefined || c.idadeAtual === undefined) return false;
@@ -221,7 +221,7 @@ export const CONQUISTAS: Conquista[] = [
     id: 'ponto-fire',
     titulo: 'Ponto FIRE',
     descricao: 'Você chegou. O trabalho virou opcional.',
-    icone: '🔥',
+    icone: 'chama',
     ordem: 999,
     atingida: (c) => c.statusFire === 'atingido' || c.progresso >= 1,
   },

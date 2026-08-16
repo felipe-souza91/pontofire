@@ -7,6 +7,7 @@ import { PORQUES } from '../data/humanizacao';
 import { formatBRL, formatDuracao, formatMesAno } from '../utils/format';
 import { MoedaInput } from '../components/MoedaInput';
 import { Flame } from '../theme/Flame';
+import { Icone } from '../theme/Icone';
 
 const TSS = 0.04;
 const RETORNOS = [4, 5, 6];
@@ -220,7 +221,7 @@ export function Onboarding({ jaCompleto = false }: { jaCompleto?: boolean }) {
                 className={`pf-btn ${retornoPct === r ? 'pf-btn-primary' : 'pf-btn-ghost'}`}
                 onClick={() => setRetornoPct(r)}
               >
-                {r}%{r === RETORNO_RECOMENDADO ? ' ★' : ''}
+                {r}%{r === RETORNO_RECOMENDADO ? ' <Icone nome="estrela" size={13} />' : ''}
               </button>
             ))}
           </div>
@@ -234,7 +235,7 @@ export function Onboarding({ jaCompleto = false }: { jaCompleto?: boolean }) {
             onChange={(e) => setRetornoPct(Number(e.target.value))}
           />
           <p className="pf-hint" style={{ marginTop: 'var(--space-2)' }}>
-            ★ recomendado — juro real histórico do Brasil. No Início você vê esse número ao lado da
+            <Icone nome="estrela" size={13} /> recomendado — juro real histórico do Brasil. No Início você vê esse número ao lado da
             média real dos últimos 10 anos, pra conferir se a sua premissa se sustenta.
           </p>
         </div>

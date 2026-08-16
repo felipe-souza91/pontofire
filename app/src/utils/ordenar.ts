@@ -14,8 +14,9 @@ const COLLATOR = new Intl.Collator('pt-BR', { numeric: true, sensitivity: 'base'
 /**
  * Emoji e símbolo no começo do rótulo não contam na ordenação.
  *
- * "💡 Ideia" e "🐛 Problema" ordenariam pelo code point do emoji, que não tem
- * relação nenhuma com o alfabeto — o usuário lê "Ideia" e "Problema".
+ * Símbolo ordena pelo code point, que não tem relação nenhuma com o alfabeto —
+ * quem lê vê a palavra. Os rótulos do app não têm mais emoji (viraram ícones de
+ * traço), mas categoria é campo livre: nada impede o usuário de digitar um.
  */
 const chaveDeOrdenacao = (s: string) => s.replace(/^[^\p{L}\p{N}]+/u, '');
 

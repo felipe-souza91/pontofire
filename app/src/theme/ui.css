@@ -337,10 +337,14 @@
   cursor: pointer;
   transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
-.pf-tab .ic {
-  font-size: 1.15rem;
-  line-height: 1;
+/* os ícones são SVG de traço: alinham pelo flex, não por font-size */
+.pf-tab .ic,
+.pf-tab svg {
   flex: none;
+  color: var(--muted);
+}
+.pf-tab.on svg {
+  color: var(--ember-2);
 }
 .pf-tab:hover {
   border-color: var(--line-2);
@@ -775,9 +779,9 @@
   margin-bottom: var(--space-4);
   min-height: 56px;
 }
-.pf-bv-emoji {
-  font-size: 2.6rem;
-  line-height: 1;
+/* ícone do slide: o traço herda a chama, mais leve que o logo */
+.pf-bv-icone svg {
+  color: var(--ember-2);
 }
 .pf-bv-titulo {
   font-size: clamp(1.4rem, 4.5vw, 1.9rem);
@@ -819,8 +823,10 @@
   background: rgba(255, 122, 69, 0.07);
 }
 .pf-bv-opcao-emoji {
-  font-size: 1.5rem;
-  line-height: 1;
+  display: grid;
+  place-items: center;
+  color: var(--ember-2);
+  flex: none;
 }
 
 .pf-bv-rodape {
@@ -1504,4 +1510,36 @@
   font-size: 0.85rem;
   white-space: nowrap;
   min-width: 5.5rem;
+}
+
+
+/* --- Ícones ---------------------------------------------------------------
+ * O app trocou 43 emoji por um set de traço próprio. A landing sempre teve
+ * zero emoji; era o app que destoava do próprio produto.
+ */
+
+/* dentro de botão/link, o ícone alinha com o texto sem empurrar a linha */
+.pf-btn-link svg,
+.pf-chip svg,
+.pf-menu-painel svg {
+  vertical-align: -0.18em;
+}
+
+/* item do menu: ícone em tom secundário, texto em primeiro plano */
+.pf-menu-painel a svg,
+.pf-menu-painel button svg {
+  color: var(--muted);
+}
+.pf-menu-painel a:hover svg,
+.pf-menu-painel button:hover svg {
+  color: var(--ember-2);
+}
+
+/* troféu: o ícone é o herói do card, então ganha a cor quente */
+.pf-conquista.on svg,
+.pf-trofeu svg {
+  color: var(--ember-2);
+}
+.pf-conquista svg {
+  color: var(--muted);
 }

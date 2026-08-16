@@ -111,7 +111,7 @@ export function EfeitoDoMes({
         >
           Desde que você começou, sua data está{' '}
           <strong>{formatDuracao(Math.abs(desdeAPartida))}</strong>{' '}
-          {desdeAPartida < 0 ? 'mais cedo' : 'mais tarde'}. 🔥
+          {desdeAPartida < 0 ? 'mais cedo' : 'mais tarde'}.
         </p>
       )}
 

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { CONQUISTAS } from '@pontofire/insights';
+import { IconeConquista } from './IconeConquista';
 
 const MAX_VISIVEIS = 10;
 
@@ -26,7 +27,7 @@ export function TrofeusResumo({ ids }: { ids: Set<string> }) {
       </span>
       {visiveis.map((c) => (
         <span key={c.id} className="medalha" title={`${c.titulo} — ${c.descricao}`}>
-          {c.icone}
+          <IconeConquista nome={c.icone} size={18} />
         </span>
       ))}
       {resto > 0 && <span className="mono resto">+{resto}</span>}

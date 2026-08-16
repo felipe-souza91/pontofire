@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { enviarFeedback, ROTULO_FEEDBACK, type TipoFeedback } from '../data/feedback';
 import { ordenarPor } from '../utils/ordenar';
+import { Icone } from '../theme/Icone';
 
 const TIPOS: TipoFeedback[] = ordenarPor(
   ['ideia', 'problema', 'elogio', 'outro'],
@@ -44,7 +45,7 @@ export function BotaoFeedback({ plano = 'free' }: { plano?: string }) {
   return (
     <>
       <button className="pf-fab" onClick={() => setAberto(true)} aria-label="Enviar feedback" title="Enviar feedback">
-        💬
+        <Icone nome="balao" size={20} />
       </button>
 
       {aberto && (
@@ -52,7 +53,7 @@ export function BotaoFeedback({ plano = 'free' }: { plano?: string }) {
           <div className="pf-modal" onClick={(e) => e.stopPropagation()}>
             {enviado ? (
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '2rem' }} aria-hidden>🙏</div>
+                <div style={{ color: 'var(--mint)' }}><Icone nome="check" size={32} /></div>
                 <h2 style={{ fontSize: '1.3rem', marginTop: 'var(--space-3)' }}>Obrigado de verdade.</h2>
                 <p style={{ color: 'var(--muted)' }}>
                   Li tudo que chega. Seu recado ajuda a decidir o que vem primeiro.

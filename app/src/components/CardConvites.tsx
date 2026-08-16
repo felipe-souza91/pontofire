@@ -43,7 +43,7 @@ export function CardConvites({ uid }: { uid: string }) {
       <p className="pf-hc-sub" style={{ marginTop: 'var(--space-2)' }}>
         {restantes > 0
           ? `Você tem ${restantes} de ${total} convites do beta pra dar.`
-          : 'Seus convites do beta já foram usados. Obrigado por espalhar. 🔥'}
+          : 'Seus convites do beta já foram usados. Obrigado por espalhar. '}
       </p>
 
       <div
@@ -63,7 +63,7 @@ export function CardConvites({ uid }: { uid: string }) {
       </div>
 
       <button className="pf-btn pf-btn-primary" style={{ marginTop: 'var(--space-3)' }} onClick={() => void compartilhar()}>
-        {copiado ? 'Link copiado! ✓' : 'Compartilhar convite'}
+        {copiado ? 'Link copiado!' : 'Compartilhar convite'}
       </button>
 
       {usados > 0 && (

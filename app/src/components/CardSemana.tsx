@@ -1,20 +1,21 @@
+import { Icone, type NomeIcone } from '../theme/Icone';
 import type { CardSemana as Card, CategoriaSemana, Parte } from '@pontofire/insights';
 
-const ESTILO: Record<CategoriaSemana, { icone: string; cor: string; borda: string; fundo: string }> = {
+const ESTILO: Record<CategoriaSemana, { icone: NomeIcone; cor: string; borda: string; fundo: string }> = {
   retrato: {
-    icone: '📊',
+    icone: 'barras',
     cor: 'var(--ember-2)',
     borda: 'rgba(255,122,69,.28)',
     fundo: 'linear-gradient(140deg, rgba(255,122,69,.09), rgba(255,122,69,.015))',
   },
   dica: {
-    icone: '💡',
+    icone: 'lampada',
     cor: 'var(--mint)',
     borda: 'rgba(63,214,155,.28)',
     fundo: 'linear-gradient(140deg, rgba(63,214,155,.09), rgba(63,214,155,.015))',
   },
   humano: {
-    icone: '🔥',
+    icone: 'chama',
     cor: 'var(--ember-2)',
     borda: 'rgba(255,122,69,.34)',
     fundo: 'linear-gradient(140deg, rgba(255,122,69,.13), rgba(255,122,69,.02))',
@@ -36,7 +37,7 @@ export function CardSemana({ card }: { card: Card | null }) {
     >
       <div className="pf-cs-topo">
         <span className="pf-eyebrow" style={{ color: s.cor }}>
-          {s.icone} {card.rotulo}
+          <Icone nome={s.icone} size={15} /> {card.rotulo}
         </span>
         <span className="pf-cs-selo">card da semana</span>
       </div>

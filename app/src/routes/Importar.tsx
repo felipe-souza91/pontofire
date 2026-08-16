@@ -290,7 +290,7 @@ export function Importar() {
               </p>
               {analise.diagnostico.transferenciasConciliadas > 0 && (
                 <p style={{ margin: 'var(--space-2) 0 0' }}>
-                  ✓ <strong>{analise.diagnostico.transferenciasConciliadas} já fecharam em zero:</strong>{' '}
+                  <strong>{analise.diagnostico.transferenciasConciliadas} já fecharam em zero:</strong>{' '}
                   achei o outro lado num extrato que você importou antes. Saiu de uma conta sua,
                   entrou na outra — não some dinheiro nem aparece receita do nada.
                 </p>
@@ -351,7 +351,7 @@ export function Importar() {
                 onCategoria={(c) => categorizar(it.id, c)}
               />
             ))}
-            {!visiveis.length && <p className="pf-hint">Nada neste filtro. 🎉</p>}
+            {!visiveis.length && <p className="pf-hint">Nada neste filtro.</p>}
           </div>
 
           {mesesSemSnapshot.length > 0 && (

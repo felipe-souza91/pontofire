@@ -5,6 +5,8 @@ import { usePainel } from '../hooks/usePainel';
 import { useConquistas } from '../hooks/useConquistas';
 import { CardConvites } from '../components/CardConvites';
 import { Flame } from '../theme/Flame';
+import { IconeConquista } from '../components/IconeConquista';
+import { Icone } from '../theme/Icone';
 
 export function Conquistas() {
   const { user } = useAuth();
@@ -74,13 +76,13 @@ export function Conquistas() {
               }}
             >
               <span style={{ fontSize: '1.6rem', filter: ok ? 'none' : 'grayscale(1)' }} aria-hidden>
-                {c.icone}
+                <IconeConquista nome={c.icone} size={24} />
               </span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 600, color: ok ? 'var(--paper)' : 'var(--muted)' }}>{c.titulo}</div>
                 <div className="pf-hint" style={{ margin: 0 }}>{c.descricao}</div>
               </div>
-              {ok && <span className="mono" style={{ color: 'var(--mint)', fontSize: '0.75rem' }}>✓</span>}
+              {ok && <span className="mono" style={{ color: 'var(--mint)', fontSize: '0.75rem' }}><Icone nome="check" size={14} /></span>}
             </div>
           );
         })}

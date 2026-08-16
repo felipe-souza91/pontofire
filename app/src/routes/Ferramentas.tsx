@@ -11,17 +11,18 @@ import { MoedaInput } from '../components/MoedaInput';
 import { Campo } from '../components/Campo';
 import { GraficoCompra } from '../components/GraficoCompra';
 import { CalcAmortizacao } from '../components/CalcAmortizacao';
+import { Icone, type NomeIcone } from '../theme/Icone';
 import { CalcNovaDivida } from '../components/CalcNovaDivida';
 import { formatBRL, formatPct } from '../utils/format';
 
 type Aba = 'juros' | 'combustivel' | 'parcelado' | 'divida' | 'amortizacao';
 
-const ABAS: { id: Aba; rotulo: string; icone: string }[] = [
-  { id: 'juros', rotulo: 'Juros compostos', icone: '📈' },
-  { id: 'combustivel', rotulo: 'Etanol ou gasolina', icone: '⛽' },
-  { id: 'parcelado', rotulo: 'À vista ou parcelado', icone: '💳' },
-  { id: 'divida', rotulo: 'Cabe no meu orçamento?', icone: '⚖️' },
-  { id: 'amortizacao', rotulo: 'Amortizar financiamento', icone: '🏦' },
+const ABAS: { id: Aba; rotulo: string; icone: NomeIcone }[] = [
+  { id: 'juros', rotulo: 'Juros compostos', icone: 'grafico' },
+  { id: 'combustivel', rotulo: 'Etanol ou gasolina', icone: 'combustivel' },
+  { id: 'parcelado', rotulo: 'À vista ou parcelado', icone: 'cartao' },
+  { id: 'divida', rotulo: 'Cabe no meu orçamento?', icone: 'balanca' },
+  { id: 'amortizacao', rotulo: 'Amortizar financiamento', icone: 'banco' },
 ];
 
 export function Ferramentas() {
@@ -45,7 +46,7 @@ export function Ferramentas() {
             onClick={() => setAba(a.id)}
             aria-pressed={aba === a.id}
           >
-            <span className="ic" aria-hidden>{a.icone}</span>
+            <Icone nome={a.icone} size={16} />
             {a.rotulo}
           </button>
         ))}

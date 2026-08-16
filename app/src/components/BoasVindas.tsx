@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Flame } from '../theme/Flame';
+import { Icone, type NomeIcone } from '../theme/Icone';
 
 interface Slide {
   icone: ReactNode;
@@ -37,7 +38,7 @@ export function BoasVindas({ nome, onFechar }: { nome: string; onFechar: () => v
       ),
     },
     {
-      icone: <span className="pf-bv-emoji">⚡</span>,
+      icone: <Icone nome="raio" size={40} />,
       eyebrow: 'o hábito',
       titulo: 'Lançar leva 30 segundos.',
       corpo: (
@@ -51,7 +52,7 @@ export function BoasVindas({ nome, onFechar }: { nome: string; onFechar: () => v
       ),
     },
     {
-      icone: <span className="pf-bv-emoji">⚖️</span>,
+      icone: <Icone nome="balanca" size={40} />,
       eyebrow: 'o que quase nenhum app te mostra',
       titulo: 'O INSS ao lado da sua liberdade.',
       corpo: (
@@ -64,7 +65,7 @@ export function BoasVindas({ nome, onFechar }: { nome: string; onFechar: () => v
       ),
     },
     {
-      icone: <span className="pf-bv-emoji">🧮</span>,
+      icone: <Icone nome="calculadora" size={40} />,
       eyebrow: 'as decisões do dia',
       titulo: 'As contas chatas, prontas.',
       corpo: (
@@ -77,7 +78,7 @@ export function BoasVindas({ nome, onFechar }: { nome: string; onFechar: () => v
       ),
     },
     {
-      icone: <span className="pf-bv-emoji">🏆</span>,
+      icone: <Icone nome="trofeu" size={40} />,
       eyebrow: 'pra não desistir no meio',
       // "Marcos" abria a frase e virava nome próprio na leitura (feedback do
       // beta). O slide fala de conquistas — a palavra do corpo do texto.
@@ -112,19 +113,19 @@ export function BoasVindas({ nome, onFechar }: { nome: string; onFechar: () => v
 
             <div className="pf-bv-opcoes">
               <Opcao
-                emoji="✍️"
+                icone="lancar"
                 titulo="Lançar o mês na mão"
                 sub="quatro números, meio minuto"
                 onClick={() => { onFechar(); navigate('/lancar'); }}
               />
               <Opcao
-                emoji="📄"
+                icone="importar"
                 titulo="Importar extrato ou fatura"
                 sub="OFX ou CSV — você revisa antes de salvar"
                 onClick={() => { onFechar(); navigate('/importar'); }}
               />
               <Opcao
-                emoji="👀"
+                icone="olho"
                 titulo="Só olhar por enquanto"
                 sub="explorar o Início primeiro"
                 onClick={onFechar}
@@ -170,19 +171,19 @@ export function BoasVindas({ nome, onFechar }: { nome: string; onFechar: () => v
 }
 
 function Opcao({
-  emoji,
+  icone,
   titulo,
   sub,
   onClick,
 }: {
-  emoji: string;
+  icone: NomeIcone;
   titulo: string;
   sub: string;
   onClick: () => void;
 }) {
   return (
     <button type="button" className="pf-bv-opcao" onClick={onClick}>
-      <span className="pf-bv-opcao-emoji">{emoji}</span>
+      <span className="pf-bv-opcao-emoji"><Icone nome={icone} size={22} /></span>
       <span>
         <strong>{titulo}</strong>
         <span className="pf-hint" style={{ display: 'block', margin: 0 }}>{sub}</span>

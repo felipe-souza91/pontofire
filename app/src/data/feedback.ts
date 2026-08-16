@@ -4,10 +4,10 @@ import { db } from '../lib/firebase';
 export type TipoFeedback = 'ideia' | 'problema' | 'elogio' | 'outro';
 
 export const ROTULO_FEEDBACK: Record<TipoFeedback, string> = {
-  ideia: '💡 Ideia',
-  problema: '🐛 Problema',
-  elogio: '❤️ Elogio',
-  outro: '💬 Outro',
+  ideia: 'Ideia',
+  problema: 'Problema',
+  elogio: 'Elogio',
+  outro: 'Outro',
 };
 
 /**

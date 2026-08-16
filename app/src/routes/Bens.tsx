@@ -10,6 +10,7 @@ import { CategoriaInput } from '../components/CategoriaInput';
 import { Campo } from '../components/Campo';
 import { formatBRL } from '../utils/format';
 import { ordenarPor } from '../utils/ordenar';
+import { Icone } from '../theme/Icone';
 
 // financeiro fica de fora: seu investido já vem do modo rápido (patrimônio lançado)
 const TIPOS_BENS: AssetTipo[] = ordenarPor(
@@ -128,7 +129,7 @@ export function Bens() {
       </label>
       {incluirNoFire && (
         <p className="pf-hint" style={{ marginTop: 0, color: 'var(--ember-2)' }}>
-          ⚠️ Isso adianta sua data no papel — mas bem de uso não te dá saque mensal (você não vende a
+          <Icone nome="alerta" size={15} /> Isso adianta sua data no papel — mas bem de uso não te dá saque mensal (você não vende a
           casa aos poucos), e imóvel de renda já conta via aluguel. A data fica otimista.
         </p>
       )}
@@ -157,7 +158,7 @@ export function Bens() {
                   </div>
                 </div>
                 <button className="pf-btn-link" style={{ padding: 0, color: 'var(--muted)' }} aria-label="Remover" onClick={() => user && void removerAsset(user.uid, b.id)}>
-                  ✕
+                  <Icone nome="fechar" size={15} />
                 </button>
               </div>
             ))}

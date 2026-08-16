@@ -180,7 +180,7 @@ export function Detalhar() {
             )}
             {soma.passiva > 0 && (
               <p style={{ margin: 'var(--space-3) 0 0', color: 'var(--mint)', fontSize: '0.9rem' }}>
-                Renda passiva: {formatBRL(soma.passiva)}/mês — já entra na sua cobertura passiva. 🔥
+                Renda passiva: {formatBRL(soma.passiva)}/mês — já entra na sua cobertura passiva.
               </p>
             )}
           </div>

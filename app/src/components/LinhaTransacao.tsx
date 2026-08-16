@@ -5,6 +5,7 @@ import { CATEGORIAS, normalizarCategoria } from '../data/categorias';
 import { CategoriaInput } from './CategoriaInput';
 import { MoedaInput } from './MoedaInput';
 import { formatBRL } from '../utils/format';
+import { Icone } from '../theme/Icone';
 
 const TIPOS: TipoTransacao[] = ['saida', 'ativa', 'passiva', 'aporte'];
 
@@ -85,7 +86,7 @@ export function LinhaTransacao({
         </div>
         <span className="mono">{formatBRL(item.valor)}</span>
         <button className="pf-btn-link" style={{ padding: 0 }} aria-label="Editar lançamento" onClick={abrir}>
-          ✎
+          <Icone nome="editar" size={15} />
         </button>
         <button
           className="pf-btn-link"
@@ -93,7 +94,7 @@ export function LinhaTransacao({
           aria-label="Remover lançamento"
           onClick={onRemover}
         >
-          ✕
+          <Icone nome="fechar" size={15} />
         </button>
       </div>
     );
