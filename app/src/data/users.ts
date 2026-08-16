@@ -8,6 +8,7 @@ import {
   type Unsubscribe,
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { VERSAO_ATUAL } from './novidades';
 import type { OnboardingCompleto, OnboardingN1, OnboardingN2, UserDoc } from './types';
 
 /** Versão do texto de consentimento LGPD aceito. */
@@ -109,6 +110,9 @@ export async function salvarOnboarding(uid: string, dados: OnboardingCompleto): 
     onboardingNivel: 2,
     onboardingCompleto: true,
     tourVisto: false,
+    // nasce em dia: não faz sentido anunciar a mudança de um número que esta
+    // pessoa nunca viu. Quem tem o que reaprender é quem já usava.
+    novidadesVistasEm: VERSAO_ATUAL,
     consentimentoLgpd: { aceitoEm: new Date().toISOString(), versao: VERSAO_CONSENTIMENTO },
     atualizadoEm: serverTimestamp(),
   };
@@ -132,6 +136,29 @@ export async function salvarOnboarding(uid: string, dados: OnboardingCompleto): 
 /** Marca a apresentação como vista (ou reabre, pelo Perfil). */
 export async function marcarTourVisto(uid: string, visto = true): Promise<void> {
   await setDoc(userRef(uid), { tourVisto: visto, atualizadoEm: serverTimestamp() }, { merge: true });
+}
+
+/** Marca o changelog como lido até a versão informada. */
+export async function marcarNovidadesVistas(uid: string, versao = VERSAO_ATUAL): Promise<void> {
+  await setDoc(
+    userRef(uid),
+    { novidadesVistasEm: versao, atualizadoEm: serverTimestamp() },
+    { merge: true },
+  );
+}
+
+/**
+ * Reabre o changelog pelo Perfil.
+ *
+ * Apaga o campo em vez de gravar uma data velha: "nunca vi" é um estado que o
+ * `novidadesDesde` já entende, e assim não fica lixo tipo '0000-00-00' no doc.
+ */
+export async function reverNovidades(uid: string): Promise<void> {
+  await setDoc(
+    userRef(uid),
+    { novidadesVistasEm: deleteField(), atualizadoEm: serverTimestamp() },
+    { merge: true },
+  );
 }
 
 /** Conclui o onboarding pulando o N2 (usuário optou por "depois"). */

@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { faixaDeReserva, metaPeloCusto } from '@pontofire/engine';
 import { useAuth } from '../auth/useAuth';
 import { useUserDoc } from '../hooks/useUserDoc';
-import { atualizarPerfil, marcarTourVisto } from '../data/users';
+import { atualizarPerfil, marcarTourVisto, reverNovidades } from '../data/users';
 import { PORQUES } from '../data/humanizacao';
 import { MoedaInput } from '../components/MoedaInput';
 import { Campo } from '../components/Campo';
@@ -290,6 +290,18 @@ export function Perfil() {
           }}
         >
           ver a apresentação do sistema de novo
+        </button>
+      </div>
+
+      <div style={{ textAlign: 'center', marginTop: 'var(--space-2)' }}>
+        <button
+          className="pf-btn-link"
+          onClick={() => {
+            if (!user) return;
+            void reverNovidades(user.uid).then(() => navigate('/'));
+          }}
+        >
+          ver o que mudou no app
         </button>
       </div>
 

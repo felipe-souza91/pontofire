@@ -57,6 +57,14 @@ export interface UserDoc {
   onboardingCompleto: boolean;
   /** já viu a apresentação do sistema (pode rever pelo Perfil) */
   tourVisto?: boolean;
+  /**
+   * Última versão do changelog que este usuário já leu (`YYYY-MM-DD`).
+   *
+   * Ausente ≠ "em dia": ausente é conta anterior ao changelog, e ela recebe a
+   * lista inteira de propósito — é justamente quem viu os números antigos.
+   * Conta nova nasce carimbada com a versão atual pelo onboarding.
+   */
+  novidadesVistasEm?: string;
 
   criadoEm?: Timestamp;
   atualizadoEm?: Timestamp;

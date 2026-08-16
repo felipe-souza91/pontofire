@@ -19,8 +19,10 @@ import { CardSemana } from '../components/CardSemana';
 import { CardMetaIdade } from '../components/CardMetaIdade';
 import { TrofeusResumo } from '../components/TrofeusResumo';
 import { BoasVindas } from '../components/BoasVindas';
+import { Novidades } from '../components/Novidades';
 import { MenuTopo } from '../components/MenuTopo';
-import { marcarTourVisto } from '../data/users';
+import { novidadesDesde } from '../data/novidades';
+import { marcarNovidadesVistas, marcarTourVisto } from '../data/users';
 import { GraficoLinha, type MarcaX, type PontoGrafico } from '../components/GraficoLinha';
 import { formatBRLcompact, formatDuracao, formatMesAno, formatPct } from '../utils/format';
 
@@ -40,6 +42,7 @@ export function Dashboard() {
   const trofeus = new Set([...atingidas, ...salvas]);
   // apresentação: só pra quem terminou o onboarding e ainda não viu
   const [tourFechado, setTourFechado] = useState(false);
+  const [novidadesFechadas, setNovidadesFechadas] = useState(false);
 
   if (carregando) return <Centro>Carregando…</Centro>;
   if (!doc || !plano || !ctx) return <Centro>Sem dados ainda.</Centro>;
@@ -101,6 +104,16 @@ export function Dashboard() {
 
   const mostraTour = doc.tourVisto === false && !tourFechado;
 
+  /**
+   * Changelog e apresentação são excludentes.
+   *
+   * Quem está vendo o tour acabou de criar a conta — não tem número antigo pra
+   * reaprender, e empilhar dois modais no primeiro acesso é o caminho pra não
+   * ler nenhum dos dois.
+   */
+  const mostraNovidades =
+    !mostraTour && !novidadesFechadas && novidadesDesde(doc.novidadesVistasEm).length > 0;
+
   return (
     <main className="pf-dash">
       {mostraTour && (
@@ -109,6 +122,15 @@ export function Dashboard() {
           onFechar={() => {
             setTourFechado(true);
             if (user) void marcarTourVisto(user.uid).catch(() => undefined);
+          }}
+        />
+      )}
+      {mostraNovidades && (
+        <Novidades
+          visto={doc.novidadesVistasEm}
+          onFechar={() => {
+            setNovidadesFechadas(true);
+            if (user) void marcarNovidadesVistas(user.uid).catch(() => undefined);
           }}
         />
       )}
