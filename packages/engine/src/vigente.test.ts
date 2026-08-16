@@ -140,3 +140,28 @@ describe('estado vigente — a fonte única', () => {
     expect(e.aporte).toMatchObject({ valor: 2_000, fonte: 'declarado' });
   });
 });
+
+describe('reserva no estado vigente', () => {
+  const perfil = {
+    custoVidaMensal: 8_000,
+    aporteMensal: 2_000,
+    taxaSaqueSegura: 0.04,
+    metaFire: 2_400_000,
+  };
+
+  it('a reserva acompanha o custo OBSERVADO, como a meta', () => {
+    const e = estadoVigente(
+      { ...perfil, reservaEmergencia: 48_000 },
+      meses([12_000, 12_000, 12_000]),
+    );
+    expect(e.metaSemReserva).toBe(3_600_000); // 25× do custo real, não do perfil
+    expect(e.meta).toBe(3_648_000);
+    expect(e.reserva).toBe(48_000);
+  });
+
+  it('sem reserva declarada, as duas metas coincidem', () => {
+    const e = estadoVigente(perfil, meses([8_000, 8_000, 8_000]));
+    expect(e.meta).toBe(e.metaSemReserva);
+    expect(e.reserva).toBe(0);
+  });
+});

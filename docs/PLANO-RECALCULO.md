@@ -1,6 +1,8 @@
 # Plano — a data viva
 
-> Status: **implementado** (Fases 0 a 4).
+> Status: **implementado** (Fases 0 a 4), mais o backlog do beta:
+> calculadora "quando parar de amortizar", marcos de patrimônio em valor
+> real e reserva de emergência.
 > Segue valendo como registro das decisões e das perguntas em aberto.
 > Origem: feedback dos primeiros usuários do beta (ago/2026).
 

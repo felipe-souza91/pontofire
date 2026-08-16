@@ -29,6 +29,16 @@ export interface UserDoc {
   metaTravada?: boolean;
   taxaSaqueSegura: number; // TSS, default 0,04
 
+  /**
+   * Reserva de emergência declarada.
+   *
+   * Fica DENTRO do patrimônio (é dinheiro real e rende; tirá-la de P quebraria
+   * a marcação a mercado todo mês) e entra na META, porque no dia do FIRE ela
+   * precisa continuar intacta. Ausente = o usuário ainda não declarou, e a meta
+   * é só o 25×.
+   */
+  reservaEmergencia?: number;
+
   /** de onde ele partiu — congelada no onboarding, nunca reescrita */
   linhaDePartida?: LinhaDePartida;
 

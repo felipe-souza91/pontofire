@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { deveNascerTravada, metaDivergiu, metaPeloCusto, metaVigente } from './partida';
+import {
+  deveNascerTravada,
+  faixaDeReserva,
+  metaDivergiu,
+  metaPeloCusto,
+  metaSemReserva,
+  metaVigente,
+} from './partida';
 
 const perfil = (over: Partial<Parameters<typeof metaVigente>[0]> = {}) => ({
   custoVidaMensal: 8_000,
@@ -94,5 +101,56 @@ describe('metaPeloCusto', () => {
   it('entrada inválida devolve zero em vez de explodir', () => {
     expect(metaPeloCusto(0, 0.04)).toBe(0);
     expect(metaPeloCusto(8_000, 0)).toBe(0);
+  });
+});
+
+describe('reserva de emergência na meta', () => {
+  const comReserva = (reservaEmergencia?: number) => perfil({ reservaEmergencia });
+
+  it('sem reserva declarada, a meta é o 25× puro', () => {
+    expect(metaVigente(comReserva())).toBe(2_400_000);
+    expect(metaSemReserva(comReserva())).toBe(2_400_000);
+  });
+
+  it('a reserva SOMA à meta em vez de sair do patrimônio', () => {
+    // ela fica em P porque é dinheiro real e rende; tirá-la de lá quebraria
+    // `rendimentoMes = P − P_anterior − aporte` todo mês
+    expect(metaVigente(comReserva(48_000))).toBe(2_448_000);
+    expect(metaSemReserva(comReserva(48_000))).toBe(2_400_000);
+  });
+
+  it('a reserva de 6 meses é 2% da meta — sempre', () => {
+    // 6C ÷ (C×12/0,04) = 2%, independente da renda. É o que torna a escolha
+    // entre as convenções uma questão de clareza, não de precisão.
+    for (const custo of [3_000, 8_000, 40_000]) {
+      const p = perfil({ custoVidaMensal: custo, reservaEmergencia: custo * 6 });
+      expect((metaVigente(p) - metaSemReserva(p)) / metaVigente(p)).toBeCloseTo(0.0196, 3);
+    }
+  });
+
+  it('soma também quando a meta está travada', () => {
+    // travar define o número que gera renda; a reserva continua sendo um
+    // requisito à parte, e o app mostra a soma decomposta
+    const p = perfil({ metaFire: 1_500_000, metaTravada: true, reservaEmergencia: 48_000 });
+    expect(metaSemReserva(p)).toBe(1_500_000);
+    expect(metaVigente(p)).toBe(1_548_000);
+  });
+
+  it('reserva negativa não vira desconto na meta', () => {
+    expect(metaVigente(comReserva(-50_000))).toBe(2_400_000);
+  });
+
+  it('zero declarado é resposta legítima, não ausência', () => {
+    expect(metaVigente(comReserva(0))).toBe(2_400_000);
+  });
+});
+
+describe('faixa sugerida de reserva', () => {
+  it('3 a 6 meses de custo, e 12 pra renda instável', () => {
+    expect(faixaDeReserva(8_000)).toEqual({ min: 24_000, max: 48_000, instavel: 96_000 });
+  });
+
+  it('custo inválido não gera sugestão negativa', () => {
+    expect(faixaDeReserva(-100)).toEqual({ min: 0, max: 0, instavel: 0 });
   });
 });

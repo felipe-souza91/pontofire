@@ -41,6 +41,40 @@ export interface PerfilDaMeta {
   metaFire: number;
   /** true = o usuário fixou um número e não quer que ele acompanhe o custo */
   metaTravada?: boolean;
+  /**
+   * Reserva de emergência, quando declarada.
+   *
+   * Ela FICA no patrimônio — é dinheiro real, rende, e tirá-la de `P` quebraria
+   * a marcação a mercado todo mês. Mas é dinheiro CARIMBADO: no dia do FIRE ela
+   * ainda precisa estar lá inteira, senão não era reserva. Por isso entra na
+   * meta em vez de sair do patrimônio.
+   */
+  reservaEmergencia?: number;
+}
+
+/**
+ * A parte da meta que gera renda: o 25× puro, sem a reserva.
+ *
+ * É esta que responde "quanto preciso ter investido pra viver dos juros". A
+ * reserva não gera liberdade nenhuma — ela existe pra você não precisar vender
+ * a carteira num mês ruim.
+ */
+export function metaSemReserva(p: PerfilDaMeta): number {
+  if (p.metaTravada && p.metaFire > 0) return p.metaFire;
+  if (!(p.custoVidaMensal > 0) || !(p.taxaSaqueSegura > 0)) return p.metaFire;
+  return numeroFire(p.custoVidaMensal, p.taxaSaqueSegura);
+}
+
+/**
+ * Sugestão de reserva: 3 a 6 meses de custo (12 pra renda instável).
+ *
+ * §14 — é faixa com o raciocínio à mostra, nunca "você deveria ter R$ X". Quem
+ * tem CLT estável e seguro-desemprego precisa de menos que quem é PJ e fatura
+ * por projeto, e só o usuário sabe em qual dos dois vive.
+ */
+export function faixaDeReserva(custoVidaMensal: number): { min: number; max: number; instavel: number } {
+  const c = Math.max(0, custoVidaMensal);
+  return { min: c * 3, max: c * 6, instavel: c * 12 };
 }
 
 /**
@@ -54,9 +88,7 @@ export interface PerfilDaMeta {
  * Quem trava, trava sabendo: `metaDivergiu` alimenta o aviso.
  */
 export function metaVigente(p: PerfilDaMeta): number {
-  if (p.metaTravada && p.metaFire > 0) return p.metaFire;
-  if (!(p.custoVidaMensal > 0) || !(p.taxaSaqueSegura > 0)) return p.metaFire;
-  return numeroFire(p.custoVidaMensal, p.taxaSaqueSegura);
+  return metaSemReserva(p) + Math.max(0, p.reservaEmergencia ?? 0);
 }
 
 /** Centavos de diferença são arredondamento, não decisão do usuário. */

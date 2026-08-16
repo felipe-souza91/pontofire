@@ -1,4 +1,4 @@
-import { metaVigente } from './partida';
+import { metaSemReserva, metaVigente } from './partida';
 
 /**
  * O que vale HOJE: custo e aporte tirados dos meses lançados.
@@ -118,13 +118,18 @@ export interface PerfilVigente {
   taxaSaqueSegura: number;
   metaFire: number;
   metaTravada?: boolean;
+  reservaEmergencia?: number;
 }
 
 export interface EstadoVigente {
   custo: Vigente;
   aporte: Vigente;
-  /** derivada do custo VIGENTE — é o que faz a meta acompanhar a vida real */
+  /** total a alcançar: a parte que gera renda MAIS a reserva carimbada */
   meta: number;
+  /** só a parte que gera renda — o 25× puro */
+  metaSemReserva: number;
+  /** quanto da meta é reserva de emergência (0 quando não declarada) */
+  reserva: number;
 }
 
 /**
@@ -139,9 +144,12 @@ export function estadoVigente(
   meses: readonly MesLancado[],
 ): EstadoVigente {
   const custo = custoVigente(meses, perfil.custoVidaMensal);
+  const comCustoVigente = { ...perfil, custoVidaMensal: custo.valor };
   return {
     custo,
     aporte: aporteVigente(meses, perfil.aporteMensal),
-    meta: metaVigente({ ...perfil, custoVidaMensal: custo.valor }),
+    meta: metaVigente(comCustoVigente),
+    metaSemReserva: metaSemReserva(comCustoVigente),
+    reserva: Math.max(0, perfil.reservaEmergencia ?? 0),
   };
 }

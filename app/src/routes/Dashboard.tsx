@@ -181,6 +181,23 @@ export function Dashboard() {
             meta {formatBRLcompact(meta)} · {progressoPct.toFixed(0)}%
           </span>
         </div>
+        {/*
+          Duas réguas pro mesmo número. Muita gente não considera a reserva como
+          patrimônio de liberdade — e não está errada: ela é dinheiro carimbado,
+          que existe pra não precisar vender a carteira num mês ruim. Mostrar as
+          duas leituras serve as duas cabeças sem partir o dado.
+        */}
+        {vigente && vigente.reserva > 0 && (
+          <p className="pf-hint" style={{ marginTop: 'var(--space-2)', marginBottom: 0 }}>
+            Sem contar a reserva: {formatBRLcompact(Math.max(0, P - vigente.reserva))} de{' '}
+            {formatBRLcompact(vigente.metaSemReserva)} ·{' '}
+            {(
+              (Math.max(0, P - vigente.reserva) / Math.max(1, vigente.metaSemReserva)) *
+              100
+            ).toFixed(0)}
+            % — a reserva fica parada de propósito, então não conta como caminho andado.
+          </p>
+        )}
         <Link className="pf-como-calculo" to="/metodologia#data">como calculo isso →</Link>
       </section>
 

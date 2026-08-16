@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { metaPeloCusto } from '@pontofire/engine';
+import { faixaDeReserva, metaPeloCusto } from '@pontofire/engine';
 import { useAuth } from '../auth/useAuth';
 import { useUserDoc } from '../hooks/useUserDoc';
 import { atualizarPerfil, marcarTourVisto } from '../data/users';
@@ -31,6 +31,8 @@ export function Perfil() {
   const [patrimonio, setPatrimonio] = useState(0);
   const [meta, setMeta] = useState(0);
   const [metaTravada, setMetaTravada] = useState(false);
+  const [reserva, setReserva] = useState(0);
+  const [reservaTocada, setReservaTocada] = useState(false);
   const [retornoPct, setRetornoPct] = useState(5);
   // INSS
   const [dataNascimento, setDataNascimento] = useState('');
@@ -50,6 +52,8 @@ export function Perfil() {
     setPatrimonio(doc.patrimonioInicial ?? 0);
     setMeta(doc.metaFire ?? 0);
     setMetaTravada(doc.metaTravada ?? false);
+    setReserva(doc.reservaEmergencia ?? 0);
+    setReservaTocada(doc.reservaEmergencia !== undefined);
     setRetornoPct(Math.round((doc.retornoRealEsperado ?? 0.05) * 1000) / 10);
     setDataNascimento(doc.dataNascimento ?? '');
     setInicioContribuicao(doc.inicioContribuicao ?? '');
@@ -63,6 +67,8 @@ export function Perfil() {
     () => Math.round(metaPeloCusto(custo, doc?.taxaSaqueSegura ?? 0.04)),
     [custo, doc?.taxaSaqueSegura],
   );
+
+  const faixa = useMemo(() => faixaDeReserva(custo), [custo]);
 
   function toggle(p: string) {
     setPorQues((prev) => (prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]));
@@ -85,6 +91,8 @@ export function Perfil() {
         // `metaVigente`, que deriva do custo
         metaFire: metaTravada ? meta : metaDerivada,
         metaTravada,
+        // undefined = ainda não declarou; zero é uma resposta legítima
+        reservaEmergencia: reservaTocada ? reserva : undefined,
         retornoRealEsperado: retornoPct / 100,
         dataNascimento: dataNascimento || undefined,
         inicioContribuicao: inicioContribuicao || undefined,
@@ -192,6 +200,38 @@ export function Perfil() {
             </p>
           )}
         </Campo>
+        {/*
+          A reserva FICA no patrimônio e entra na META. Tirá-la de P quebraria
+          `rendimentoMes = P − P_anterior − aporte` todo mês, e obrigaria o
+          usuário a subtrair de cabeça antes de digitar o saldo.
+        */}
+        <Campo
+          rotulo="Reserva de emergência"
+          opcional
+          dica="Quanto do seu patrimônio é reserva. Ela continua contando como patrimônio — só entra também na meta, porque no dia do FIRE precisa estar intacta."
+        >
+          <MoedaInput
+            value={reserva}
+            onChange={setReserva}
+            tocado={reservaTocada}
+            onTocar={() => setReservaTocada(true)}
+          />
+          <span className="pf-hint">
+            Pelo seu custo de {formatBRL(custo)}/mês, 3 a 6 meses seriam{' '}
+            <strong>{formatBRL(faixa.min)}</strong> a <strong>{formatBRL(faixa.max)}</strong> — e{' '}
+            {formatBRL(faixa.instavel)} se sua renda for instável (PJ, comissão, autônomo). É faixa,
+            não regra: quem tem CLT com seguro-desemprego precisa de menos que quem fatura por
+            projeto, e só você sabe em qual dos dois vive.
+          </span>
+          {reservaTocada && reserva > 0 && (
+            <p className="pf-hint">
+              Sua meta passa a ser <strong>{formatBRL(metaDerivada + reserva)}</strong>:{' '}
+              {formatBRL(metaDerivada)} que geram renda + {formatBRL(reserva)} de reserva, que fica
+              parada de propósito.
+            </p>
+          )}
+        </Campo>
+
         <Campo rotulo="Retorno real esperado (% a.a.)">
           <input
             className="pf-input pf-num"

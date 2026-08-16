@@ -116,6 +116,24 @@ export function Metodologia() {
             regra. O painel usa a <strong>sua</strong> — a regra fica só como referência.
           </p>
         )}
+        {vigente.reserva > 0 && (
+          <p className="pf-metodo-nota">
+            <strong>Sua reserva de emergência entra na meta</strong>, não sai do patrimônio. Ela
+            continua contando como patrimônio porque é dinheiro real e rende — e tirá-la de{' '}
+            <Mono>P</Mono> quebraria a marcação a mercado todo mês, além de te obrigar a subtrair de
+            cabeça antes de digitar o saldo. Mas é dinheiro carimbado: no dia do FIRE ela precisa
+            estar intacta, senão não era reserva. Daí{' '}
+            <Mono>M = C × 12 ÷ TSS + reserva</Mono> — {formatBRLcompact(vigente.metaSemReserva)} que
+            geram renda mais {formatBRLcompact(vigente.reserva)} que ficam parados de propósito.
+          </p>
+        )}
+        <p className="pf-metodo-nota">
+          Muita gente prefere não contar a reserva como patrimônio, e não está errada: é outra
+          grandeza — <em>patrimônio líquido</em> (contábil, onde a reserva sempre entra) contra{' '}
+          <em>capital que gera liberdade</em>. As duas leituras aparecem no seu painel. A escolha
+          entre elas move sua data em <strong>meses, não em anos</strong>: uma reserva de 6 meses é
+          sempre 2% do número FIRE, porque as duas coisas escalam com o mesmo custo.
+        </p>
         <Limite>
           A regra dos 4% nasceu de uma carteira americana 50/50 em janelas de 30 anos. Ela não é lei
           da natureza: assume que você não vive 60 anos após parar, que a carteira acompanha a
