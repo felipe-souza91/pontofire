@@ -4,6 +4,7 @@ import {
   amortizarOuInvestir,
   ganhoDeAmortizar,
   pontoDeVirada,
+  IPCA_PADRAO,
   type SistemaAmortizacao,
 } from '@pontofire/engine';
 import { useAuth } from '../auth/useAuth';
@@ -12,9 +13,6 @@ import { useIndicadores } from '../hooks/useIndicadores';
 import { MoedaInput } from '../components/MoedaInput';
 import { Campo } from '../components/Campo';
 import { formatBRL, formatBRLcompact, formatDuracao, formatPct } from '../utils/format';
-
-/** Usado só quando o BACEN não responde — declarado, não escondido. */
-const IPCA_PADRAO = 0.045;
 
 /**
  * Amortização de financiamento — e a pergunta que decide: amortizar ou

@@ -25,6 +25,8 @@ export interface Insight {
 
 /** Snapshot mensal, na forma que as regras precisam. */
 export interface SnapshotInsight {
+  /** IPCA 12m registrado naquela competência (deflator do histórico) */
+  ipca12m?: number;
   mes: string; // YYYY-MM
   patrimonioTotal: number;
   receitaLiquida: number;
@@ -65,6 +67,16 @@ export interface ContextoInsights {
    * do perfil ficou velho — o motor já usa o real.
    */
   custoDeclarado?: number;
+
+  /**
+   * Patrimônio no poder de compra de quando o usuário começou.
+   *
+   * Marco de valor absoluto precisa de régua fixa: "R$ 1 milhão" alcançado em
+   * 2045 não é o mesmo feito que em 2026 — com 4,5% de inflação ao ano, basta
+   * ficar parado vinte anos pra "chegar" lá. Ausente = sem linha de partida, e
+   * aí os marcos usam o nominal mesmo.
+   */
+  patrimonioReal?: number;
 
   /** 0..1 — R/C */
   coberturaPassiva: number;

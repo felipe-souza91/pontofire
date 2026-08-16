@@ -18,6 +18,7 @@ import {
 import { useAuth } from '../auth/useAuth';
 import { useSnapshots } from '../hooks/useSnapshots';
 import { useUserDoc } from '../hooks/useUserDoc';
+import { useIndicadores } from '../hooks/useIndicadores';
 import { salvarSnapshot } from '../data/snapshots';
 import { EfeitoDoMes } from '../components/EfeitoDoMes';
 import { MoedaInput } from '../components/MoedaInput';
@@ -52,6 +53,7 @@ export function Lancar() {
   const navigate = useNavigate();
   const { lista } = useSnapshots(user?.uid ?? null);
   const { doc } = useUserDoc(user?.uid ?? null);
+  const ind = useIndicadores();
 
   const [mes, setMes] = useState(mesCorrente());
   const [patrimonio, setPatrimonio] = useState(0);
@@ -189,6 +191,9 @@ export function Lancar() {
         taxaPoupanca: taxa,
         taxaInvestimento: taxaInvest,
         mesesAteFire: mesesAteFireAgora,
+        // carimba a inflação da competência: é o que permite comparar patrimônio
+        // entre anos mais tarde, sem aplicar a taxa de hoje ao passado inteiro
+        ...(typeof ind?.ipca12m === 'number' ? { ipca12m: ind.ipca12m / 100 } : {}),
         atipico,
         ...(observacao.trim() ? { observacao: observacao.trim() } : {}),
       });

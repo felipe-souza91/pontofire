@@ -287,6 +287,14 @@ export function Metodologia() {
           <Mono>rendimento = saldo de hoje − saldo anterior − aportes do mês</Mono>. É o que impede
           você de confundir "guardei dinheiro" com "meu dinheiro rendeu".
         </p>
+        <p className="pf-metodo-nota">
+          <strong>Marcos de patrimônio usam dinheiro da sua partida.</strong> "Primeiro milhão"
+          alcançado em 2046 não é o mesmo feito que em 2026: com 4,5% de inflação ao ano, R$ 1
+          milhão daqui a vinte anos vale cerca de <strong>R$ 415 mil</strong> de hoje — ou seja,
+          ficar parado "entregaria" o milhão nominal sem nenhum mérito. O app deflaciona seu
+          patrimônio encadeando o IPCA que cada mês lançado registrou, e usa o IPCA corrente só pros
+          meses sem registro. Quem começou agora não perde nada: o deflator é 1.
+        </p>
         <Limite>
           Você pode marcar um bem de uso como parte da base, e o app deixa. Mas aí a sua data passa
           a assumir que você venderia a casa onde mora para se sustentar.

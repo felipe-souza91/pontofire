@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import {
   calcularPlanoFire,
+  emDinheiroDe,
   estadoVigente,
   resumoPatrimonio,
   type EstadoVigente,
@@ -8,6 +9,7 @@ import {
 } from '@pontofire/engine';
 import type { ContextoInsights } from '@pontofire/insights';
 import { useUserDoc } from './useUserDoc';
+import { useIndicadores } from './useIndicadores';
 import { useSnapshots } from './useSnapshots';
 import { useAssets } from './useAssets';
 import { useTransactions } from './useTransactions';
@@ -45,8 +47,17 @@ export interface Painel {
 }
 
 /** Reúne os dados do usuário e monta o contexto usado por insights e conquistas. */
+/** Competência corrente, YYYY-MM. */
+function mesCorrente(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
 export function usePainel(uid: string | null): Painel {
   const { doc, carregando } = useUserDoc(uid);
+  const ind = useIndicadores();
+  // fallback do deflator pros meses sem IPCA carimbado (ver inflacao.ts)
+  const ipcaAtual = typeof ind?.ipca12m === 'number' ? ind.ipca12m / 100 : undefined;
   const { lista: snapshots } = useSnapshots(uid);
   const { lista: bens } = useAssets(uid);
 
@@ -92,6 +103,11 @@ export function usePainel(uid: string | null): Painel {
       nomeSonho: doc.nomeSonho,
       porQues: doc.porQues,
       custoVidaMensal: C,
+      // marco de valor absoluto precisa de régua fixa: o patrimônio de hoje
+      // trazido pro poder de compra de quando ele começou
+      patrimonioReal: doc.linhaDePartida
+        ? emDinheiroDe(P, doc.linhaDePartida.em.slice(0, 7), mesCorrente(), snapshots, ipcaAtual)
+        : undefined,
       // o que ele digitou no onboarding — vira fallback e ponto de comparação
       custoDeclarado: doc.custoVidaMensal,
       metaFire: vigente.meta,
@@ -107,7 +123,7 @@ export function usePainel(uid: string | null): Painel {
       snapshots,
       transacoesMes,
     };
-  }, [doc, plano, vigente, P, R, snapshots, transacoesMes]);
+  }, [doc, plano, vigente, P, R, snapshots, transacoesMes, ipcaAtual]);
 
   return { carregando, doc, plano, ctx, vigente, P, R, netWorth, snapshots, ultimo, bens };
 }

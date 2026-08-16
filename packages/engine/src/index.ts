@@ -5,6 +5,7 @@
 
 export * from './categorias';
 export * from './decomposicao';
+export * from './inflacao';
 export * from './partida';
 export * from './vigente';
 export * from './rates';

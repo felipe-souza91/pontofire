@@ -55,6 +55,14 @@ export interface Snapshot {
   /** presente só enquanto os totais vêm dos itens; é o caminho de volta */
   declarado?: TotaisDeclarados;
   /**
+   * IPCA acumulado em 12 meses quando este mês foi lançado.
+   *
+   * Guardado pra que marcos de patrimônio possam ser comparados entre anos: um
+   * milhão de 2045 não é o mesmo feito que um milhão de 2026, e sem o histórico
+   * de inflação só sobra aplicar a taxa de hoje ao passado inteiro.
+   */
+  ipca12m?: number;
+  /**
    * A data FIRE como estava quando ESTE mês foi lançado. null = inalcançável.
    *
    * Gravada no momento do lançamento e nunca recalculada: é registro histórico,

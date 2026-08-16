@@ -38,6 +38,51 @@ export function streakAtual(ctx: ContextoInsights): number {
 const melhorTaxa = (ctx: ContextoInsights): number =>
   ctx.snapshots.reduce((max, s) => Math.max(max, s.taxaPoupanca), 0);
 
+/**
+ * Patrimônio na régua que o marco usa: dinheiro de quando o usuário começou.
+ *
+ * Sem `patrimonioReal` (conta sem linha de partida) cai no nominal — que, pra
+ * quem começou agora, é a mesma coisa. O erro só cresce com os anos, e é
+ * exatamente aí que o deflator passa a existir.
+ */
+const patrimonioNaRegua = (ctx: ContextoInsights): number =>
+  ctx.patrimonioReal ?? ctx.patrimonioAtual;
+
+/**
+ * Marcos de patrimônio, em dinheiro da partida.
+ *
+ * Por que não nominal: com 4,5% de inflação ao ano, R$ 1 milhão em 2045 exige
+ * hoje R$ 415 mil. Comemorar o nominal seria premiar o usuário por ficar
+ * parado — e este app é o que denuncia esse tipo de conta em todo lugar.
+ *
+ * Não é conquista solta: quem tem R$ 300 mil ficaria anos sem nada pra
+ * comemorar entre "25% da meta" e o milhão.
+ */
+// declaração de função, não const: `marcosPatrimonio` chama isto na
+// inicialização do módulo, antes de qualquer `const` abaixo existir
+function brl(v: number): string {
+  return v >= 1_000_000
+    ? `R$ ${v / 1_000_000} milh${v === 1_000_000 ? 'ão' : 'ões'}`
+    : `R$ ${v / 1_000} mil`;
+}
+
+const MARCOS_PATRIMONIO: { valor: number; titulo: string; icone: string }[] = [
+  { valor: 100_000, titulo: 'Primeiros cem mil', icone: '🌰' },
+  { valor: 500_000, titulo: 'Meio milhão', icone: '🌳' },
+  { valor: 1_000_000, titulo: 'Primeiro milhão', icone: '💎' },
+  { valor: 5_000_000, titulo: 'Cinco milhões', icone: '🏔️' },
+];
+
+const marcosPatrimonio: Conquista[] = MARCOS_PATRIMONIO.map((m, k) => ({
+  id: `patrimonio-${m.valor}`,
+  titulo: m.titulo,
+  descricao: `${brl(m.valor)} investidos, medidos no dinheiro de quando você começou — inflação não conta como conquista.`,
+  icone: m.icone,
+  ordem: 200 + k * 10,
+  atingida: (c) => patrimonioNaRegua(c) >= m.valor,
+}));
+
+
 export const CONQUISTAS: Conquista[] = [
   {
     id: 'primeiro-passo',
@@ -171,6 +216,7 @@ export const CONQUISTAS: Conquista[] = [
       return jaEhCoastFire(c.patrimonioAtual, c.metaFire, c.iMensal, (c.idadeAlvo - c.idadeAtual) * 12);
     },
   },
+  ...marcosPatrimonio,
   {
     id: 'ponto-fire',
     titulo: 'Ponto FIRE',

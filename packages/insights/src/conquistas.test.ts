@@ -55,7 +55,10 @@ describe('catálogo de conquistas', () => {
   });
 
   it('usuário sem dados não desbloqueia nada', () => {
-    expect(conquistasAtingidas(ctx({ progresso: 0 }))).toEqual([]);
+    // o `ctx` padrão tem R$ 300 mil; "sem dados" precisa zerar também o
+    // patrimônio, senão o teste passava por acaso — nenhuma conquista dependia
+    // de valor absoluto até os marcos existirem
+    expect(conquistasAtingidas(ctx({ progresso: 0, patrimonioAtual: 0 }))).toEqual([]);
   });
 
   it('primeiro mês desbloqueia o primeiro passo', () => {
@@ -93,5 +96,42 @@ describe('catálogo de conquistas', () => {
     expect(() => conquistasAtingidas(ctx({ progresso: 0.3 }))).not.toThrow();
     expect(conquistasAtingidas(ctx({ progresso: 0.3 }))).toContain('progresso-25');
     CONQUISTAS[0]!.atingida = original;
+  });
+});
+
+describe('marcos de patrimônio, em dinheiro da partida', () => {
+  const comPatrimonio = (nominal: number, real?: number) =>
+    ctx({ patrimonioAtual: nominal, patrimonioReal: real });
+
+  it('a família cobre a escada, não só o milhão', () => {
+    const ids = CONQUISTAS.filter((c) => c.id.startsWith('patrimonio-')).map((c) => c.id);
+    expect(ids).toEqual([
+      'patrimonio-100000',
+      'patrimonio-500000',
+      'patrimonio-1000000',
+      'patrimonio-5000000',
+    ]);
+  });
+
+  it('o milhão NOMINAL não vale se o real não chegou lá', () => {
+    // 20 anos de inflação depois, R$ 1 milhão vale ~R$ 415 mil de quando ele
+    // começou. Comemorar seria premiar ficar parado.
+    const atingidas = conquistasAtingidas(comPatrimonio(1_000_000, 415_000));
+    expect(atingidas).toContain('patrimonio-100000');
+    expect(atingidas).not.toContain('patrimonio-1000000');
+  });
+
+  it('o milhão real vale, mesmo com nominal maior', () => {
+    expect(conquistasAtingidas(comPatrimonio(2_400_000, 1_000_000))).toContain('patrimonio-1000000');
+  });
+
+  it('sem linha de partida cai no nominal — quem começou agora não perde nada', () => {
+    expect(conquistasAtingidas(comPatrimonio(1_000_000))).toContain('patrimonio-1000000');
+  });
+
+  it('a descrição avisa qual régua está sendo usada', () => {
+    const milhao = CONQUISTAS.find((c) => c.id === 'patrimonio-1000000')!;
+    expect(milhao.titulo).toBe('Primeiro milhão');
+    expect(milhao.descricao).toMatch(/dinheiro de quando você começou/);
   });
 });
