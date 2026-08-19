@@ -6,6 +6,7 @@ import { useUserDoc } from '../hooks/useUserDoc';
 import { atualizarPerfil, marcarTourVisto, reverNovidades } from '../data/users';
 import { PORQUES } from '../data/humanizacao';
 import { MoedaInput } from '../components/MoedaInput';
+import { DataInput, MesInput } from '../components/DataInput';
 import { Campo } from '../components/Campo';
 import { ZonaDePerigo } from '../components/ZonaDePerigo';
 import { Flame } from '../theme/Flame';
@@ -252,10 +253,10 @@ export function Perfil() {
           Serve pra comparar sua liberdade com a aposentadoria do INSS.
         </p>
         <Campo rotulo="Data de nascimento" dica="Define sua idade e quando você atinge a idade mínima do INSS.">
-          <input className="pf-input" type="date" value={dataNascimento} onChange={(e) => setDataNascimento(e.target.value)} />
+          <DataInput value={dataNascimento} onChange={setDataNascimento} minimo="1900-01-01" />
         </Campo>
         <Campo rotulo="Início das contribuições" dica="Mês/ano da sua 1ª contribuição. Define o tempo de contribuição e se você cai nas regras de transição (antes de nov/2019).">
-          <input className="pf-input" type="month" value={inicioContribuicao} onChange={(e) => setInicioContribuicao(e.target.value)} />
+          <MesInput value={inicioContribuicao} onChange={setInicioContribuicao} minimo="1930-01" />
         </Campo>
         <Campo rotulo="Salário bruto atual" dica="Usado como estimativa da média das contribuições. Aceita centavos.">
           <MoedaInput value={salario} onChange={setSalario} />

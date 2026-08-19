@@ -6,6 +6,7 @@ import { salvarOnboarding } from '../data/users';
 import { PORQUES } from '../data/humanizacao';
 import { formatBRL, formatDuracao, formatMesAno } from '../utils/format';
 import { MoedaInput } from '../components/MoedaInput';
+import { DataInput, MesInput } from '../components/DataInput';
 import { Flame } from '../theme/Flame';
 import { Icone } from '../theme/Icone';
 
@@ -124,12 +125,12 @@ export function Onboarding({ jaCompleto = false }: { jaCompleto?: boolean }) {
       titulo: 'Quando você nasceu?',
       sub: 'É o que transforma "faltam 23 anos" em "aos 59" — e me deixa comparar com o INSS depois.',
       campo: (
-        <input
-          className="pf-input"
-          type="date"
-          style={{ maxWidth: '14rem' }}
+        <DataInput
           value={dataNascimento}
-          onChange={(e) => setDataNascimento(e.target.value)}
+          onChange={setDataNascimento}
+          ariaLabel="Data de nascimento"
+          minimo="1900-01-01"
+          aviso="Data inválida — confira o dia, o mês e o ano."
         />
       ),
       opcional: true,
@@ -365,7 +366,12 @@ export function Onboarding({ jaCompleto = false }: { jaCompleto?: boolean }) {
       campo: (
         <div>
           <Campo rotulo="Início das contribuições ao INSS">
-            <input className="pf-input" type="month" value={inicioContribuicao} onChange={(e) => setInicioContribuicao(e.target.value)} />
+            <MesInput
+              value={inicioContribuicao}
+              onChange={setInicioContribuicao}
+              ariaLabel="Mês e ano da primeira contribuição ao INSS"
+              minimo="1930-01"
+            />
           </Campo>
           <Campo rotulo="Salário bruto atual">
             <MoedaInput value={salario} onChange={setSalario} />
