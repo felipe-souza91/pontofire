@@ -219,9 +219,11 @@ export function Onboarding({ jaCompleto = false }: { jaCompleto?: boolean }) {
                 key={r}
                 type="button"
                 className={`pf-btn ${retornoPct === r ? 'pf-btn-primary' : 'pf-btn-ghost'}`}
+                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}
                 onClick={() => setRetornoPct(r)}
               >
-                {r}%{r === RETORNO_RECOMENDADO ? ' <Icone nome="estrela" size={13} />' : ''}
+                {r}%
+                {r === RETORNO_RECOMENDADO && <Icone nome="estrela" size={13} />}
               </button>
             ))}
           </div>
