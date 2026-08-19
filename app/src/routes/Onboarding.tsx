@@ -22,7 +22,8 @@ type Bloco = 'você' | 'números';
 interface PassoConfig {
   bloco: Bloco;
   titulo: string;
-  sub: string;
+  /** ReactNode e não string: a pergunta do custo precisa de destaque no meio da frase */
+  sub: ReactNode;
   campo: ReactNode;
   /** false trava o "Continuar" */
   valido?: boolean;
@@ -61,6 +62,18 @@ export function Onboarding({ jaCompleto = false }: { jaCompleto?: boolean }) {
   // --- bloco "números"
   const [custo, setCusto] = useState(0);
   const [aporte, setAporte] = useState(0);
+  /**
+   * Saída de emergência de quem não usa cartão: `custo = receita − aporte`.
+   *
+   * Fica escondida atrás de um link porque é o caminho pior — depende de a
+   * pessoa não ter movido saldo no mês. Mas quando ela erra, erra pra CIMA (a
+   * sobra em conta vira "gasto"), e meta grande demais é o lado seguro do erro.
+   *
+   * Não é campo novo: o aporte daqui é o mesmo da pergunta seguinte, então o
+   * custo sai de UMA pergunta a mais, não de duas.
+   */
+  const [calcAberto, setCalcAberto] = useState(false);
+  const [receita, setReceita] = useState(0);
   const [patrimonio, setPatrimonio] = useState(0);
   const [retornoPct, setRetornoPct] = useState(RETORNO_RECOMENDADO);
   const [meta, setMeta] = useState(0);
@@ -68,6 +81,8 @@ export function Onboarding({ jaCompleto = false }: { jaCompleto?: boolean }) {
   const [inicioContribuicao, setInicioContribuicao] = useState('');
   const [salario, setSalario] = useState(0);
   const [sexoINSS, setSexoINSS] = useState<'F' | 'M' | undefined>(undefined);
+
+  const custoCalculado = Math.max(0, receita - aporte);
 
   const metaSugerida = useMemo(() => Math.round(numeroFire(custo, TSS)), [custo]);
   const metaEfetiva = metaEditada && meta > 0 ? meta : metaSugerida;
@@ -189,8 +204,91 @@ export function Onboarding({ jaCompleto = false }: { jaCompleto?: boolean }) {
     {
       bloco: 'números',
       titulo: `Agora os números, ${tratamento}. Quanto você gasta por mês?`,
-      sub: 'Só o que você consome pra viver — SEM contar o que investe. É esse número que define sua meta.',
-      campo: <MoedaInput value={custo} onChange={setCusto} autoFocus />,
+      /**
+       * A receita do próprio dono do app, e ela vence qualquer instrução que eu
+       * escreveria: fatura + o que não passa nela.
+       *
+       * Os dois números são de BUSCA (estão no app do banco), não de memória.
+       * Toda instrução que pede pra somar gastos de cabeça produz o mesmo erro,
+       * sempre pro mesmo lado: a lista pega o que se repete e esquece mercado,
+       * padaria e farmácia — que é metade do gasto. A fatura já somou isso.
+       */
+      sub: (
+        <>
+          O jeito rápido: <b>sua última fatura de cartão + o que não passa nela</b> (boleto, débito
+          automático, PIX, desconto em folha). A fatura já traz mercado, padaria e farmácia — que é
+          justamente o que escapa quando a gente tenta listar de cabeça.{' '}
+          <b>Não precisa acertar: na dúvida, chuta pra cima.</b> Do 3º mês lançado em diante o app
+          passa a usar o seu gasto real.
+        </>
+      ),
+      campo: (
+        <div>
+          <MoedaInput value={custo} onChange={setCusto} autoFocus />
+
+          <details className="pf-onb-detalhe">
+            <summary>o que costuma escapar</summary>
+            <ul>
+              <li>
+                <b>Gastos anuais</b> — IPVA, seguro, IPTU, material escolar. Some o ano e divida por
+                12: a fatura de um mês só não pega.
+              </li>
+              <li>
+                <b>O que sai de outras contas</b> — débito automático, PIX recorrente, a conta que
+                está no nome de outra pessoa mas sai do seu bolso.
+              </li>
+              <li>
+                <b>É o gasto de hoje.</b> O que muda quando você parar de trabalhar (aluguel acaba,
+                plano de saúde encarece) o app trata depois, com dado — não precisa adivinhar agora.
+              </li>
+            </ul>
+          </details>
+
+          {!calcAberto ? (
+            <button className="pf-btn-link" onClick={() => setCalcAberto(true)}>
+              não sei — calcular pelo que entra →
+            </button>
+          ) : (
+            <div className="pf-onb-calc">
+              <label>
+                Quanto entra por mês, líquido?
+                <MoedaInput value={receita} onChange={setReceita} autoFocus />
+              </label>
+              <label>
+                Quanto disso você investe?
+                <MoedaInput value={aporte} onChange={setAporte} />
+              </label>
+
+              {receita > 0 && (
+                custoCalculado > 0 ? (
+                  <>
+                    <p className="pf-onb-calc-saida">
+                      Então você gasta cerca de <b>{formatBRL(custoCalculado)}</b> por mês.
+                    </p>
+                    <button
+                      className="pf-btn pf-btn-primary"
+                      onClick={() => {
+                        setCusto(custoCalculado);
+                        setCalcAberto(false);
+                      }}
+                    >
+                      Usar esse número
+                    </button>
+                  </>
+                ) : (
+                  <p className="pf-onb-calc-saida">
+                    Assim o gasto daria zero ou menos. Confira os dois números — o que entra tem que
+                    ser maior que o que você investe.
+                  </p>
+                )
+              )}
+              <p className="pf-hint" style={{ marginBottom: 0 }}>
+                Guardo o que você investe pra próxima pergunta, não precisa digitar de novo.
+              </p>
+            </div>
+          )}
+        </div>
+      ),
       valido: custo > 0,
     },
     {
@@ -345,7 +443,8 @@ export function Onboarding({ jaCompleto = false }: { jaCompleto?: boolean }) {
       </div>
 
       <h2 style={{ fontSize: '1.5rem', marginBottom: 'var(--space-2)' }}>{atual.titulo}</h2>
-      <p className="pf-hint" style={{ marginTop: 0 }}>{atual.sub}</p>
+      {/* div e não p: o sub agora pode trazer marcação */}
+      <div className="pf-hint pf-onb-sub" style={{ marginTop: 0 }}>{atual.sub}</div>
       <div style={{ margin: 'var(--space-4) 0' }}>{atual.campo}</div>
 
       {erro && <p className="pf-error">{erro}</p>}

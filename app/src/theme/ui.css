@@ -861,6 +861,77 @@
 }
 
 /* ===================================================================== */
+/* Onboarding — instrução da pergunta do custo                           */
+/* ===================================================================== */
+
+/* o sub virou texto de verdade nessa pergunta: o negrito precisa saltar */
+.pf-hint b {
+  color: var(--paper);
+  font-weight: 600;
+}
+
+/* 0,82rem serve pra uma linha de dica; não serve pra instrução que a pessoa
+   precisa LER antes de responder o número que define a meta inteira. */
+.pf-onb-sub {
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.pf-onb-detalhe {
+  margin-top: var(--space-4);
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+.pf-onb-detalhe summary {
+  cursor: pointer;
+  color: var(--ember-2);
+  list-style: none;
+}
+.pf-onb-detalhe summary::-webkit-details-marker { display: none; }
+.pf-onb-detalhe summary::before {
+  content: '+ ';
+  font-family: var(--font-mono);
+}
+.pf-onb-detalhe[open] summary::before { content: '− '; }
+.pf-onb-detalhe ul {
+  margin: var(--space-3) 0 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: var(--space-2);
+  line-height: 1.5;
+}
+.pf-onb-detalhe b {
+  color: var(--paper);
+  font-weight: 600;
+}
+
+.pf-onb-calc {
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
+  background: var(--ink-2);
+  display: grid;
+  gap: var(--space-3);
+}
+.pf-onb-calc label {
+  display: grid;
+  gap: var(--space-2);
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.pf-onb-calc-saida {
+  margin: 0;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--line);
+  line-height: 1.5;
+}
+.pf-onb-calc-saida b {
+  font-family: var(--font-mono);
+  color: var(--mint);
+}
+
+/* ===================================================================== */
 /* O que mudou (changelog) — reaproveita o fundo e o card da apresentação */
 /* ===================================================================== */
 
