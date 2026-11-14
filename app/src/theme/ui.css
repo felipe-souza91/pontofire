@@ -244,7 +244,7 @@
 /* layout do dashboard — mobile-first, mas usa a largura no desktop */
 .pf-dash {
   width: 100%;
-  max-width: 980px;
+  max-width: 1080px;
   margin: 0 auto;
   padding: var(--space-6) var(--space-6) var(--space-12);
   position: relative;
@@ -261,17 +261,19 @@
   }
 }
 
-/* grid de cards de estatística — 2×2 */
+/* Faixa de estatísticas. `auto-fit` em vez de 2 colunas fixas: com cinco
+   números a última sobrava sozinha numa linha inteira, e no desktop havia
+   largura pra todos lado a lado. */
 .pf-stats {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
   gap: var(--space-3);
 }
 .pf-stat {
   background: var(--ink-2);
   border: 1px solid var(--line);
   border-radius: 16px;
-  padding: var(--space-4) var(--space-6);
+  padding: var(--space-4);
   min-width: 0;
 }
 .pf-stat .rot {
@@ -285,9 +287,20 @@
 .pf-stat .val {
   font-family: var(--font-mono);
   font-weight: 700;
-  font-size: 1.25rem;
+  font-size: clamp(0.95rem, 4.2vw, 1.2rem);
   margin-top: 8px;
+  /* o número não quebra; a unidade ("/mês") desce pra linha de baixo se faltar largura */
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 3px;
   white-space: nowrap;
+}
+.pf-stat .val small {
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--muted);
+  margin-left: 2px;
 }
 .pf-stat .val.mint {
   color: var(--mint);
@@ -964,6 +977,12 @@
   font-weight: 600;
 }
 
+.pf-nov-intro-bloco {
+  text-align: left;
+  margin-bottom: var(--space-3);
+  font-size: 0.9rem;
+}
+
 .pf-nov-versao {
   font-family: var(--font-mono);
   font-size: 0.78rem;
@@ -1013,57 +1032,6 @@
 /* ===================================================================== */
 /* Correções de layout com poucos (ou nenhum) lançamentos                */
 /* ===================================================================== */
-
-/* nº ímpar de estatísticas: a última ocupa a linha toda em vez de deixar
-   um buraco do lado */
-.pf-stats > .pf-stat:last-child:nth-child(odd) {
-  grid-column: 1 / -1;
-}
-
-/* A coluna dos gráficos vira flex: só os cards QUE TÊM gráfico esticam.
-   Antes, `grid-auto-rows: 1fr` inflava também o card de "evolução" quando ele
-   só tinha uma frase — virava uma caixa vazia gigante. */
-.pf-col-graficos {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-@media (min-width: 860px) {
-  .pf-col-graficos > .pf-card-graf {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-  }
-  .pf-col-graficos > .pf-card-graf .pf-graf {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-  }
-  .pf-col-graficos > .pf-card-graf .pf-graf-plot {
-    flex: 1;
-    height: auto !important;
-    /* trava: sem isso, uma coluna direita muito alta esticaria o gráfico até
-       ficar uma mancha vertical */
-    max-height: 340px;
-  }
-}
-
-/* estado vazio do gráfico de evolução — compacto e com saída */
-.pf-vazio {
-  display: grid;
-  gap: var(--space-3);
-  justify-items: start;
-  margin-top: var(--space-3);
-  padding: var(--space-4);
-  border: 1px dashed var(--line-2);
-  border-radius: 14px;
-}
-.pf-vazio p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.9rem;
-  line-height: 1.5;
-}
 
 /* ===================================================================== */
 /* Motor reverso — "o que fecharia a diferença até a idade que eu quero" */
@@ -1692,4 +1660,674 @@
 }
 .pf-conquista svg {
   color: var(--muted);
+}
+
+/* estado vazio do gráfico de evolução — compacto e com saída */
+.pf-vazio {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+  margin-top: var(--space-3);
+  padding: var(--space-4);
+  border: 1px dashed var(--line-2);
+  border-radius: 14px;
+}
+.pf-vazio p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* ===================================================================== */
+/* Início — estrutura                                                    */
+/* ===================================================================== */
+
+.pf-bloco {
+  margin-top: var(--space-4);
+}
+
+/* a data (o que você persegue) ao lado do hoje (o que mudou desde ontem) */
+.pf-topo-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+@media (min-width: 900px) {
+  .pf-topo-grid {
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  }
+}
+
+/* Gráficos lado a lado quando cabem. `auto-fit` e não duas colunas fixas: se
+   um dos dois não existe ainda (histórico curto), o outro ocupa a linha toda
+   em vez de ficar espremido ao lado de um buraco. */
+.pf-grade-graf {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+  gap: var(--space-4);
+  align-items: start;
+}
+/* minmax(0, …) nas colunas: sem isso um filho largo (tabela, legenda) empurra
+   a coluna pra fora da tela no celular */
+.pf-grade-graf > *,
+.pf-topo-grid > * {
+  min-width: 0;
+}
+
+/* --- seletor de período: um só, acima dos gráficos que ele recorta ------- */
+.pf-periodo {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: var(--space-6);
+}
+.pf-periodo + .pf-bloco {
+  margin-top: var(--space-3);
+}
+.pf-periodo-rot {
+  margin-right: auto;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+.pf-periodo button {
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 100px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+.pf-periodo button.on {
+  color: var(--paper);
+  background: var(--ink-3);
+  border-color: var(--line-2);
+}
+@media (hover: hover) {
+  .pf-periodo button:not(.on):hover {
+    color: var(--paper);
+  }
+}
+
+/* ===================================================================== */
+/* "Hoje" — a parte do Início que muda todo dia                          */
+/* ===================================================================== */
+
+.pf-hoje {
+  display: flex;
+  flex-direction: column;
+}
+.pf-hoje-topo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.pf-hoje-data {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.pf-hoje-item {
+  padding-top: var(--space-4);
+  margin-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+.pf-hoje-valor {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 1.35rem;
+  letter-spacing: -0.01em;
+}
+.pf-hoje-valor small {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+/* variação positiva: cor de status (dinheiro que entrou), com o sinal escrito */
+.pf-hoje-delta {
+  font-size: 0.82rem;
+  color: var(--mint);
+}
+.pf-hoje-item p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+.pf-hoje-item p b {
+  color: var(--paper);
+  font-weight: 600;
+}
+
+/* 30 dias do mês; os acesos são os que o patrimônio já paga */
+.pf-dias {
+  display: grid;
+  grid-template-columns: repeat(30, minmax(0, 1fr));
+  gap: 3px;
+  margin: 10px 0 2px;
+}
+.pf-dias i {
+  height: 16px;
+  border-radius: 3px;
+  background: var(--ink-3);
+}
+.pf-dias i.cheio {
+  background: var(--mint);
+}
+.pf-dias i[data-parcial] {
+  background: linear-gradient(90deg, var(--mint) var(--parte), var(--ink-3) var(--parte));
+}
+@media (max-width: 420px) {
+  .pf-dias {
+    grid-template-columns: repeat(15, minmax(0, 1fr));
+  }
+  .pf-dias i {
+    height: 12px;
+  }
+}
+
+/* ===================================================================== */
+/* Gráfico de linha                                                      */
+/* ===================================================================== */
+
+.pf-graf-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+/* o número do gráfico: o último valor, legível sem apontar pra nada */
+.pf-graf-numero {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: clamp(1.35rem, 3.4vw, 1.7rem);
+  letter-spacing: -0.01em;
+  margin-top: 6px;
+}
+.pf-graf-resumo {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+.pf-graf-resumo b {
+  color: var(--paper);
+  font-weight: 600;
+}
+.pf-graf-resumo .sobe {
+  color: var(--mint);
+}
+.pf-graf-resumo .desce {
+  color: var(--ember-2);
+}
+
+.pf-graf {
+  margin-top: var(--space-4);
+}
+
+/* legenda viva: traço na cor da série, nome em cinza, valor em branco */
+.pf-graf-legenda {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.pf-graf-legenda li {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.pf-graf-legenda i,
+.pf-graf-dica .linha i,
+.pf-rent-figura .rot i {
+  display: inline-block;
+  width: 16px;
+  height: 0;
+  border-top: 2px solid;
+  border-radius: 2px;
+  flex: none;
+}
+.pf-graf-legenda i.pontilhada,
+.pf-graf-dica .linha i.pontilhada {
+  border-top-style: dotted;
+}
+.pf-graf-legenda b {
+  color: var(--paper);
+  font-size: 0.78rem;
+}
+
+.pf-graf-corpo {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 10px;
+}
+.pf-graf-eixo-y {
+  position: relative;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  color: var(--muted);
+}
+/* invisível: existe só pra coluna do eixo ter a largura do maior rótulo */
+.pf-graf-eixo-y .medida {
+  display: block;
+  height: 0;
+  visibility: hidden;
+  white-space: nowrap;
+}
+.pf-graf-eixo-y span:not(.medida) {
+  position: absolute;
+  right: 0;
+  transform: translateY(-50%);
+  white-space: nowrap;
+}
+
+.pf-graf-plot {
+  position: relative;
+  /* arrastar na horizontal percorre o gráfico; na vertical, rola a página */
+  touch-action: pan-y;
+  cursor: crosshair;
+  border-radius: 6px;
+  outline-offset: 6px;
+  -webkit-tap-highlight-color: transparent;
+}
+.pf-graf-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  /* a curva se desenha da esquerda pra direita na primeira vez que aparece */
+  animation: pf-graf-revela 0.9s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+@keyframes pf-graf-revela {
+  from { clip-path: inset(-4% 100% -4% 0); }
+  to { clip-path: inset(-4% -2% -4% 0); }
+}
+/* grade: fio de cabelo sólido, um passo acima do fundo */
+.pf-graf-svg .grade {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+/* a meta é limite, não grade — por isso é a única linha tracejada do eixo */
+.pf-graf-svg .meta {
+  stroke: var(--mint);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+  opacity: 0.85;
+}
+.pf-graf-meta {
+  position: absolute;
+  left: 6px;
+  transform: translateY(-125%);
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  color: var(--paper);
+  opacity: 0.85;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.pf-graf-marcador {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-left: 1px dashed var(--line-2);
+  pointer-events: none;
+}
+.pf-graf-marcador em {
+  position: absolute;
+  top: 2px;
+  font-style: normal;
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  color: var(--muted);
+  white-space: nowrap;
+  background: var(--ink-2);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* pontos: HTML por cima do SVG esticado, então são círculos de verdade.
+   O anel na cor do fundo é o que os separa da linha que cruzam. */
+.pf-graf-ponto {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--cor);
+  box-shadow: 0 0 0 2px var(--ink-2);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+/* mês atípico: vazado — a diferença é de forma, não só de cor */
+.pf-graf-ponto.vazado {
+  width: 6px;
+  height: 6px;
+  background: var(--ink-2);
+  box-shadow: 0 0 0 2px var(--cor);
+}
+.pf-graf-ponto.fim {
+  width: 10px;
+  height: 10px;
+  box-shadow:
+    0 0 0 3px var(--ink-2),
+    0 0 0 7px color-mix(in srgb, var(--cor) 22%, transparent);
+}
+.pf-graf-ponto.ativo {
+  width: 11px;
+  height: 11px;
+  z-index: 2;
+  box-shadow: 0 0 0 3px var(--ink-2);
+}
+.pf-graf-regua {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  margin-left: -0.5px;
+  background: var(--line-2);
+  pointer-events: none;
+}
+
+/* tooltip: o valor manda (branco, forte), o nome da série acompanha (cinza) */
+.pf-graf-dica {
+  position: absolute;
+  top: 4px;
+  z-index: 3;
+  min-width: 9.5rem;
+  max-width: min(16rem, 78%);
+  padding: 10px 12px;
+  background: rgba(9, 12, 38, 0.96);
+  border: 1px solid var(--line-2);
+  border-radius: 12px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4);
+  font-size: 0.78rem;
+  pointer-events: none;
+}
+.pf-graf-dica strong {
+  display: block;
+  margin-bottom: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.pf-graf-dica .linha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 7px;
+  padding: 2px 0;
+}
+.pf-graf-dica .linha b {
+  color: var(--paper);
+  font-size: 0.82rem;
+}
+.pf-graf-dica .linha span {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+.pf-graf-dica .extra {
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.74rem;
+  line-height: 1.45;
+}
+.pf-graf-dica .extra b {
+  color: var(--paper);
+  font-weight: 600;
+}
+
+.pf-graf-eixo-x {
+  position: relative;
+  height: 16px;
+  margin-top: 8px;
+}
+.pf-graf-eixo-x span {
+  position: absolute;
+  font-size: 0.68rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* tabela: os mesmos números do gráfico, sem depender de gesto nenhum */
+.pf-graf-tabela {
+  margin-top: var(--space-3);
+}
+.pf-graf-tabela summary {
+  width: fit-content;
+  cursor: pointer;
+  list-style: none;
+  font-size: 0.72rem;
+  color: var(--muted);
+  opacity: 0.8;
+  border-bottom: 1px dotted var(--line-2);
+}
+.pf-graf-tabela summary::-webkit-details-marker {
+  display: none;
+}
+.pf-graf-tabela[open] summary {
+  opacity: 1;
+  color: var(--ember-2);
+}
+.pf-graf-tabela .rolagem {
+  max-height: 16rem;
+  overflow: auto;
+  margin-top: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.pf-graf-tabela table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+.pf-graf-tabela th,
+.pf-graf-tabela td {
+  padding: 7px 12px;
+  text-align: right;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--line);
+}
+.pf-graf-tabela th:first-child {
+  text-align: left;
+}
+.pf-graf-tabela thead th {
+  position: sticky;
+  top: 0;
+  background: var(--ink-2);
+  color: var(--muted);
+  font-weight: 500;
+}
+.pf-graf-tabela tbody th {
+  font-weight: 400;
+  color: var(--muted);
+}
+.pf-graf-tabela tbody tr:last-child th,
+.pf-graf-tabela tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* --- rentabilidade: você × CDI × inflação ------------------------------- */
+.pf-rent {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+.pf-rent-topo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.pf-rent-periodo {
+  font-size: 0.68rem;
+  color: var(--muted);
+}
+.pf-rent-numeros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(86px, 1fr));
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+.pf-rent-figura {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+  min-width: 0;
+}
+.pf-rent-figura .rot {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.74rem;
+  color: var(--muted);
+}
+.pf-rent-figura b {
+  display: block;
+  margin-top: 4px;
+  font-size: 1.15rem;
+}
+.pf-rent-leitura {
+  display: grid;
+  gap: 6px;
+  margin: var(--space-3) 0 0;
+  padding-left: 1.1rem;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+.pf-rent-leitura b {
+  color: var(--paper);
+  font-weight: 600;
+}
+.pf-rent-nota {
+  margin-bottom: 0;
+  opacity: 0.8;
+}
+
+/* lançamento salvo: o que a carteira rendeu, ao lado do CDI do mesmo intervalo */
+.pf-efeito-cdi {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2) var(--space-3);
+  margin-top: var(--space-6);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+  text-align: left;
+}
+.pf-efeito-cdi > div {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+}
+.pf-efeito-cdi span {
+  display: block;
+  font-size: 0.74rem;
+  color: var(--muted);
+}
+.pf-efeito-cdi b {
+  display: block;
+  margin-top: 4px;
+  font-size: 1.15rem;
+}
+.pf-efeito-cdi p {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 0.74rem;
+  line-height: 1.45;
+  color: var(--muted);
+  opacity: 0.85;
+}
+
+/* ===================================================================== */
+/* Barra de navegação inferior — só no celular                           */
+/* ===================================================================== */
+
+.pf-barra {
+  display: none;
+}
+@media (max-width: 820px) {
+  .pf-barra {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 45;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+    background: rgba(12, 15, 46, 0.9);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-top: 1px solid var(--line);
+  }
+  .pf-barra a {
+    display: grid;
+    justify-items: center;
+    gap: 3px;
+    padding: 6px 2px;
+    border-radius: 12px;
+    font-size: 0.66rem;
+    color: var(--muted);
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .pf-barra a.on {
+    color: var(--ember-2);
+  }
+  .pf-barra a span {
+    white-space: nowrap;
+  }
+  /* o conteúdo não pode terminar atrás da barra. `!important` porque várias
+     telas definem o padding do <main> inline. */
+  body:has(.pf-barra) main {
+    padding-bottom: calc(88px + env(safe-area-inset-bottom)) !important;
+  }
+  body:has(.pf-barra) .pf-fab {
+    bottom: calc(78px + env(safe-area-inset-bottom));
+  }
+}
+
+/* o termômetro enche da esquerda na primeira vez que aparece — mesmo gesto da
+   curva dos gráficos. (prefers-reduced-motion já zera animações no tokens.css) */
+.pf-bar > i {
+  transform-origin: left center;
+  animation: pf-bar-cresce 0.9s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+@keyframes pf-bar-cresce {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/* Tooltip em tela estreita: o nome da série desce SEMPRE pra linha de baixo.
+   Deixar o navegador decidir fazia umas linhas caberem e outras não. */
+@media (max-width: 520px) {
+  .pf-graf-dica .linha span {
+    flex-basis: 100%;
+  }
 }

@@ -38,6 +38,14 @@ export interface Snapshot {
    * real.
    */
   aporteObservado?: boolean;
+  /**
+   * Dia em que o patrimônio acima foi observado (YYYY-MM-DD).
+   *
+   * A competência não basta: quem lança novembro no dia 14 informou o
+   * patrimônio do dia 14. É a partir deste dia que a régua diária do CDI conta
+   * no Início. Ausente nos lançamentos antigos — ver `referenciaDoPatrimonio`.
+   */
+  patrimonioEm?: string;
   rendimentosMes: number; // derivado por marcação a mercado
   taxaPoupanca: number; // derivado: (receita − gasto)/receita
   /** derivado: aporte/receita — quanto da renda virou patrimônio */

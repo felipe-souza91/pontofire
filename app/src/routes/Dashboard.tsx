@@ -2,8 +2,8 @@ import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import {
   coberturaPassiva,
+  estimarINSS,
   proporcaoAtipica,
-  valorFuturo,
   variacaoDaData,
   type EstadoVigente,
 } from '@pontofire/engine';
@@ -23,14 +23,25 @@ import { Novidades } from '../components/Novidades';
 import { MenuTopo } from '../components/MenuTopo';
 import { novidadesDesde } from '../data/novidades';
 import { marcarNovidadesVistas, marcarTourVisto } from '../data/users';
-import { GraficoLinha, type MarcaX, type PontoGrafico } from '../components/GraficoLinha';
+import { GraficoEvolucao } from '../components/GraficoEvolucao';
+import { GraficoProjecao } from '../components/GraficoProjecao';
+import { GraficoData } from '../components/GraficoData';
+import { PainelHoje } from '../components/PainelHoje';
+import { useMercado } from '../hooks/useMercado';
+import { diasAte, diasPagosPorMes, estimativaDeHoje, motivoSemEstimativa } from '../utils/pulso';
 import { formatBRLcompact, formatDuracao, formatMesAno, formatPct } from '../utils/format';
 
-const MESES_ABREV = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
-function mesCurto(m: string): string {
-  const [ano, mm] = m.split('-');
-  return `${MESES_ABREV[parseInt(mm ?? '1', 10) - 1]}/${(ano ?? '').slice(2)}`;
-}
+/**
+ * Janela dos gráficos de histórico. Um controle só, acima dos dois: se cada
+ * gráfico tivesse o seu, "evolução" e "data" poderiam estar mostrando períodos
+ * diferentes lado a lado sem ninguém perceber.
+ */
+type Periodo = '6m' | '12m' | 'tudo';
+const PERIODOS: { id: Periodo; rotulo: string; meses: number | null }[] = [
+  { id: '6m', rotulo: '6 meses', meses: 6 },
+  { id: '12m', rotulo: '12 meses', meses: 12 },
+  { id: 'tudo', rotulo: 'Tudo', meses: null },
+];
 
 export function Dashboard() {
   const { user, sair } = useAuth();
@@ -43,6 +54,8 @@ export function Dashboard() {
   // apresentação: só pra quem terminou o onboarding e ainda não viu
   const [tourFechado, setTourFechado] = useState(false);
   const [novidadesFechadas, setNovidadesFechadas] = useState(false);
+  const mercado = useMercado();
+  const [periodo, setPeriodo] = useState<Periodo>('tudo');
 
   if (carregando) return <Centro>Carregando…</Centro>;
   if (!doc || !plano || !ctx) return <Centro>Sem dados ainda.</Centro>;
@@ -86,9 +99,9 @@ export function Dashboard() {
   // card da semana: determinístico por uid + semana, muda sozinho na segunda
   const daSemana = cardDaSemana(ctx, fmt, { semente: user?.uid });
 
-  const stats: { rot: string; val: string; tom?: 'mint' | 'ember' }[] = [
+  const stats: { rot: string; val: string; un?: string; tom?: 'mint' | 'ember' }[] = [
     { rot: 'Número FIRE', val: formatBRLcompact(meta) },
-    { rot: 'Renda ao atingir', val: `${formatBRLcompact(plano.saqueMensalSustentavel)}/mês`, tom: 'mint' },
+    { rot: 'Renda ao atingir', val: formatBRLcompact(plano.saqueMensalSustentavel), un: '/mês', tom: 'mint' },
   ];
   if (bens.length > 0) {
     stats.push({ rot: 'Patrimônio líquido', val: formatBRLcompact(netWorth), tom: 'mint' });
@@ -99,10 +112,35 @@ export function Dashboard() {
   if (R > 0) {
     stats.push({ rot: 'Cobertura passiva', val: formatPct(coberturaPassiva(R, vigente?.custo.valor ?? 0)), tom: 'mint' });
   }
-  stats.push({ rot: 'Aporte mensal', val: `${formatBRLcompact(vigente?.aporte.valor ?? 0)}/mês` });
+  stats.push({ rot: 'Aporte mensal', val: formatBRLcompact(vigente?.aporte.valor ?? 0), un: '/mês' });
   stats.push({ rot: 'Retorno real a.a.', val: formatPct(doc.retornoRealEsperado), tom: 'ember' });
 
   const mostraTour = doc.tourVisto === false && !tourFechado;
+
+  // --- o que muda todo dia
+  const hoje = new Date();
+  const estimativa = estimativaDeHoje(ultimo, mercado?.cdiDiario ?? [], hoje);
+  const reserva = vigente?.reserva ?? 0;
+  const custoVigente = vigente?.custo.valor ?? 0;
+  const diasPagos = diasPagosPorMes(P, reserva, doc.taxaSaqueSegura, custoVigente);
+  const rendaSustentavel = (Math.max(0, P - reserva) * doc.taxaSaqueSegura) / 12;
+  const diasParaFire =
+    plano.status === 'ok' && plano.dataLiberdade ? diasAte(plano.dataLiberdade, hoje) : null;
+
+  // --- janela dos gráficos de histórico (N meses = N+1 pontos: precisa do de partida)
+  const mesesDaJanela = PERIODOS.find((p) => p.id === periodo)?.meses ?? null;
+  const janela = mesesDaJanela === null ? lista : lista.slice(-(mesesDaJanela + 1));
+
+  // --- INSS: só pra marcar no gráfico de projeção quando ele chegaria
+  const inss =
+    doc.dataNascimento && doc.inicioContribuicao && doc.salario && doc.sexoINSS
+      ? estimarINSS({
+          dataNascimento: doc.dataNascimento,
+          inicioContribuicao: doc.inicioContribuicao,
+          salarioBruto: doc.salario,
+          sexo: doc.sexoINSS,
+        })
+      : null;
 
   /**
    * Changelog e apresentação são excludentes.
@@ -150,173 +188,164 @@ export function Dashboard() {
         <TrofeusResumo ids={trofeus} />
       </div>
 
-      {/* Card da data — termômetro + contagem regressiva (full width) */}
-      <section className="pf-hero-card">
-        <span className="pf-eyebrow">Seu ponto FIRE</span>
-        {plano.status === 'ok' && plano.dataLiberdade && plano.meses !== null ? (
-          <>
-            <div className="pf-hc-date">{formatMesAno(plano.dataLiberdade)}</div>
-            <p className="pf-hc-sub">
-              faltam {formatDuracao(plano.meses)} no seu ritmo atual
-              {plano.idadeNaLiberdade !== null && ` · aos ${Math.round(plano.idadeNaLiberdade)} anos`}
+      {/* Topo: a data (o que você persegue) e o hoje (o que mudou desde ontem) */}
+      <div className="pf-topo-grid">
+        {/* Card da data — termômetro + contagem regressiva (full width) */}
+        <section className="pf-hero-card">
+          <span className="pf-eyebrow">Seu ponto FIRE</span>
+          {plano.status === 'ok' && plano.dataLiberdade && plano.meses !== null ? (
+            <>
+              <div className="pf-hc-date">{formatMesAno(plano.dataLiberdade)}</div>
+              <p className="pf-hc-sub">
+                faltam {formatDuracao(plano.meses)} no seu ritmo atual
+                {plano.idadeNaLiberdade !== null && ` · aos ${Math.round(plano.idadeNaLiberdade)} anos`}
+              </p>
+            </>
+          ) : plano.status === 'atingido' ? (
+            <>
+              <div className="pf-hc-date">Livre</div>
+              <p className="pf-hc-sub">seu patrimônio já cobre sua meta</p>
+            </>
+          ) : (
+            <>
+              <div className="pf-hc-date" style={{ color: 'var(--ember-2)', fontSize: 'clamp(22px, 6vw, 32px)' }}>
+                sem data ainda
+              </div>
+              <p className="pf-hc-sub">no aporte atual a meta não fecha — simular um aporte maior muda o jogo</p>
+            </>
+          )}
+
+          {doc.nomeSonho && (
+            <p style={{ color: 'var(--muted)', marginTop: '-10px', marginBottom: '18px' }}>
+              rumo a <span style={{ color: 'var(--mint)', fontStyle: 'italic' }}>“{doc.nomeSonho}”</span>
             </p>
-          </>
-        ) : plano.status === 'atingido' ? (
-          <>
-            <div className="pf-hc-date">Livre</div>
-            <p className="pf-hc-sub">seu patrimônio já cobre sua meta</p>
-          </>
-        ) : (
-          <>
-            <div className="pf-hc-date" style={{ color: 'var(--ember-2)', fontSize: 'clamp(22px, 6vw, 32px)' }}>
-              sem data ainda
-            </div>
-            <p className="pf-hc-sub">no aporte atual a meta não fecha — simular um aporte maior muda o jogo</p>
-          </>
-        )}
+          )}
 
-        {doc.nomeSonho && (
-          <p style={{ color: 'var(--muted)', marginTop: '-10px', marginBottom: '18px' }}>
-            rumo a <span style={{ color: 'var(--mint)', fontStyle: 'italic' }}>“{doc.nomeSonho}”</span>
-          </p>
-        )}
+          {desdeAPartida !== null && Math.abs(desdeAPartida) >= 1 && (
+            <p
+              className="pf-hc-sub"
+              style={{ marginTop: '-14px', color: desdeAPartida < 0 ? 'var(--mint)' : 'var(--muted)' }}
+            >
+              {formatDuracao(Math.abs(desdeAPartida))} {desdeAPartida < 0 ? 'mais cedo' : 'mais tarde'} do
+              que quando você começou
+              {doc.linhaDePartida?.origem === 'reconstruida' && ' (partida aproximada)'}
+            </p>
+          )}
 
-        {desdeAPartida !== null && Math.abs(desdeAPartida) >= 1 && (
-          <p
-            className="pf-hc-sub"
-            style={{ marginTop: '-14px', color: desdeAPartida < 0 ? 'var(--mint)' : 'var(--muted)' }}
-          >
-            {formatDuracao(Math.abs(desdeAPartida))} {desdeAPartida < 0 ? 'mais cedo' : 'mais tarde'} do
-            que quando você começou
-            {doc.linhaDePartida?.origem === 'reconstruida' && ' (partida aproximada)'}
-          </p>
-        )}
+          {vigente && <Vigencia vigente={vigente} snapshots={lista} />}
 
-        {vigente && <Vigencia vigente={vigente} snapshots={lista} />}
-
-        <div className="pf-bar">
-          <i style={{ width: `${progressoPct}%` }} />
-        </div>
-        <div className="pf-bar-row">
-          <span>{formatBRLcompact(P)}</span>
-          <span>
-            meta {formatBRLcompact(meta)} · {progressoPct.toFixed(0)}%
-          </span>
-        </div>
-        {/*
-          Duas réguas pro mesmo número. Muita gente não considera a reserva como
-          patrimônio de liberdade — e não está errada: ela é dinheiro carimbado,
-          que existe pra não precisar vender a carteira num mês ruim. Mostrar as
-          duas leituras serve as duas cabeças sem partir o dado.
-        */}
-        {vigente && vigente.reserva > 0 && (
-          <p className="pf-hint" style={{ marginTop: 'var(--space-2)', marginBottom: 0 }}>
-            Sem contar a reserva: {formatBRLcompact(Math.max(0, P - vigente.reserva))} de{' '}
-            {formatBRLcompact(vigente.metaSemReserva)} ·{' '}
-            {(
-              (Math.max(0, P - vigente.reserva) / Math.max(1, vigente.metaSemReserva)) *
-              100
-            ).toFixed(0)}
-            % — a reserva fica parada de propósito, então não conta como caminho andado.
-          </p>
-        )}
-        <Link className="pf-como-calculo" to="/metodologia#data">como calculo isso →</Link>
-      </section>
+          <div className="pf-bar">
+            <i style={{ width: `${progressoPct}%` }} />
+          </div>
+          <div className="pf-bar-row">
+            <span>{formatBRLcompact(P)}</span>
+            <span>
+              meta {formatBRLcompact(meta)} · {progressoPct.toFixed(0)}%
+            </span>
+          </div>
+          {/*
+            Duas réguas pro mesmo número. Muita gente não considera a reserva como
+            patrimônio de liberdade — e não está errada: ela é dinheiro carimbado,
+            que existe pra não precisar vender a carteira num mês ruim. Mostrar as
+            duas leituras serve as duas cabeças sem partir o dado.
+          */}
+          {vigente && vigente.reserva > 0 && (
+            <p className="pf-hint" style={{ marginTop: 'var(--space-2)', marginBottom: 0 }}>
+              Sem contar a reserva: {formatBRLcompact(Math.max(0, P - vigente.reserva))} de{' '}
+              {formatBRLcompact(vigente.metaSemReserva)} ·{' '}
+              {(
+                (Math.max(0, P - vigente.reserva) / Math.max(1, vigente.metaSemReserva)) *
+                100
+              ).toFixed(0)}
+              % — a reserva fica parada de propósito, então não conta como caminho andado.
+            </p>
+          )}
+          <Link className="pf-como-calculo" to="/metodologia#data">como calculo isso →</Link>
+        </section>
+        <PainelHoje
+          hoje={hoje}
+          diasParaFire={diasParaFire}
+          estimativa={estimativa ? { ...estimativa, valor: P + estimativa.ganho } : null}
+          ultimoMes={ultimo?.mes ?? null}
+          semEstimativa={motivoSemEstimativa(ultimo, mercado?.cdiDiario ?? [], hoje)}
+          diasPagos={diasPagos}
+          rendaSustentavel={rendaSustentavel}
+        />
+      </div>
 
       {/* Números — faixa cheia */}
       <div className="pf-stats" style={{ marginTop: 'var(--space-4)' }}>
         {stats.map((st) => (
-          <Stat key={st.rot} rot={st.rot} val={st.val} tom={st.tom} />
+          <Stat key={st.rot} rot={st.rot} val={st.val} un={st.un} tom={st.tom} />
         ))}
       </div>
 
-      <div className="pf-cols-2" style={{ marginTop: 'var(--space-4)' }}>
-        {/* Coluna esquerda: os gráficos (precisam de largura) */}
-        <div className="pf-col-graficos">
-          {mostraProjecao && (
-            <section className="pf-hero-card pf-card-graf">
-              <span className="pf-eyebrow">Projeção do patrimônio</span>
-              <p className="pf-hc-sub" style={{ marginTop: 'var(--space-2)', marginBottom: 0 }}>
-                de hoje até a meta, no seu ritmo
-              </p>
-              <GraficoLinha
-                pontos={pontosProjecao(P, vigente?.aporte.valor ?? 0, plano.iMensal, plano.meses!)}
-                cor="#FF7A45"
-                meta={meta}
-                rotuloMeta={`meta ${formatBRLcompact(meta)}`}
-                marcasX={marcasProjecao(plano.meses!, plano.dataLiberdade!)}
-                formatValor={formatBRLcompact}
-                desdeZero
-              />
-            </section>
-          )}
-
-          {(() => {
-            /*
-             * A trajetória da DATA — o gráfico que só existe porque a Fase 1
-             * passou a gravar `mesesAteFire` em cada lançamento. Mostra
-             * movimento, não posição: é o retrato de o app estar funcionando.
-             */
-            const pontos = trajetoriaDaData(lista);
-            if (pontos.length < 2) return null;
-            const primeiro = pontos[0]!.v;
-            const ultimoPonto = pontos[pontos.length - 1]!.v;
-            const ganho = primeiro - ultimoPonto;
-            return (
-              <section className="pf-hero-card pf-card-graf">
-                <span className="pf-eyebrow">Sua data ao longo do tempo</span>
-                <p className="pf-hc-sub" style={{ marginTop: 'var(--space-2)', marginBottom: 0 }}>
-                  {Math.abs(ganho) < 0.08
-                    ? 'estável desde o primeiro lançamento'
-                    : ganho > 0
-                      ? `veio ${formatDuracao(ganho * 12)} pra trás desde o 1º lançamento`
-                      : `foi ${formatDuracao(-ganho * 12)} pra frente desde o 1º lançamento`}
-                </p>
-                <GraficoLinha
-                  pontos={pontos}
-                  cor="#FF9E6B"
-                  marcasX={marcasEvolucao(lista.filter((sn) => typeof sn.mesesAteFire === 'number'))}
-                  formatValor={anoDecimalCurto}
-                />
-              </section>
-            );
-          })()}
-
-          {lista.length >= 2 ? (
-            <section className="pf-hero-card pf-card-graf">
-              <span className="pf-eyebrow">Evolução do patrimônio</span>
-              <p className="pf-hc-sub" style={{ marginTop: 'var(--space-2)', marginBottom: 0 }}>
-                {lista.length} meses lançados
-              </p>
-              <GraficoLinha
-                pontos={lista.map((sn, i) => ({ t: i / (lista.length - 1), v: sn.patrimonioTotal }))}
-                cor="#3FD69B"
-                marcasX={marcasEvolucao(lista)}
-                formatValor={formatBRLcompact}
-              />
-            </section>
-          ) : (
-            <section className="pf-hero-card">
-              <span className="pf-eyebrow">Evolução do patrimônio</span>
-              <div className="pf-vazio">
-                <p>
-                  {lista.length === 1
-                    ? 'Seu 1º mês está registrado. Com dois pontos eu consigo desenhar a curva — e a partir daí ela é a sua letra, não uma projeção.'
-                    : 'Ainda não há mês lançado. A curva aparece assim que houver dois — é ela que mostra se a sua data está andando.'}
-                </p>
-                <Link className="pf-btn pf-btn-ghost" to="/lancar" style={{ width: 'auto', padding: '0.6rem 1.2rem', textDecoration: 'none' }}>
-                  {lista.length === 1 ? 'Lançar mais um mês' : 'Lançar meu primeiro mês'}
-                </Link>
-              </div>
-            </section>
-          )}
+      {lista.length > 7 && (
+        <div className="pf-periodo" role="group" aria-label="Período dos gráficos de histórico">
+          <span className="pf-periodo-rot">Histórico</span>
+          {PERIODOS.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              className={periodo === p.id ? 'on' : ''}
+              aria-pressed={periodo === p.id}
+              onClick={() => setPeriodo(p.id)}
+            >
+              {p.rotulo}
+            </button>
+          ))}
         </div>
+      )}
 
-        {/* Coluna direita: o que se lê */}
+      <div className="pf-bloco">
+        {janela.length >= 2 ? (
+          <GraficoEvolucao
+            snapshots={janela}
+            mercado={mercado}
+            estimativa={estimativa}
+            retornoEsperado={doc.retornoRealEsperado}
+          />
+        ) : (
+          <section className="pf-hero-card">
+            <span className="pf-eyebrow">Evolução do patrimônio</span>
+            <div className="pf-vazio">
+              <p>
+                {lista.length === 1
+                  ? 'Seu 1º mês está registrado. Com dois pontos eu consigo desenhar a curva — e colocar ao lado dela o que os mesmos aportes renderiam no CDI.'
+                  : 'Ainda não há mês lançado. A curva aparece assim que houver dois — é ela que mostra se a sua data está andando, e como você se sai contra o CDI e a inflação.'}
+              </p>
+              <Link className="pf-btn pf-btn-ghost" to="/lancar" style={{ width: 'auto', padding: '0.6rem 1.2rem', textDecoration: 'none' }}>
+                {lista.length === 1 ? 'Lançar mais um mês' : 'Lançar meu primeiro mês'}
+              </Link>
+            </div>
+          </section>
+        )}
+      </div>
+
+      {/* Os dois gráficos do FUTURO: pra onde a curva vai, e como a chegada vem se movendo */}
+      <div className="pf-bloco pf-grade-graf">
+        {mostraProjecao && (
+          <GraficoProjecao
+            patrimonio={P}
+            aporte={vigente?.aporte.valor ?? 0}
+            iMensal={plano.iMensal}
+            meses={plano.meses!}
+            dataLiberdade={plano.dataLiberdade!}
+            meta={meta}
+            inss={inss ? { data: inss.dataElegivel, idade: inss.idadeElegivel } : null}
+          />
+        )}
+        <GraficoData snapshots={janela} />
+      </div>
+
+      {/* O que se lê */}
+      <div className="pf-bloco pf-cols-2">
         <div className="pf-col-lado">
           <CardsInsights insights={insights} />
-          <CardEconomico doc={doc} />
           <CardSemana card={daSemana} />
+        </div>
+        <div className="pf-col-lado">
+          <CardEconomico doc={doc} />
         </div>
       </div>
 
@@ -342,41 +371,17 @@ export function Dashboard() {
 
 // ---------------------------------------------------------------------------
 
-function Stat({ rot, val, tom }: { rot: string; val: string; tom?: 'mint' | 'ember' }) {
+function Stat({ rot, val, un, tom }: { rot: string; val: string; un?: string; tom?: 'mint' | 'ember' }) {
   return (
     <div className="pf-stat">
       <div className="rot">{rot}</div>
-      <div className={`val ${tom ?? ''}`}>{val}</div>
+      {/* a unidade vai separada e menor: "R$ 8,1 mil/mês" inteiro estourava o card no celular */}
+      <div className={`val ${tom ?? ''}`}>
+        {val}
+        {un && <small>{un}</small>}
+      </div>
     </div>
   );
-}
-
-/** Curva do patrimônio de hoje até a meta. */
-function pontosProjecao(P: number, A: number, i: number, meses: number): PontoGrafico[] {
-  const n = 40;
-  return Array.from({ length: n + 1 }, (_, k) => {
-    const t = k / n;
-    return { t, v: valorFuturo(P, A, i, meses * t) };
-  });
-}
-
-function marcasProjecao(meses: number, dataFim: Date): MarcaX[] {
-  const meio = new Date();
-  meio.setMonth(meio.getMonth() + Math.round(meses / 2));
-  return [
-    { t: 0, rotulo: 'hoje' },
-    { t: 0.5, rotulo: mesCurto(`${meio.getFullYear()}-${String(meio.getMonth() + 1).padStart(2, '0')}`) },
-    { t: 1, rotulo: mesCurto(`${dataFim.getFullYear()}-${String(dataFim.getMonth() + 1).padStart(2, '0')}`) },
-  ];
-}
-
-/** Até 4 marcas no eixo, distribuídas — funciona com 2 ou 36 meses. */
-function marcasEvolucao(lista: Snapshot[]): MarcaX[] {
-  const n = lista.length;
-  if (n < 2) return [];
-  const quantas = Math.min(4, n);
-  const idx = Array.from({ length: quantas }, (_, k) => Math.round((k * (n - 1)) / (quantas - 1)));
-  return [...new Set(idx)].map((i) => ({ t: i / (n - 1), rotulo: mesCurto(lista[i]!.mes) }));
 }
 
 function Centro({ children }: { children: ReactNode }) {
@@ -425,31 +430,4 @@ function Vigencia({ vigente, snapshots }: { vigente: EstadoVigente; snapshots: S
       {vigente.custo.mesesUsados} meses.
     </p>
   );
-}
-
-/**
- * A data prevista em cada mês lançado, como ano decimal.
- *
- * `mesesAteFire` guardado é PRAZO, e prazo encurta sozinho com o tempo passando.
- * Somá-lo ao mês do lançamento converte pra DATA DE CHEGADA — que só se move
- * quando algo de fato muda. É a diferença entre um gráfico que sempre desce
- * (inútil) e um que mostra se você está ganhando terreno.
- */
-function trajetoriaDaData(snapshots: readonly Snapshot[]): PontoGrafico[] {
-  const comData = snapshots.filter((s) => typeof s.mesesAteFire === 'number');
-  if (comData.length < 2) return [];
-  return comData.map((s, i) => {
-    const [ano, mes] = s.mes.split('-').map(Number);
-    const totalMeses = (ano ?? 2026) * 12 + (mes ?? 1) - 1 + (s.mesesAteFire as number);
-    return { t: i / (comData.length - 1), v: totalMeses / 12 };
-  });
-}
-
-const MESES_ABREV_CURTO = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
-
-/** 2051.25 → "abr/51" */
-function anoDecimalCurto(v: number): string {
-  const ano = Math.floor(v);
-  const mes = Math.min(11, Math.max(0, Math.round((v - ano) * 12)));
-  return `${MESES_ABREV_CURTO[mes]}/${String(ano).slice(2)}`;
 }

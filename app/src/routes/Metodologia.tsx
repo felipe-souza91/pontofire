@@ -443,6 +443,50 @@ export function Metodologia() {
       </Secao>
 
       {/* ------------------------------------------------------------------ */}
+      <Secao
+        id="mercado"
+        titulo="Você × CDI × inflação"
+        pergunta="Como o app compara minha carteira com o mercado?"
+      >
+        <p>
+          Patrimônio subindo não quer dizer carteira rendendo: ele sobe só de você aportar. Pra
+          separar as duas coisas o app faz duas contas diferentes, cada uma pra uma pergunta.
+        </p>
+        <p>
+          <strong>No gráfico</strong>, as linhas do CDI e da inflação são a <em>sua</em> história
+          refeita: partem do mesmo patrimônio e recebem os mesmos aportes, nos mesmos meses — só que
+          rendendo a régua. Comparar seu patrimônio com um índice puro seria injusto, porque o
+          índice não recebeu aporte nenhum.
+        </p>
+        <Formula>régua[mês] = régua[mês anterior] × (1 + taxa do mês) + seu aporte do mês</Formula>
+        <p>
+          <strong>No número</strong> (o “% do CDI”), o retorno de cada mês é o que o patrimônio andou
+          além do que você colocou, e os meses são encadeados. É a conta que os fundos publicam — um
+          aporte grande em dezembro não vira rentabilidade.
+        </p>
+        <Formula>retorno do mês = (patrimônio − aporte) ÷ patrimônio anterior − 1</Formula>
+        <p>
+          <strong>No “Hoje”</strong>, o patrimônio estimado é o do seu último lançamento corrigido
+          pelo CDI de cada dia útil desde então. O app não conhece sua carteira dia a dia — por isso
+          a frase é condicional (“se rendeu o CDI”) e o número de verdade aparece no próximo
+          lançamento, ao lado da régua.
+        </p>
+        <p className="pf-metodo-nota">
+          Séries do BACEN: <Mono>4391</Mono> CDI acumulado no mês, <Mono>12</Mono> CDI de cada dia
+          útil, <Mono>433</Mono> IPCA. O retorno “ao ano acima da inflação” só aparece com 12 meses
+          ou mais de histórico: anualizar três meses é transformar ruído em taxa.
+        </p>
+        <Limite>
+          É aproximação. O app conhece seu patrimônio uma vez por mês e trata o aporte como feito no
+          fim do mês; quem aporta no dia 5 tem alguns dias de rendimento atribuídos à carteira
+          antiga. Some na escala de um ano; num mês isolado, não. A inflação de um mês só é
+          publicada por volta do dia 10 do seguinte — até lá a comparação para no último mês fechado
+          em vez de comparar períodos de tamanhos diferentes. E nada disto é recomendação de
+          investimento: o app mostra a régua, não diz onde pôr o dinheiro.
+        </Limite>
+      </Secao>
+
+      {/* ------------------------------------------------------------------ */}
       <Secao id="divida" titulo="Dívida: cabe? amortizar ou investir? quando parar?" pergunta="Como uma parcela vira atraso na minha data?">
         <p>
           A premissa é uma só, e está à mostra: a parcela sai primeiro do{' '}

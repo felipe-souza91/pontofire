@@ -331,6 +331,16 @@ serem usados, o que encurta a espera dos 3 meses.
    comparação em destaque passa a ser 12 meses móveis.
 2. **Janela de 6 meses é a certa?** Escolha por julgamento, não por evidência.
    Vale revisitar com dados reais de uso.
-3. **Retorno real declarado nunca se confronta com o observado?** Com 5+ anos de
-   histórico dá pra dizer "você esperava 5% e realizou 3,8%". Fora deste escopo,
-   mas o dado ficará disponível.
+3. ~~**Retorno real declarado nunca se confronta com o observado?**~~
+   **Respondida (nov/2026).** O gráfico de evolução passou a calcular o retorno
+   da carteira ponderado pelo tempo e a mostrá-lo ao lado do CDI, do IPCA e da
+   premissa do usuário (`packages/engine/src/benchmark.ts`). Não foi preciso
+   esperar 5 anos: com 12 meses já sai "X% ao ano acima da inflação; sua data é
+   calculada com Y%". Abaixo de 12 meses o app mostra só o acumulado e diz por
+   quê — anualizar três meses é transformar ruído em taxa.
+
+   O que **continua em aberto** é o passo seguinte: o app informa a distância
+   entre o realizado e a premissa, mas não mexe na data por causa dela. Trocar
+   a premissa pelo realizado automaticamente faria a data balançar com um ano
+   bom ou ruim de mercado — exatamente o que a mediana de 6 meses existe pra
+   evitar no custo e no aporte. Se um dia fizer, a janela teria que ser de anos.

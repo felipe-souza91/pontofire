@@ -14,6 +14,7 @@ import { Metodologia } from './routes/Metodologia';
 import { Conquistas } from './routes/Conquistas';
 import { Ferramentas } from './routes/Ferramentas';
 import { BotaoFeedback } from './components/BotaoFeedback';
+import { BarraInferior } from './components/BarraInferior';
 import { useTituloDaPagina } from './hooks/useTituloDaPagina';
 import { Flame } from './theme/Flame';
 
@@ -87,6 +88,7 @@ function RotasLogado({ uid }: { uid: string }) {
     <>
       {/* feedback mão única — disponível em todo o app logado */}
       {!precisaOnboarding && <BotaoFeedback plano={doc?.plano ?? 'free'} />}
+      {!precisaOnboarding && <BarraInferior />}
       <Routes>
       <Route path="/entrar" element={<Navigate to="/" replace />} />
       {/* O Onboarding decide sozinho se redireciona: ele grava tudo numa escrita

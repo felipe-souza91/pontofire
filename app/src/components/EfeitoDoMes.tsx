@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { Decomposicao, FatorFire } from '@pontofire/engine';
-import { formatDuracao, formatMesAno } from '../utils/format';
+import { formatDuracao, formatMesAno, formatPct } from '../utils/format';
 
 /**
  * O que aquele lançamento fez com a data.
@@ -32,6 +32,7 @@ export function EfeitoDoMes({
   dataDepois,
   decomposicao,
   desdeAPartida,
+  contraCdi,
   onContinuar,
 }: {
   mes: string;
@@ -40,6 +41,8 @@ export function EfeitoDoMes({
   decomposicao: Decomposicao;
   /** meses que a data andou desde o onboarding (negativo = antecipou) */
   desdeAPartida: number | null;
+  /** o que a carteira rendeu desde o lançamento anterior, e o CDI no mesmo intervalo */
+  contraCdi?: { carteira: number; cdi: number } | null;
   onContinuar: () => void;
 }) {
   const total = decomposicao.total;
@@ -113,6 +116,28 @@ export function EfeitoDoMes({
           <strong>{formatDuracao(Math.abs(desdeAPartida))}</strong>{' '}
           {desdeAPartida < 0 ? 'mais cedo' : 'mais tarde'}.
         </p>
+      )}
+
+      {/*
+        O número de verdade ao lado da régua. O Início estima o mês inteiro "se
+        rendeu o CDI"; é aqui que a estimativa encontra o que aconteceu.
+        Informa e para: não diz se é bom ou ruim, nem o que fazer com isso.
+      */}
+      {contraCdi && (
+        <div className="pf-efeito-cdi">
+          <div>
+            <span>Sua carteira</span>
+            <b className="mono">{formatPct(contraCdi.carteira, 2)}</b>
+          </div>
+          <div>
+            <span>CDI no período</span>
+            <b className="mono">{formatPct(contraCdi.cdi, 2)}</b>
+          </div>
+          <p>
+            desde o lançamento anterior, já descontado o que você aportou · aproximação: considera o
+            aporte no fim do período
+          </p>
+        </div>
       )}
 
       <div style={{ display: 'grid', gap: 'var(--space-2)', marginTop: 'var(--space-5)' }}>

@@ -56,13 +56,10 @@ export function Novidades({
         <div className="pf-bv-icone"><Flame size={40} /></div>
         <span className="pf-eyebrow">enquanto você esteve fora</span>
         <h2 className="pf-bv-titulo">{pendentes[0]!.titulo}</h2>
-        <p className="pf-nov-intro">
-          Parte disto <b>muda números que você já viu</b> — não é o app quebrando, é ele passando a
-          usar o que você lança. Vale meio minuto de leitura.
-        </p>
+        {pendentes[0]!.intro && <p className="pf-nov-intro">{pendentes[0]!.intro}</p>}
 
-        {pendentes.map((n) => (
-          <Bloco key={n.versao} novidade={n} varias={pendentes.length > 1} />
+        {pendentes.map((n, k) => (
+          <Bloco key={n.versao} novidade={n} cabecalho={k > 0} />
         ))}
 
         <button
@@ -80,10 +77,16 @@ export function Novidades({
   );
 }
 
-function Bloco({ novidade, varias }: { novidade: Novidade; varias: boolean }) {
+/** A primeira versão pendente já está no título do modal; as anteriores trazem o seu. */
+function Bloco({ novidade, cabecalho }: { novidade: Novidade; cabecalho: boolean }) {
   return (
     <>
-      {varias && <div className="pf-nov-versao">{novidade.titulo}</div>}
+      {cabecalho && (
+        <>
+          <div className="pf-nov-versao">{novidade.titulo}</div>
+          {novidade.intro && <p className="pf-nov-intro pf-nov-intro-bloco">{novidade.intro}</p>}
+        </>
+      )}
       <ul className="pf-nov-lista">
         {novidade.itens.map((item, k) => (
           <li key={k} className={`pf-nov-item pf-nov-${item.tipo}`}>

@@ -26,14 +26,70 @@ export interface Novidade {
   /** YYYY-MM-DD — ordenável como string, que é o que a comparação usa */
   versao: string;
   titulo: string;
+  /**
+   * Uma frase antes da lista, dizendo o que esta versão faz com o que o usuário
+   * já conhece. Por versão, e não fixa no modal: "isto muda números que você já
+   * viu" era verdade na primeira e seria alarme falso na segunda.
+   */
+  intro?: string;
   itens: ItemNovidade[];
 }
 
 /** Mais recente primeiro. */
 export const NOVIDADES: Novidade[] = [
   {
+    versao: '2026-11-14',
+    titulo: 'Seu patrimônio agora tem com o que se comparar',
+    intro:
+      'Nada aqui muda a sua data nem a sua meta. São jeitos novos de olhar pros números que você já lança.',
+    itens: [
+      {
+        tipo: 'novo',
+        texto:
+          'O gráfico de evolução ganhou duas réguas: o que os MESMOS aportes, nos mesmos meses, teriam rendido no CDI — e o que valeriam só corrigidos pela inflação. Embaixo, o número que todo extrato mostra: quanto por cento do CDI a sua carteira rendeu.',
+      },
+      {
+        tipo: 'novo',
+        texto:
+          'Os gráficos respondem ao toque. Passe o dedo (ou o mouse) e cada mês mostra o valor exato, quanto rendeu e quanto você aportou. "Ver em tabela" abre os mesmos números em linhas.',
+      },
+      {
+        tipo: 'novo',
+        texto:
+          'O Início ganhou um bloco "Hoje", que muda todo dia útil: quantos dias faltam, quanto seu patrimônio estaria valendo se rendeu o CDI desde o último lançamento, e quantos dias de cada mês ele já paga sozinho. A estimativa é régua, não extrato — o número de verdade aparece quando você lança.',
+      },
+      {
+        tipo: 'novo',
+        texto:
+          'Ao lançar o mês, o app mostra quanto a carteira rendeu de fato ao lado do CDI do mesmo período.',
+      },
+      {
+        tipo: 'novo',
+        texto:
+          'A projeção até a meta agora tem uma segunda linha — só o que você vai aportar, sem render nada. O vão entre as duas é o juro composto.',
+      },
+      {
+        tipo: 'mudanca',
+        texto:
+          'No celular, as telas mais usadas ficam numa barra fixa no rodapé, ao alcance do polegar. O menu do topo continua lá pro resto.',
+      },
+      {
+        tipo: 'correcao',
+        texto:
+          'Os valores do eixo dos gráficos ficavam em cima da própria curva, e em números quebrados ("R$ 668 mil"). Agora têm coluna própria e caem em valores redondos.',
+      },
+      {
+        tipo: 'correcao',
+        texto:
+          'No celular, "R$ 8,1 mil/mês" não cabia no cartão e era cortado na borda.',
+      },
+    ],
+  },
+  {
     versao: '2026-08-16',
     titulo: 'Sua data agora responde ao que você vive',
+    intro:
+      'Parte disto muda números que você já viu — não é o app quebrando, é ele passando a usar o que você lança. Vale meio minuto de leitura.',
     itens: [
       {
         tipo: 'mudanca',

@@ -4,6 +4,8 @@ import {
   calcularPlanoFire,
   dataFire,
   decomporVariacao,
+  fatorNoIntervalo,
+  retornoEntre,
   estadoVigente,
   mesesAteFire,
   realMensalDeAnual,
@@ -19,11 +21,13 @@ import { useAuth } from '../auth/useAuth';
 import { useSnapshots } from '../hooks/useSnapshots';
 import { useUserDoc } from '../hooks/useUserDoc';
 import { useIndicadores } from '../hooks/useIndicadores';
+import { useMercado } from '../hooks/useMercado';
 import { salvarSnapshot } from '../data/snapshots';
 import { EfeitoDoMes } from '../components/EfeitoDoMes';
 import { MoedaInput } from '../components/MoedaInput';
 import { Campo } from '../components/Campo';
 import { formatBRL, formatBRLcompact, formatMesAno, formatPct } from '../utils/format';
+import { carimboDoPatrimonio } from '../utils/pulso';
 
 function mesCorrente(): string {
   const d = new Date();
@@ -43,6 +47,8 @@ interface EfeitoSalvo {
   dataAntes: Date | null;
   dataDepois: Date | null;
   desdeAPartida: number | null;
+  /** retorno da carteira no período ao lado do CDI do mesmo período */
+  contraCdi: { carteira: number; cdi: number } | null;
 }
 
 const NENHUM_TOCADO = { patrimonio: false, receita: false, despesa: false, aporte: false };
@@ -54,6 +60,7 @@ export function Lancar() {
   const { lista } = useSnapshots(user?.uid ?? null);
   const { doc } = useUserDoc(user?.uid ?? null);
   const ind = useIndicadores();
+  const mercado = useMercado();
 
   const [mes, setMes] = useState(mesCorrente());
   const [patrimonio, setPatrimonio] = useState(0);
@@ -162,6 +169,18 @@ export function Lancar() {
     const mAntes = mesesAteFire(antes.patrimonio, antes.aporte, i, antes.meta);
     const hoje = new Date();
 
+    // A resposta da pergunta que o Início faz todo dia ("se rendeu o CDI…"):
+    // quanto a carteira rendeu DE FATO desde o lançamento anterior, ao lado da
+    // régua no mesmo intervalo. Sem lançamento anterior ou sem régua, não há
+    // comparação — e nenhuma é inventada.
+    const carteira = anterior
+      ? retornoEntre(
+          { mes: anterior.mes, patrimonio: anterior.patrimonioTotal, aporte: 0 },
+          { mes, patrimonio, aporte },
+        )
+      : null;
+    const fatorCdi = anterior && mercado ? fatorNoIntervalo(mercado.cdiMensal, anterior.mes, mes) : null;
+
     return {
       decomposicao: decomporVariacao(antes, depois),
       dataAntes: mAntes.status === 'ok' ? dataFire(hoje, mAntes.meses) : null,
@@ -172,6 +191,7 @@ export function Lancar() {
             { em: hoje, mesesAteFire: mesesAteFireAgora },
           )
         : null,
+      contraCdi: carteira !== null && fatorCdi !== null ? { carteira, cdi: fatorCdi - 1 } : null,
     };
   }
 
@@ -183,6 +203,7 @@ export function Lancar() {
       await salvarSnapshot(user.uid, {
         mes,
         patrimonioTotal: patrimonio,
+        patrimonioEm: carimboDoPatrimonio(mes, patrimonio, lista.find((s) => s.mes === mes), new Date()),
         receitaLiquida: receita,
         gastoTotal: despesa,
         aportesMes: aporte,
@@ -217,6 +238,7 @@ export function Lancar() {
           dataDepois={efeito.dataDepois}
           decomposicao={efeito.decomposicao}
           desdeAPartida={efeito.desdeAPartida}
+          contraCdi={efeito.contraCdi}
           onContinuar={() => navigate('/', { replace: true })}
         />
       </main>
