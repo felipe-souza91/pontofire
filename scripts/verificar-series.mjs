@@ -3,7 +3,7 @@
  * Verificador das séries do BACEN (SGS) usadas pelo Ponto FIRE.
  *
  * POR QUE ISSO EXISTE
- * O app depende de códigos de série do SGS (432, 433, 188, 189, 4390). Um
+ * O app depende de códigos de série do SGS (432, 433, 188, 189, 4390, 4391, 12). Um
  * código errado não quebra nada visivelmente — ele devolve NÚMEROS, só que os
  * números de outra coisa. Isso é o pior tipo de bug num produto que promete
  * honestidade: some silenciosamente dentro de um card com cara de verdade.
@@ -38,6 +38,10 @@ const SERIES = {
   ipca: { codigo: 433, rotulo: 'IPCA', unidade: '% a.m.', pontos: 120 },
   inpc: { codigo: 188, rotulo: 'INPC', unidade: '% a.m.', pontos: 12 },
   igpm: { codigo: 189, rotulo: 'IGP-M', unidade: '% a.m.', pontos: 12 },
+  // espelham SERIES_MERCADO em app/src/data/mercado.ts — as réguas do gráfico
+  // de evolução e da estimativa diária do Início
+  cdiMensal: { codigo: 4391, rotulo: 'CDI acumulado no mês', unidade: '% a.m.', pontos: 24 },
+  cdiDiario: { codigo: 12, rotulo: 'CDI diário', unidade: '% a.d.', pontos: 90 },
 };
 
 // ---------------------------------------------------------------------------
@@ -199,6 +203,62 @@ export function analisar(dados, falhasDeRede = []) {
     );
   }
 
+  // --- 4391: CDI acumulado no mês (régua do gráfico de evolução) -----------
+  // CDI e Selic andam colados (o CDI fica ~0,1 p.p. abaixo). Se 4391 fosse
+  // outra série, não acompanharia a 4390 mês a mês.
+  if (dados.cdiMensal) {
+    const v = valores(dados.cdiMensal);
+    const faixaOk = v.every((x) => dentro(x, [0, 3]));
+    registrar(
+      'CDI mensal (4391) — unidade',
+      faixaOk,
+      faixaOk
+        ? `${v.length} meses, todos entre 0% e 3% a.m. (último: ${num(ultimo(dados.cdiMensal).valor)}%)`
+        : `valores fora de 0–3% a.m. → NÃO é taxa mensal. Máx: ${num(Math.max(...v))}`,
+    );
+    if (dados.selicMensal) {
+      // compara só meses FECHADOS: o último ponto pode ser o mês corrente, parcial
+      const cdi12 = anualizar(v.slice(-13, -1));
+      const selic12 = anualizar(valores(dados.selicMensal).slice(-13, -1));
+      const dist = Math.abs(cdi12 - selic12);
+      registrar(
+        'CDI 4391 × Selic 4390 — cruzamento',
+        dist <= 1,
+        `CDI 12m = ${num(cdi12)}% a.a. vs. Selic 12m = ${num(selic12)}% a.a. (distância ${num(dist)} p.p.)`,
+      );
+    }
+  } else registrar('CDI mensal (4391)', false, 'não respondeu (SGS fora do ar?)', false);
+
+  // --- 12: CDI diário (régua da estimativa de "hoje") ----------------------
+  // Composto dentro de um mês fechado, o diário TEM que reproduzir o número
+  // mensal publicado. É a mesma checagem que o app faz antes de usar a série.
+  if (dados.cdiDiario) {
+    const faixaOk = valores(dados.cdiDiario).every((x) => dentro(x, [0, 0.2]));
+    registrar(
+      'CDI diário (12) — unidade',
+      faixaOk,
+      faixaOk
+        ? `${dados.cdiDiario.length} dias úteis, todos entre 0% e 0,2% a.d. (último: ${num(ultimo(dados.cdiDiario).valor, 4)}% em ${ultimo(dados.cdiDiario).data})`
+        : `valores fora de 0–0,2% a.d. → NÃO é taxa diária. Máx: ${num(Math.max(...valores(dados.cdiDiario)), 4)}`,
+    );
+    if (dados.cdiMensal) {
+      const competencia = (data) => data.slice(3); // 'dd/mm/aaaa' → 'mm/aaaa'
+      // do mais recente pro mais antigo: o primeiro mês que o diário cobre por inteiro
+      for (const mensal of [...dados.cdiMensal].reverse().slice(1)) {
+        const dias = dados.cdiDiario.filter((d) => competencia(d.data) === competencia(mensal.data));
+        if (dias.length < 15) continue;
+        const composto = acumular(valores(dias));
+        const dist = Math.abs(composto - mensal.valor);
+        registrar(
+          'CDI diário 12 × mensal 4391 — cruzamento',
+          dist <= 0.08,
+          `${competencia(mensal.data)}: diário composto = ${num(composto, 3)}% vs. mensal publicado ${num(mensal.valor, 3)}% (distância ${num(dist, 3)} p.p.)`,
+        );
+        break;
+      }
+    }
+  } else registrar('CDI diário (12)', false, 'não respondeu (SGS fora do ar?)', false);
+
   // --- o número que o card econômico vai mostrar ---------------------------
   let juroReal10a = null;
   if (dados.selicMensal && dados.ipca) {
@@ -229,7 +289,12 @@ export function analisar(dados, falhasDeRede = []) {
   }
   // Um cruzamento que NÃO RODOU não é um cruzamento que passou. Sem isto, o
   // relatório dizia "tudo certo" tendo verificado só a faixa de duas séries.
-  const CRUZAMENTOS = ['Selic 4390 × 432 — cruzamento', 'INPC 188 × IPCA 433 — cruzamento'];
+  const CRUZAMENTOS = [
+    'Selic 4390 × 432 — cruzamento',
+    'INPC 188 × IPCA 433 — cruzamento',
+    'CDI 4391 × Selic 4390 — cruzamento',
+    'CDI diário 12 × mensal 4391 — cruzamento',
+  ];
   const naoRodaram = CRUZAMENTOS.filter((c) => !resultados.some((r) => r.nome === c));
   const nadaRespondeu = Object.values(dados).every((d) => !d);
 
@@ -241,7 +306,7 @@ export function analisar(dados, falhasDeRede = []) {
     nadaRespondeu
       ? '**Não deu pra verificar.** Nenhuma série respondeu — provavelmente o SGS está fora do ar. Isso não diz nada sobre os códigos; o job volta a rodar na próxima segunda.'
       : criticasFalhas.length
-        ? `**${criticasFalhas.length} verificação(ões) crítica(s) falharam.** Um código de série provavelmente mudou ou está errado em \`app/src/data/indicadores.ts\`.`
+        ? `**${criticasFalhas.length} verificação(ões) crítica(s) falharam.** Um código de série provavelmente mudou ou está errado em \`app/src/data/indicadores.ts\` ou \`app/src/data/mercado.ts\`.`
         : naoRodaram.length
           ? `**Verificação incompleta.** ${naoRodaram.length} cruzamento(s) não rodaram porque a série que eles comparam não veio. O que respondeu está coerente, mas isso NÃO confirma os códigos.`
           : '**Tudo certo.** Os códigos batem com o que o app espera.',

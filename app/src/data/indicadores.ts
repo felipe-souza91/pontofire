@@ -10,7 +10,7 @@
  * deve tratar `null` como "sem dados" e simplesmente não exibir o card.
  */
 
-const BASE = 'https://api.bcb.gov.br/dados/serie/bcdata.sgs';
+export const BASE = 'https://api.bcb.gov.br/dados/serie/bcdata.sgs';
 
 /** Códigos das séries no SGS (§9). */
 export const SERIES = {
@@ -59,7 +59,7 @@ export interface Indicadores {
   atualizadoEm: string;
 }
 
-interface PontoSGS {
+export interface PontoSGS {
   data: string;
   valor: string;
 }
@@ -112,7 +112,7 @@ function limparCachesAntigos(): void {
   }
 }
 
-async function pedir(url: string): Promise<PontoSGS[]> {
+export async function pedir(url: string): Promise<PontoSGS[]> {
   const r = await fetch(url);
   if (!r.ok) throw new Error(`SGS: HTTP ${r.status}`);
   const json = (await r.json()) as PontoSGS[];
@@ -120,7 +120,7 @@ async function pedir(url: string): Promise<PontoSGS[]> {
   return json;
 }
 
-const ddmmaaaa = (d: Date): string =>
+export const ddmmaaaa = (d: Date): string =>
   `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
 
 /**

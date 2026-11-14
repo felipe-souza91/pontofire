@@ -14,6 +14,7 @@ on:
   push:
     paths:
       - 'app/src/data/indicadores.ts'
+      - 'app/src/data/mercado.ts'
       - 'scripts/verificar-series.mjs'
       - '.github/workflows/verificar-series.yml'
 
