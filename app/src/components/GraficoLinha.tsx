@@ -224,8 +224,10 @@ export function GraficoLinha({
           <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="pf-graf-svg" aria-hidden>
             <defs>
               <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stopColor={principal.cor} stopOpacity="0.2" />
-                <stop offset="1" stopColor={principal.cor} stopOpacity="0" />
+                {/* via `style`: a cor é um token (`var(--serie-…)`), e var() em atributo
+                    de apresentação não é garantido em todo navegador */}
+                <stop offset="0" style={{ stopColor: principal.cor }} stopOpacity="0.2" />
+                <stop offset="1" style={{ stopColor: principal.cor }} stopOpacity="0" />
               </linearGradient>
             </defs>
 
@@ -245,7 +247,7 @@ export function GraficoLinha({
                 key={s.id}
                 d={caminho(s.valores)}
                 fill="none"
-                stroke={s.cor}
+                style={{ stroke: s.cor }}
                 strokeWidth={s.principal ? 2.5 : 1.75}
                 strokeDasharray={s.estimada ? '2 5' : undefined}
                 strokeLinejoin="round"

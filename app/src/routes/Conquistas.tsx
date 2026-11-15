@@ -71,7 +71,7 @@ export function Conquistas() {
                 gap: 'var(--space-4)',
                 alignItems: 'center',
                 padding: 'var(--space-4) var(--space-6)',
-                borderColor: ok ? 'rgba(63,214,155,.3)' : 'var(--line)',
+                borderColor: ok ? 'color-mix(in srgb, var(--mint) 30%, transparent)' : 'var(--line)',
                 opacity: ok ? 1 : 0.55,
               }}
             >

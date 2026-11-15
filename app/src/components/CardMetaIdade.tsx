@@ -75,7 +75,7 @@ export function CardMetaIdade({
     const jaCoast = jaEhCoastFire(P, meta, plano.iMensal, mesesAlvo);
     const antes = doc.idadeAlvo - idadeLib;
     return (
-      <div className="pf-stat" style={{ borderColor: 'rgba(63,214,155,0.3)' }}>
+      <div className="pf-stat" style={{ borderColor: 'color-mix(in srgb, var(--mint) 30%, transparent)' }}>
         <div className="rot">Sua meta de idade · {doc.idadeAlvo} anos</div>
         <p style={{ margin: 'var(--space-2) 0 0', fontSize: '0.95rem', lineHeight: 1.5 }}>
           {antes > 0 ? (

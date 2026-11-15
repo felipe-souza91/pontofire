@@ -13,14 +13,17 @@ import { formatBRL, formatBRLcompact, formatPct } from '../utils/format';
 import { diaCurto, mesCurto, mesMedio } from '../utils/meses';
 
 /**
- * Cores das séries. Conferidas contra o fundo do card (#141838) pra daltonismo
- * e contraste — as três se distinguem em protanopia, deuteranopia e tritanopia.
- * A sua é a mais grossa e a única com área: identidade não depende só de cor.
+ * Cores das séries — tokens, porque cada tema tem o seu passo.
+ *
+ * Conferidas contra o card de cada tema (#141838 no escuro, branco no claro)
+ * pra daltonismo e contraste: as três se distinguem em protanopia,
+ * deuteranopia e tritanopia nos dois. A do usuário é a mais grossa e a única
+ * com área — identidade não depende só de cor.
  */
 export const COR = {
-  voce: '#3FD69B',
-  cdi: '#7C8CFF',
-  ipca: '#E8A53A',
+  voce: 'var(--serie-voce)',
+  cdi: 'var(--serie-cdi)',
+  ipca: 'var(--serie-ipca)',
 } as const;
 
 /**

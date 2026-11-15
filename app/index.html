@@ -7,6 +7,24 @@
     <meta name="theme-color" content="#0C0F2E" />
     <meta name="description" content="Descubra a data exata da sua independência financeira." />
     <title>Ponto FIRE</title>
+    <!--
+      Tema antes da primeira pintura. Se isto esperasse o React, quem escolheu o
+      tema claro veria um clarão escuro a cada abertura. Repete, de propósito, a
+      regra de src/theme/tema.ts (resolverTema) — mexeu lá, mexe aqui.
+    -->
+    <script>
+      (function () {
+        var tema = 'dark';
+        try {
+          var p = localStorage.getItem('pf:tema');
+          var sistemaClaro = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+          if (p === 'claro' || (p === 'sistema' && sistemaClaro)) tema = 'light';
+        } catch (e) {}
+        document.documentElement.setAttribute('data-theme', tema);
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', tema === 'light' ? '#F4F3FA' : '#0C0F2E');
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

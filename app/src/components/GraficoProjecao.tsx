@@ -4,8 +4,8 @@ import { formatBRL, formatBRLcompact, formatDuracao, formatMesAno, formatPct } f
 import { competenciaDe, mesCurto, mesMedio } from '../utils/meses';
 
 const AMOSTRAS = 40;
-const COR_RITMO = '#FF7A45';
-const COR_APORTES = '#7C8CFF';
+const COR_RITMO = 'var(--serie-ritmo)';
+const COR_APORTES = 'var(--serie-cdi)';
 
 /**
  * De hoje até a meta — e quanto desse caminho é juro.

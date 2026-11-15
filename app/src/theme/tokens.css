@@ -25,6 +25,35 @@
   --line: rgba(255, 255, 255, 0.09);
   --line-2: rgba(255, 255, 255, 0.15);
 
+  /* --- o que antes era cor escrita à mão no CSS ---------------------------
+     Cada valor abaixo existia espalhado pelo ui.css como `rgba(...)` fixo. Cor
+     fixa só funciona num tema: `rgba(255,255,255,.04)` é um realce sutil no
+     escuro e NADA no claro. Viraram token pra poderem ter par no tema claro. */
+
+  /* superfície do que flutua sobre o conteúdo: tooltip, menu, barra do rodapé */
+  --flutuante: rgba(9, 12, 38, 0.96);
+  --barra-fundo: rgba(12, 15, 46, 0.9);
+  /* véu atrás de modal */
+  --veu: rgba(6, 8, 24, 0.8);
+  /* sombra de elevação */
+  --sombra: rgba(0, 0, 0, 0.42);
+  /* texto sobre o gradiente da chama (botão principal) */
+  --sobre-chama: #241203;
+  /* intensidade do brilho âmbar no fundo da página */
+  --brilho: 22%;
+
+  /* ação destrutiva */
+  --perigo: #c0392b;
+  --perigo-texto: #ff8a7a;
+
+  /* séries dos gráficos — conferidas pra daltonismo e contraste contra o card
+     de cada tema (ver GraficoEvolucao.tsx) */
+  --serie-voce: #3fd69b;
+  --serie-cdi: #7c8cff;
+  --serie-ipca: #e8a53a;
+  --serie-ritmo: #ff7a45;
+  --serie-data: #ff9e6b;
+
   /* gradiente da chama (logo/ícone) */
   --flame-grad: linear-gradient(180deg, #ffb27a 0%, #ff7a45 55%, #e85a2a 100%);
 
@@ -38,6 +67,7 @@
   --space-2: 0.5rem;
   --space-3: 0.75rem;
   --space-4: 1rem;
+  --space-5: 1.25rem;
   --space-6: 1.5rem;
   --space-8: 2rem;
   --space-12: 3rem;
@@ -46,6 +76,56 @@
   --radius-lg: 22px;
 
   color-scheme: dark;
+}
+
+/* =========================================================================
+   Tema claro.
+
+   Mesma identidade, invertida: o índigo sai do fundo e vira a cor do texto; a
+   chama e o verde continuam sendo os dois únicos acentos. Os nomes dos tokens
+   (`--ink` = fundo, `--paper` = texto) vêm do tema escuro e ficam — renomear
+   tocaria em 1.500 linhas pra ganho nenhum. Leia como PAPEL: `--ink` é a
+   superfície de trás, `--paper` é o que se escreve em cima dela.
+
+   O que NÃO é só inverter:
+   - Verde e âmbar escurecem. `#3FD69B` sobre branco tem contraste 1,9:1 — é a
+     cor da data e dos valores, e sumiria. Os daqui passam de 4,5:1.
+   - As linhas dos gráficos têm passos próprios, validados contra o branco.
+   - Sombra e véu ficam bem mais leves: sombra preta a 42% em tela clara é
+     mancha, não elevação.
+   ========================================================================= */
+:root[data-theme='light'] {
+  --ink: #f4f3fa;
+  --ink-2: #ffffff;
+  --ink-3: #e7e6f3;
+
+  --ember: #ee6a34;
+  --ember-2: #c2410c;
+  --ember-deep: #b5390f;
+
+  --mint: #0a7f58;
+
+  --paper: #14183a;
+  --muted: #5a5f85;
+
+  --line: rgba(20, 24, 58, 0.1);
+  --line-2: rgba(20, 24, 58, 0.2);
+
+  --flutuante: rgba(255, 255, 255, 0.98);
+  --barra-fundo: rgba(255, 255, 255, 0.9);
+  --veu: rgba(20, 24, 58, 0.5);
+  --sombra: rgba(20, 24, 58, 0.16);
+  --brilho: 13%;
+
+  --perigo-texto: #b3261e;
+
+  --serie-voce: #087a55;
+  --serie-cdi: #4f5be0;
+  --serie-ipca: #cc8400;
+  --serie-ritmo: #d9501e;
+  --serie-data: #d9501e;
+
+  color-scheme: light;
 }
 
 *,
@@ -63,7 +143,7 @@ body {
 body {
   /* glow âmbar no canto superior direito (igual à landing) + índigo no topo */
   background:
-    radial-gradient(680px 620px at 88% -30px, rgba(255, 122, 69, 0.22) 0%, transparent 60%),
+    radial-gradient(680px 620px at 88% -30px, color-mix(in srgb, var(--ember) var(--brilho), transparent) 0%, transparent 60%),
     radial-gradient(1200px 700px at 50% -10%, var(--ink-3) 0%, transparent 60%),
     var(--ink);
   background-repeat: no-repeat;

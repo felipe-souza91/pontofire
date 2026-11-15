@@ -38,6 +38,23 @@ export interface Novidade {
 /** Mais recente primeiro. */
 export const NOVIDADES: Novidade[] = [
   {
+    versao: '2026-11-15',
+    titulo: 'Agora tem tema claro',
+    intro: 'Nada muda sozinho: o app continua escuro até você escolher outra coisa.',
+    itens: [
+      {
+        tipo: 'novo',
+        texto:
+          'Tema claro, escuro ou igual ao do seu aparelho. O botão de sol/lua no topo troca na hora; a escolha completa fica em Perfil → Aparência. Vale por aparelho — dá pra ter claro no computador e escuro no celular.',
+      },
+      {
+        tipo: 'correcao',
+        texto:
+          'Os itens desta lista de novidades estavam sem espaçamento interno, com o texto colado na borda.',
+      },
+    ],
+  },
+  {
     versao: '2026-11-14',
     titulo: 'Seu patrimônio agora tem com o que se comparar',
     intro:

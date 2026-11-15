@@ -5,20 +5,20 @@ const ESTILO: Record<CategoriaSemana, { icone: NomeIcone; cor: string; borda: st
   retrato: {
     icone: 'barras',
     cor: 'var(--ember-2)',
-    borda: 'rgba(255,122,69,.28)',
-    fundo: 'linear-gradient(140deg, rgba(255,122,69,.09), rgba(255,122,69,.015))',
+    borda: 'color-mix(in srgb, var(--ember) 28%, transparent)',
+    fundo: 'linear-gradient(140deg, color-mix(in srgb, var(--ember) 9%, transparent), color-mix(in srgb, var(--ember) 1.5%, transparent))',
   },
   dica: {
     icone: 'lampada',
     cor: 'var(--mint)',
-    borda: 'rgba(63,214,155,.28)',
-    fundo: 'linear-gradient(140deg, rgba(63,214,155,.09), rgba(63,214,155,.015))',
+    borda: 'color-mix(in srgb, var(--mint) 28%, transparent)',
+    fundo: 'linear-gradient(140deg, color-mix(in srgb, var(--mint) 9%, transparent), color-mix(in srgb, var(--mint) 1.5%, transparent))',
   },
   humano: {
     icone: 'chama',
     cor: 'var(--ember-2)',
-    borda: 'rgba(255,122,69,.34)',
-    fundo: 'linear-gradient(140deg, rgba(255,122,69,.13), rgba(255,122,69,.02))',
+    borda: 'color-mix(in srgb, var(--ember) 34%, transparent)',
+    fundo: 'linear-gradient(140deg, color-mix(in srgb, var(--ember) 13%, transparent), color-mix(in srgb, var(--ember) 2%, transparent))',
   },
 };
 

@@ -20,6 +20,7 @@ export type NomeIcone =
   // navegação e ações
   | 'casa' | 'lancar' | 'importar' | 'trofeu' | 'calculadora' | 'engrenagem'
   | 'sair' | 'fechar' | 'check' | 'editar' | 'olho' | 'alerta' | 'estrela'
+  | 'sol' | 'lua'
   // conteúdo
   | 'balao' | 'lampada' | 'bug' | 'coracao' | 'grafico' | 'barras'
   | 'combustivel' | 'cartao' | 'banco' | 'raio' | 'balanca' | 'chama'
@@ -41,6 +42,8 @@ const CAMINHOS: Record<NomeIcone, string> = {
   olho: 'M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6',
   alerta: 'M12 3.5 22 20H2zM12 10v4.5M12 17.2v.1',
   estrela: 'M12 3.5 14.6 9l6 .9-4.3 4.2 1 6-5.3-2.8-5.3 2.8 1-6L3.4 9.9 9.4 9z',
+  sol: 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.5 1.5M17.2 17.2l1.5 1.5M5.3 18.7l1.5-1.5M17.2 6.8l1.5-1.5',
+  lua: 'M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z',
   balao: 'M4 5h16v11H9l-5 4z',
   lampada: 'M9 17h6M10 20h4M8.5 14a5.5 5.5 0 1 1 7 0c-.7.6-1 1.3-1 2h-5c0-.7-.3-1.4-1-2',
   bug: 'M8 8a4 4 0 0 1 8 0M6 12h12M8 8h8v6a4 4 0 0 1-8 0zM4 9l2.5 1.5M20 9l-2.5 1.5M3.5 15l3-.8M20.5 15l-3-.8M6 20l2.5-2.5M18 20l-2.5-2.5',

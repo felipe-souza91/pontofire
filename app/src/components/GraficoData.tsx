@@ -72,7 +72,7 @@ export function GraficoData({ snapshots }: { snapshots: readonly Snapshot[] }) {
 
       <GraficoLinha
         titulo="A data prevista do seu ponto FIRE em cada mês lançado"
-        series={[{ id: 'data', nome: 'Data prevista', cor: '#FF9E6B', principal: true, valores }]}
+        series={[{ id: 'data', nome: 'Data prevista', cor: 'var(--serie-data)', principal: true, valores }]}
         rotulos={pontos.map((p) => `lançamento de ${mesMedio(p.mes.mes)}`)}
         marcasX={marcasX}
         formatValor={rotuloData}

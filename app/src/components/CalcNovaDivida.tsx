@@ -8,9 +8,9 @@ import { Campo } from '../components/Campo';
 import { formatBRL, formatDuracao, formatPct } from '../utils/format';
 
 const ESTILO: Record<VeredictoOrcamento, { rotulo: string; cor: string; borda: string }> = {
-  cabe: { rotulo: 'cabe no seu orçamento', cor: 'var(--mint)', borda: 'rgba(63,214,155,.35)' },
-  aperta: { rotulo: 'cabe, mas aperta', cor: 'var(--ember-2)', borda: 'rgba(255,122,69,.35)' },
-  'nao-cabe': { rotulo: 'não cabe sem cortar', cor: 'var(--ember-2)', borda: 'rgba(255,122,69,.5)' },
+  cabe: { rotulo: 'cabe no seu orçamento', cor: 'var(--mint)', borda: 'color-mix(in srgb, var(--mint) 35%, transparent)' },
+  aperta: { rotulo: 'cabe, mas aperta', cor: 'var(--ember-2)', borda: 'color-mix(in srgb, var(--ember) 35%, transparent)' },
+  'nao-cabe': { rotulo: 'não cabe sem cortar', cor: 'var(--ember-2)', borda: 'color-mix(in srgb, var(--ember) 50%, transparent)' },
 };
 
 /**

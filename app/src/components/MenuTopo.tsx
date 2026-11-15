@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Flame } from '../theme/Flame';
 import { Icone, type NomeIcone } from '../theme/Icone';
+import { useTema } from '../theme/tema';
 
 const ITENS: { para: string; rotulo: string; icone: NomeIcone }[] = [
   { para: '/lancar', rotulo: 'Lançar', icone: 'lancar' },
@@ -26,6 +27,10 @@ export function MenuTopo({ onSair }: { onSair: () => void }) {
   const [aberto, setAberto] = useState(false);
   const { pathname } = useLocation();
   const caixa = useRef<HTMLDivElement>(null);
+  const { tema, alternar } = useTema();
+  // o botão mostra pra onde vai, não onde está: sol no escuro, lua no claro
+  const rotuloTema = tema === 'dark' ? 'Mudar para o tema claro' : 'Mudar para o tema escuro';
+  const iconeTema: NomeIcone = tema === 'dark' ? 'sol' : 'lua';
 
   // navegou: fecha
   useEffect(() => setAberto(false), [pathname]);
@@ -59,6 +64,12 @@ export function MenuTopo({ onSair }: { onSair: () => void }) {
         ))}
         <button className="pf-btn-link" onClick={onSair}>Sair</button>
       </nav>
+
+      {/* atalho do tema — à vista no desktop e no celular; a escolha completa
+          (incluindo "igual ao sistema") fica no Perfil */}
+      <button type="button" className="pf-tema-btn" onClick={alternar} aria-label={rotuloTema} title={rotuloTema}>
+        <Icone nome={iconeTema} size={18} />
+      </button>
 
       {/* celular */}
       <button

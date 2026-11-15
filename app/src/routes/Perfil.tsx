@@ -10,6 +10,7 @@ import { DataInput, MesInput } from '../components/DataInput';
 import { Campo } from '../components/Campo';
 import { ZonaDePerigo } from '../components/ZonaDePerigo';
 import { Flame } from '../theme/Flame';
+import { useTema, type PreferenciaDeTema } from '../theme/tema';
 import { formatBRL } from '../utils/format';
 
 export function Perfil() {
@@ -276,6 +277,11 @@ export function Perfil() {
         {salvando ? 'Salvando…' : 'Salvar'}
       </button>
 
+      {/* depois do Salvar de propósito: aparência não faz parte do que ele grava */}
+      <div style={{ marginTop: 'var(--space-12)' }}>
+        <Aparencia />
+      </div>
+
       <div style={{ textAlign: 'center', marginTop: 'var(--space-6)' }}>
         <Link className="pf-btn-link" to="/metodologia">
           metodologia: as fórmulas e as fontes de cada número
@@ -308,6 +314,43 @@ export function Perfil() {
 
       {user && <ZonaDePerigo user={user} />}
     </main>
+  );
+}
+
+const TEMAS: { id: PreferenciaDeTema; rotulo: string }[] = [
+  { id: 'escuro', rotulo: 'Escuro' },
+  { id: 'claro', rotulo: 'Claro' },
+  { id: 'sistema', rotulo: 'Igual ao sistema' },
+];
+
+/**
+ * Aparência. Vale na hora e não depende do botão "Salvar" do perfil: é
+ * preferência DESTE aparelho (fica no navegador), não um dado da conta.
+ */
+function Aparencia() {
+  const { preferencia, tema, definir } = useTema();
+  return (
+    <Secao titulo="Aparência">
+      <div className="pf-segmentado" role="radiogroup" aria-label="Tema do app">
+        {TEMAS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            role="radio"
+            aria-checked={preferencia === t.id}
+            className={preferencia === t.id ? 'on' : ''}
+            onClick={() => definir(t.id)}
+          >
+            {t.rotulo}
+          </button>
+        ))}
+      </div>
+      <p className="pf-hint">
+        {preferencia === 'sistema'
+          ? `Acompanha o tema do seu aparelho — agora, ${tema === 'dark' ? 'escuro' : 'claro'}.`
+          : 'Vale só neste aparelho: você pode ter um tema no celular e outro no computador.'}
+      </p>
+    </Secao>
   );
 }
 

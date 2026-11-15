@@ -180,7 +180,7 @@ export function ZonaDePerigo({ user }: { user: User }) {
 
                 <button
                   className="pf-btn"
-                  style={{ background: '#c0392b', color: '#fff' }}
+                  style={{ background: 'var(--perigo)', color: '#fff' }}
                   disabled={ocupado || confirmacao.trim().toUpperCase() !== 'EXCLUIR'}
                   onClick={() => void confirmarExclusao()}
                 >
@@ -223,16 +223,16 @@ function Item({
         gap: 'var(--space-4)',
         alignItems: 'center',
         flexWrap: 'wrap',
-        borderColor: perigo ? 'rgba(192,57,43,.4)' : 'var(--line)',
+        borderColor: perigo ? 'color-mix(in srgb, var(--perigo) 40%, transparent)' : 'var(--line)',
       }}
     >
       <div style={{ flex: 1, minWidth: '12rem' }}>
-        <div style={{ fontWeight: 600, color: perigo ? '#ff8a7a' : 'var(--paper)' }}>{titulo}</div>
+        <div style={{ fontWeight: 600, color: perigo ? 'var(--perigo-texto)' : 'var(--paper)' }}>{titulo}</div>
         <div className="pf-hint" style={{ margin: 0 }}>{texto}</div>
       </div>
       <button
         className="pf-btn pf-btn-ghost"
-        style={{ width: 'auto', padding: '0.6rem 1.1rem', borderColor: perigo ? 'rgba(192,57,43,.5)' : undefined }}
+        style={{ width: 'auto', padding: '0.6rem 1.1rem', borderColor: perigo ? 'color-mix(in srgb, var(--perigo) 50%, transparent)' : undefined }}
         onClick={onClick}
         disabled={ocupado}
       >

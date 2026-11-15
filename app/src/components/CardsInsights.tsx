@@ -2,13 +2,13 @@ import type { Insight, Parte, TomInsight } from '@pontofire/insights';
 
 const ESTILO: Record<TomInsight, { borda: string; fundo: string; destaque: string }> = {
   celebracao: {
-    borda: 'rgba(63,214,155,.32)',
-    fundo: 'linear-gradient(120deg, rgba(63,214,155,.10), rgba(63,214,155,.02))',
+    borda: 'color-mix(in srgb, var(--mint) 32%, transparent)',
+    fundo: 'linear-gradient(120deg, color-mix(in srgb, var(--mint) 10%, transparent), color-mix(in srgb, var(--mint) 2%, transparent))',
     destaque: 'var(--mint)',
   },
   atencao: {
-    borda: 'rgba(255,158,107,.32)',
-    fundo: 'linear-gradient(120deg, rgba(255,122,69,.10), rgba(255,122,69,.02))',
+    borda: 'color-mix(in srgb, var(--ember-2) 32%, transparent)',
+    fundo: 'linear-gradient(120deg, color-mix(in srgb, var(--ember) 10%, transparent), color-mix(in srgb, var(--ember) 2%, transparent))',
     destaque: 'var(--ember-2)',
   },
   fato: {
@@ -17,8 +17,8 @@ const ESTILO: Record<TomInsight, { borda: string; fundo: string; destaque: strin
     destaque: 'var(--ember-2)',
   },
   humano: {
-    borda: 'rgba(255,122,69,.28)',
-    fundo: 'linear-gradient(120deg, rgba(255,122,69,.12), rgba(255,122,69,.02))',
+    borda: 'color-mix(in srgb, var(--ember) 28%, transparent)',
+    fundo: 'linear-gradient(120deg, color-mix(in srgb, var(--ember) 12%, transparent), color-mix(in srgb, var(--ember) 2%, transparent))',
     destaque: 'var(--ember-2)',
   },
 };
